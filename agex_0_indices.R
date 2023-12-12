@@ -57,7 +57,9 @@ p5d <- function(x){
 # ------------------------------------------ #
 
 # Standardized Precipitation Evapotranspiration Index
-spe <- function(x){}
+Spei <- function(x){
+  
+}
 
 # Maximum number of consecutive days
 cdd <- function(x){

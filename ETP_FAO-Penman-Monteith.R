@@ -1,13 +1,16 @@
-## FAO-Penman-Monteith Evapotranspiration (ETP)
-## By: Cesar Saavedra
-## Junio, 2023
+# ------------------------------------------ #
+# FAO-Penman-Monteith Evapotranspiration
+# By: Cesar Saavedra & Harold Achicanoy
+# ABC
+# Dec. 2023
+# ------------------------------------------ #
 
-# R options
-rm(list = ls()); gc(TRUE) # Empty garbage collector
-options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
-suppressMessages(library(pacman))
+# R options and packages loading
+options(warn = -1, scipen = 999)
+rm(list = ls()); gc(TRUE)
+suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
 suppressMessages(pacman::p_load(tidyverse,terra,gtools,lubridate))
-#
+
 root <- '//CATALOGUE/WFP_ClimateRiskPr1'
 cnty <- terra::vect(paste0(root,'/1.Data/shps/GTM/GTM_GADM1.shp'))
 

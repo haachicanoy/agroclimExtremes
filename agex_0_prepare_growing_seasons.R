@@ -1,5 +1,5 @@
 # ------------------------------------------ #
-# Prepare growing seasons
+# Prepare growing seasons - croplands
 # By: Harold Achicanoy
 # WUR & ABC
 # Dec. 2023
@@ -7,6 +7,7 @@
 
 # R options and packages loading
 options(warn = -1, scipen = 999)
+rm(list = ls()); gc(TRUE)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
 suppressMessages(pacman::p_load(terra))
 
