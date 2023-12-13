@@ -35,7 +35,7 @@ n_seasons <- terra::rast(paste0(root,'/phenology/phenonseasons_v03.tif')); gc(TR
 # Start date
 s1_ini <- terra::rast(paste0(root,'/phenology/phenos1_v03.tif'))
 s1_ini[s1_ini > 250] <- NA # Remove missing data
-s1_ini[n_seasons != 1] <- NA
+s1_ini[n_seasons == 2] <- NA
 s1_ini[s1_ini > 36 & s1_ini <= 72] <- s1_ini[s1_ini > 36 & s1_ini <= 72] - 36 # Circularity
 s1_ini[s1_ini > 72] <- s1_ini[s1_ini > 72] - 72 # Circularity
 for(i in 1:nrow(dks_map)){ # Dekad to day-of-year
@@ -116,8 +116,48 @@ for(i in 1:nrow(dks_map)){
 terra::writeRaster(s2_end, filename = paste0(out,'/two_s2_end.tif'), gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
 rm(s2_end); gc(TRUE)
 
+# ------------------------------------------ #
+# Re-sampling to 5 km or 10 km
+# ------------------------------------------ #
 
+tmp_05km <- terra::rast('https://github.com/haachicanoy/agroclimExtremes/raw/main/data/tmp_chirps.tif')
+tmp_10km <- terra::rast('https://github.com/haachicanoy/agroclimExtremes/raw/main/data/tmp_era5.tif')
 
+# One season - Season 1 pre-processing
+s1_ini <- terra::rast(paste0(out,'/one_s1_ini.tif'))
+s1_end <- terra::rast(paste0(out,'/one_s1_end.tif'))
+# 5 km
+s1_ini_05km <- terra::resample(x = s1_ini, y = tmp_05km, method = 'near', threads = T)
+s1_end_05km <- terra::resample(x = s1_end, y = tmp_05km, method = 'near', threads = T)
+cnd <- ((s1_end_05km - s1_ini_05km) <= 0)
+s1_ini_05km[cnd] <- NA
+s1_end_05km[cnd] <- NA
+terra::writeRaster(x = s1_ini_05km, filename = paste0(out,'/one_s1_ini_5km.tif'), gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+terra::writeRaster(x = s1_end_05km, filename = paste0(out,'/one_s1_end_5km.tif'), gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+rm(s1_ini_05km, s1_end_05km); gc(T)
+# 10 km
+s1_ini_10km <- terra::resample(x = s1_ini, y = tmp_10km, method = 'near', threads = T, filename = paste0(out,'/one_s1_ini_10km.tif'), gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+
+s1_end_10km <- terra::resample(x = s1_end, y = tmp_10km, method = 'near', threads = T, filename = paste0(out,'/one_s1_end_10km.tif'), gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+rm(s1_end, s1_end_05km, s1_end_10km); gc(T)
+# Two seasons - Season 1 pre-processing
+s1_ini <- terra::rast(paste0(out,'/two_s1_ini.tif'))
+s1_ini_05km <- terra::resample(x = s1_ini, y = tmp_05km, method = 'near', threads = T, filename = paste0(out,'/two_s1_ini_5km.tif'), gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+s1_ini_10km <- terra::resample(x = s1_ini, y = tmp_10km, method = 'near', threads = T, filename = paste0(out,'/two_s1_ini_10km.tif'), gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+rm(s1_ini, s1_ini_05km, s1_ini_10km); gc(T)
+s1_end <- terra::rast(paste0(out,'/two_s1_end.tif'))
+s1_end_05km <- terra::resample(x = s1_end, y = tmp_05km, method = 'near', threads = T, filename = paste0(out,'/two_s1_end_5km.tif'), gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+s1_end_10km <- terra::resample(x = s1_end, y = tmp_10km, method = 'near', threads = T, filename = paste0(out,'/two_s1_end_10km.tif'), gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+rm(s1_end, s1_end_05km, s1_end_10km); gc(T)
+# Two seasons - Season 2 pre-processing
+s2_ini <- terra::rast(paste0(out,'/two_s2_ini.tif'))
+s2_ini_05km <- terra::resample(x = s2_ini, y = tmp_05km, method = 'near', threads = T, filename = paste0(out,'/two_s2_ini_5km.tif'), gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+s2_ini_10km <- terra::resample(x = s2_ini, y = tmp_10km, method = 'near', threads = T, filename = paste0(out,'/two_s2_ini_10km.tif'), gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+rm(s2_ini, s2_ini_05km, s2_ini_10km); gc(T)
+s2_end <- terra::rast(paste0(out,'/two_s2_end.tif'))
+s2_end_05km <- terra::resample(x = s2_end, y = tmp_05km, method = 'near', threads = T, filename = paste0(out,'/two_s2_end_5km.tif'), gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+s2_end_10km <- terra::resample(x = s2_end, y = tmp_10km, method = 'near', threads = T, filename = paste0(out,'/two_s2_end_10km.tif'), gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+rm(s2_end, s2_end_05km, s2_end_10km); gc(T)
 
 
 ## Precipitation template
