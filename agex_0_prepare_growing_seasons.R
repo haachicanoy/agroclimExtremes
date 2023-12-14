@@ -42,20 +42,20 @@ for(i in 1:nrow(dks_map)){ # Dekad to day-of-year
   s1_ini[s1_ini == i] <- dks_map$day[i]
   gc(TRUE)
 }; rm(i)
-terra::writeRaster(s1_ini, filename = paste0(out,'/one_s1_ini.tif'), gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+terra::writeRaster(s1_ini, filename = paste0(out,'/one_s1_ini.tif'), overwrite = T, gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
 rm(s1_ini); gc(TRUE)
 
 # End date
 s1_end <- terra::rast(paste0(root,'/phenology/phenoe1_v03.tif'))
 s1_end[s1_end > 250] <- NA
-s1_end[n_seasons != 1] <- NA
+s1_end[n_seasons == 2] <- NA
 s1_end[s1_end > 36 & s1_end <= 72] <- s1_end[s1_end > 36 & s1_end <= 72] - 36
 s1_end[s1_end > 72] <- s1_end[s1_end > 72] - 72
 for(i in 1:nrow(dks_map)){
   s1_end[s1_end == i] <- dks_map$day[i]
   gc(TRUE)
 }; rm(i)
-terra::writeRaster(s1_end, filename = paste0(out,'/one_s1_end.tif'), gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+terra::writeRaster(s1_end, filename = paste0(out,'/one_s1_end.tif'), overwrite = T, gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
 rm(s1_end); gc(TRUE)
 
 # ------------------------------------------ #
@@ -64,27 +64,27 @@ rm(s1_end); gc(TRUE)
 # Start date
 s1_ini <- terra::rast(paste0(root,'/phenology/phenos1_v03.tif'))
 s1_ini[s1_ini > 250] <- NA
-s1_ini[n_seasons != 2] <- NA
+s1_ini[n_seasons == 1] <- NA
 s1_ini[s1_ini > 36 & s1_ini <= 72] <- s1_ini[s1_ini > 36 & s1_ini <= 72] - 36
 s1_ini[s1_ini > 72] <- s1_ini[s1_ini > 72] - 72
 for(i in 1:nrow(dks_map)){
   s1_ini[s1_ini == i] <- dks_map$day[i]
   gc(TRUE)
 }; rm(i)
-terra::writeRaster(s1_ini, filename = paste0(out,'/two_s1_ini.tif'), gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+terra::writeRaster(s1_ini, filename = paste0(out,'/two_s1_ini.tif'), overwrite = T, gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
 rm(s1_ini); gc(TRUE)
 
-# End date
+# End date (to continue)
 s1_end <- terra::rast(paste0(root,'/phenology/phenoe1_v03.tif'))
 s1_end[s1_end > 250] <- NA
-s1_end[n_seasons != 2] <- NA
+s1_end[n_seasons == 1] <- NA
 s1_end[s1_end > 36 & s1_end <= 72] <- s1_end[s1_end > 36 & s1_end <= 72] - 36
 s1_end[s1_end > 72] <- s1_end[s1_end > 72] - 72
 for(i in 1:nrow(dks_map)){
   s1_end[s1_end == i] <- dks_map$day[i]
   gc(TRUE)
 }; rm(i)
-terra::writeRaster(s1_end, filename = paste0(out,'/two_s1_end.tif'), gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+terra::writeRaster(s1_end, filename = paste0(out,'/two_s1_end.tif'), overwrite = T, gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
 rm(s1_end); gc(TRUE)
 
 # ------------------------------------------ #
@@ -93,27 +93,27 @@ rm(s1_end); gc(TRUE)
 # Start date
 s2_ini <- terra::rast(paste0(root,'/phenology/phenos2_v03.tif'))
 s2_ini[s2_ini > 250] <- NA
-s2_ini[n_seasons != 2] <- NA
+s2_ini[n_seasons == 1] <- NA
 s2_ini[s2_ini > 36 & s2_ini <= 72] <- s2_ini[s2_ini > 36 & s2_ini <= 72] - 36
 s2_ini[s2_ini > 72] <- s2_ini[s2_ini > 72] - 72
 for(i in 1:nrow(dks_map)){
   s2_ini[s2_ini == i] <- dks_map$day[i]
   gc(TRUE)
 }; rm(i)
-terra::writeRaster(s2_ini, filename = paste0(out,'/two_s2_ini.tif'), gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+terra::writeRaster(s2_ini, filename = paste0(out,'/two_s2_ini.tif'), overwrite = T, gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
 rm(s2_ini); gc(TRUE)
 
 # End date
 s2_end <- terra::rast(paste0(root,'/phenology/phenoe2_v03.tif'))
 s2_end[s2_end > 250] <- NA
-s2_end[n_seasons != 2] <- NA
+s2_end[n_seasons == 1] <- NA
 s2_end[s2_end > 36 & s2_end <= 72] <- s2_end[s2_end > 36 & s2_end <= 72] - 36
 s2_end[s2_end > 72] <- s2_end[s2_end > 72] - 72
 for(i in 1:nrow(dks_map)){
   s2_end[s2_end == i] <- dks_map$day[i]
   gc(TRUE)
 }; rm(i)
-terra::writeRaster(s2_end, filename = paste0(out,'/two_s2_end.tif'), gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+terra::writeRaster(s2_end, filename = paste0(out,'/two_s2_end.tif'), overwrite = T, gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
 rm(s2_end); gc(TRUE)
 
 # ------------------------------------------ #
@@ -132,8 +132,8 @@ s1_end_05km <- terra::resample(x = s1_end, y = tmp_05km, method = 'near', thread
 cnd <- ((s1_end_05km - s1_ini_05km) <= 0)
 s1_ini_05km[cnd] <- NA
 s1_end_05km[cnd] <- NA
-terra::writeRaster(x = s1_ini_05km, filename = paste0(out,'/one_s1_ini_5km.tif'), gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
-terra::writeRaster(x = s1_end_05km, filename = paste0(out,'/one_s1_end_5km.tif'), gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+terra::writeRaster(x = s1_ini_05km, filename = paste0(out,'/one_s1_ini_5km.tif'), overwrite = T, gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+terra::writeRaster(x = s1_end_05km, filename = paste0(out,'/one_s1_end_5km.tif'), overwrite = T, gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
 rm(s1_ini_05km, s1_end_05km); gc(T)
 # 10 km
 s1_ini_10km <- terra::resample(x = s1_ini, y = tmp_10km, method = 'near', threads = T, filename = paste0(out,'/one_s1_ini_10km.tif'), gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
