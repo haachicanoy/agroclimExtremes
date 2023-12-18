@@ -12,7 +12,7 @@ suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pa
 suppressMessages(pacman::p_load(terra))
 
 # Directories
-root <- 'E:/Harold/Maps' # root <- 'D:/Data/Maps'
+root <- '//CATALOGUE/WFP_ClimateRiskPr1/agroclimExtremes/data' # root <- 'D:/Data/Maps'
 out  <- paste0(root,'/results'); dir.create(out, F, T)
 
 # Mapping dekads to day-of-year units
@@ -29,99 +29,156 @@ dks_map$day[dks_map$dekad == 36] <- 1
 # Load phenology data
 n_seasons <- terra::rast(paste0(root,'/phenology/phenonseasons_v03.tif')); gc(TRUE)
 
+# Template rasters
+# tmp_05km <- terra::rast('https://github.com/haachicanoy/agroclimExtremes/raw/main/data/tmp_chirps.tif')
+tmp_10km <- terra::rast('https://github.com/haachicanoy/agroclimExtremes/raw/main/data/tmp_era5.tif')
+
 # ------------------------------------------ #
 # One season - Season 1 pre-processing
 # ------------------------------------------ #
 # Start date
-s1_ini <- terra::rast(paste0(root,'/phenology/phenos1_v03.tif'))
-s1_ini[s1_ini > 250] <- NA # Remove missing data
-s1_ini[n_seasons == 2] <- NA
-s1_ini[s1_ini > 36 & s1_ini <= 72] <- s1_ini[s1_ini > 36 & s1_ini <= 72] - 36 # Circularity
-s1_ini[s1_ini > 72] <- s1_ini[s1_ini > 72] - 72 # Circularity
-for(i in 1:nrow(dks_map)){ # Dekad to day-of-year
-  s1_ini[s1_ini == i] <- dks_map$day[i]
-  gc(TRUE)
-}; rm(i)
-terra::writeRaster(s1_ini, filename = paste0(out,'/one_s1_ini.tif'), overwrite = T, gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
-rm(s1_ini); gc(TRUE)
+if(!file.exists(paste0(out,'/one_s1_ini_raw_10km.tif'))){
+  s1_ini <- terra::rast(paste0(root,'/phenology/phenos1_v03.tif'))
+  s1_ini[s1_ini > 250] <- NA # Remove missing data
+  s1_ini[n_seasons == 2] <- NA
+  s1_ini_10km <- terra::resample(x = s1_ini, y = tmp_10km, method = 'near', threads = T)
+  rm(s1_ini); gc(TRUE)
+  terra::writeRaster(x = s1_ini_10km, filename = paste0(out,'/one_s1_ini_raw_10km.tif'), overwrite = T, gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+} else {
+  s1_ini_10km <- terra::rast(paste0(out,'/one_s1_ini_raw_10km.tif'))
+  s1_ini_10km[s1_ini_10km > 36 & s1_ini_10km <= 72] <- s1_ini_10km[s1_ini_10km > 36 & s1_ini_10km <= 72] - 36 # Circularity
+  if(any(terra::values(s1_ini_10km) > 72, na.rm = T)){
+    s1_ini_10km[s1_ini_10km > 72] <- s1_ini_10km[s1_ini_10km > 72] - 72
+  } # Circularity
+  for(i in 1:nrow(dks_map)){ # Dekad to day-of-year
+    s1_ini_10km[s1_ini_10km == i] <- dks_map$day[i]
+    gc(TRUE)
+  }; rm(i)
+  terra::writeRaster(s1_ini_10km, filename = paste0(out,'/one_s1_ini_10km.tif'), overwrite = T, gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+  rm(s1_ini_10km); gc(TRUE)
+}
 
 # End date
-s1_end <- terra::rast(paste0(root,'/phenology/phenoe1_v03.tif'))
-s1_end[s1_end > 250] <- NA
-s1_end[n_seasons == 2] <- NA
-s1_end[s1_end > 36 & s1_end <= 72] <- s1_end[s1_end > 36 & s1_end <= 72] - 36
-s1_end[s1_end > 72] <- s1_end[s1_end > 72] - 72
-for(i in 1:nrow(dks_map)){
-  s1_end[s1_end == i] <- dks_map$day[i]
-  gc(TRUE)
-}; rm(i)
-terra::writeRaster(s1_end, filename = paste0(out,'/one_s1_end.tif'), overwrite = T, gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
-rm(s1_end); gc(TRUE)
+if(!file.exists(paste0(out,'/one_s1_end_raw_10km.tif'))){
+  s1_end <- terra::rast(paste0(root,'/phenology/phenoe1_v03.tif'))
+  s1_end[s1_end > 250] <- NA
+  s1_end[n_seasons == 2] <- NA
+  s1_end_10km <- terra::resample(x = s1_end, y = tmp_10km, method = 'near', threads = T)
+  terra::writeRaster(x = s1_end_10km, filename = paste0(out,'/one_s1_end_raw_10km.tif'), overwrite = T, gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+  rm(s1_end); gc(TRUE)
+} else {
+  s1_end_10km <- terra::rast(paste0(out,'/one_s1_end_raw_10km.tif'))
+  s1_end_10km[s1_end_10km > 36 & s1_end_10km <= 72] <- s1_end_10km[s1_end_10km > 36 & s1_end_10km <= 72] - 36
+  if(any(terra::values(s1_end_10km) > 72, na.rm = T)){
+    s1_end_10km[s1_end_10km > 72] <- s1_end_10km[s1_end_10km > 72] - 72
+  }
+  for(i in 1:nrow(dks_map)){
+    s1_end_10km[s1_end_10km == i] <- dks_map$day[i]
+    gc(TRUE)
+  }; rm(i)
+  terra::writeRaster(s1_end_10km, filename = paste0(out,'/one_s1_end_10km.tif'), overwrite = T, gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+  rm(s1_end_10km); gc(TRUE)
+}
 
 # ------------------------------------------ #
 # Two seasons - Season 1 pre-processing
 # ------------------------------------------ #
 # Start date
-s1_ini <- terra::rast(paste0(root,'/phenology/phenos1_v03.tif'))
-s1_ini[s1_ini > 250] <- NA
-s1_ini[n_seasons == 1] <- NA
-s1_ini[s1_ini > 36 & s1_ini <= 72] <- s1_ini[s1_ini > 36 & s1_ini <= 72] - 36
-s1_ini[s1_ini > 72] <- s1_ini[s1_ini > 72] - 72
-for(i in 1:nrow(dks_map)){
-  s1_ini[s1_ini == i] <- dks_map$day[i]
-  gc(TRUE)
-}; rm(i)
-terra::writeRaster(s1_ini, filename = paste0(out,'/two_s1_ini.tif'), overwrite = T, gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
-rm(s1_ini); gc(TRUE)
+if(!file.exists(paste0(out,'/two_s1_ini_raw_10km.tif'))){
+  s1_ini <- terra::rast(paste0(root,'/phenology/phenos1_v03.tif'))
+  s1_ini[s1_ini > 250] <- NA # Remove missing data
+  s1_ini[n_seasons == 1] <- NA
+  s1_ini_10km <- terra::resample(x = s1_ini, y = tmp_10km, method = 'near', threads = T)
+  rm(s1_ini); gc(TRUE)
+  terra::writeRaster(x = s1_ini_10km, filename = paste0(out,'/two_s1_ini_raw_10km.tif'), overwrite = T, gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+} else {
+  s1_ini_10km <- terra::rast(paste0(out,'/two_s1_ini_raw_10km.tif'))
+  s1_ini_10km[s1_ini_10km > 36 & s1_ini_10km <= 72] <- s1_ini_10km[s1_ini_10km > 36 & s1_ini_10km <= 72] - 36 # Circularity
+  if(any(terra::values(s1_ini_10km) > 72, na.rm = T)){
+    s1_ini_10km[s1_ini_10km > 72] <- s1_ini_10km[s1_ini_10km > 72] - 72
+  } # Circularity
+  for(i in 1:nrow(dks_map)){ # Dekad to day-of-year
+    s1_ini_10km[s1_ini_10km == i] <- dks_map$day[i]
+    gc(TRUE)
+  }; rm(i)
+  terra::writeRaster(s1_ini_10km, filename = paste0(out,'/two_s1_ini_10km.tif'), overwrite = T, gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+  rm(s1_ini_10km); gc(TRUE)
+}
 
-# End date (to continue)
-s1_end <- terra::rast(paste0(root,'/phenology/phenoe1_v03.tif'))
-s1_end[s1_end > 250] <- NA
-s1_end[n_seasons == 1] <- NA
-s1_end[s1_end > 36 & s1_end <= 72] <- s1_end[s1_end > 36 & s1_end <= 72] - 36
-s1_end[s1_end > 72] <- s1_end[s1_end > 72] - 72
-for(i in 1:nrow(dks_map)){
-  s1_end[s1_end == i] <- dks_map$day[i]
-  gc(TRUE)
-}; rm(i)
-terra::writeRaster(s1_end, filename = paste0(out,'/two_s1_end.tif'), overwrite = T, gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
-rm(s1_end); gc(TRUE)
+# End date
+if(!file.exists(paste0(out,'/two_s1_end_raw_10km.tif'))){
+  s1_end <- terra::rast(paste0(root,'/phenology/phenoe1_v03.tif'))
+  s1_end[s1_end > 250] <- NA
+  s1_end[n_seasons == 1] <- NA
+  s1_end_10km <- terra::resample(x = s1_end, y = tmp_10km, method = 'near', threads = T)
+  terra::writeRaster(x = s1_end_10km, filename = paste0(out,'/two_s1_end_raw_10km.tif'), overwrite = T, gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+  rm(s1_end); gc(TRUE)
+} else {
+  s1_end_10km <- terra::rast(paste0(out,'/two_s1_end_raw_10km.tif'))
+  s1_end_10km[s1_end_10km > 36 & s1_end_10km <= 72] <- s1_end_10km[s1_end_10km > 36 & s1_end_10km <= 72] - 36
+  if(any(terra::values(s1_end_10km) > 72, na.rm = T)){
+    s1_end_10km[s1_end_10km > 72] <- s1_end_10km[s1_end_10km > 72] - 72
+  }
+  for(i in 1:nrow(dks_map)){
+    s1_end_10km[s1_end_10km == i] <- dks_map$day[i]
+    gc(TRUE)
+  }; rm(i)
+  terra::writeRaster(s1_end_10km, filename = paste0(out,'/two_s1_end_10km.tif'), overwrite = T, gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+  rm(s1_end_10km); gc(TRUE)
+}
 
 # ------------------------------------------ #
 # Two seasons - Season 2 pre-processing
 # ------------------------------------------ #
 # Start date
-s2_ini <- terra::rast(paste0(root,'/phenology/phenos2_v03.tif'))
-s2_ini[s2_ini > 250] <- NA
-s2_ini[n_seasons == 1] <- NA
-s2_ini[s2_ini > 36 & s2_ini <= 72] <- s2_ini[s2_ini > 36 & s2_ini <= 72] - 36
-s2_ini[s2_ini > 72] <- s2_ini[s2_ini > 72] - 72
-for(i in 1:nrow(dks_map)){
-  s2_ini[s2_ini == i] <- dks_map$day[i]
-  gc(TRUE)
-}; rm(i)
-terra::writeRaster(s2_ini, filename = paste0(out,'/two_s2_ini.tif'), overwrite = T, gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
-rm(s2_ini); gc(TRUE)
+if(!file.exists(paste0(out,'/two_s2_ini_raw_10km.tif'))){
+  s2_ini <- terra::rast(paste0(root,'/phenology/phenos2_v03.tif'))
+  s2_ini[s2_ini > 250] <- NA # Remove missing data
+  s2_ini[n_seasons == 1] <- NA
+  s2_ini_10km <- terra::resample(x = s2_ini, y = tmp_10km, method = 'near', threads = T)
+  rm(s2_ini); gc(TRUE)
+  terra::writeRaster(x = s2_ini_10km, filename = paste0(out,'/two_s2_ini_raw_10km.tif'), overwrite = T, gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+} else {
+  s2_ini_10km <- terra::rast(paste0(out,'/two_s2_ini_raw_10km.tif'))
+  s2_ini_10km[s2_ini_10km > 36 & s2_ini_10km <= 72] <- s2_ini_10km[s2_ini_10km > 36 & s2_ini_10km <= 72] - 36 # Circularity
+  if(any(terra::values(s2_ini_10km) > 72, na.rm = T)){
+    s2_ini_10km[s2_ini_10km > 72] <- s2_ini_10km[s2_ini_10km > 72] - 72
+  } # Circularity
+  for(i in 1:nrow(dks_map)){ # Dekad to day-of-year
+    s2_ini_10km[s2_ini_10km == i] <- dks_map$day[i]
+    gc(TRUE)
+  }; rm(i)
+  terra::writeRaster(s2_ini_10km, filename = paste0(out,'/two_s2_ini_10km.tif'), overwrite = T, gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+  rm(s2_ini_10km); gc(TRUE)
+}
 
 # End date
-s2_end <- terra::rast(paste0(root,'/phenology/phenoe2_v03.tif'))
-s2_end[s2_end > 250] <- NA
-s2_end[n_seasons == 1] <- NA
-s2_end[s2_end > 36 & s2_end <= 72] <- s2_end[s2_end > 36 & s2_end <= 72] - 36
-s2_end[s2_end > 72] <- s2_end[s2_end > 72] - 72
-for(i in 1:nrow(dks_map)){
-  s2_end[s2_end == i] <- dks_map$day[i]
-  gc(TRUE)
-}; rm(i)
-terra::writeRaster(s2_end, filename = paste0(out,'/two_s2_end.tif'), overwrite = T, gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
-rm(s2_end); gc(TRUE)
+if(!file.exists(paste0(out,'/two_s2_end_raw_10km.tif'))){
+  s2_end <- terra::rast(paste0(root,'/phenology/phenoe2_v03.tif'))
+  s2_end[s2_end > 250] <- NA
+  s2_end[n_seasons == 1] <- NA
+  s2_end_10km <- terra::resample(x = s2_end, y = tmp_10km, method = 'near', threads = T)
+  terra::writeRaster(x = s2_end_10km, filename = paste0(out,'/two_s2_end_raw_10km.tif'), overwrite = T, gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+  rm(s2_end); gc(TRUE)
+} else {
+  s2_end_10km <- terra::rast(paste0(out,'/two_s2_end_raw_10km.tif'))
+  s2_end_10km[s2_end_10km > 36 & s2_end_10km <= 72] <- s2_end_10km[s2_end_10km > 36 & s2_end_10km <= 72] - 36
+  if(any(terra::values(s2_end_10km) > 72, na.rm = T)){
+    s2_end_10km[s2_end_10km > 72] <- s2_end_10km[s2_end_10km > 72] - 72
+  }
+  for(i in 1:nrow(dks_map)){
+    s2_end_10km[s2_end_10km == i] <- dks_map$day[i]
+    gc(TRUE)
+  }; rm(i)
+  terra::writeRaster(s2_end_10km, filename = paste0(out,'/two_s2_end_10km.tif'), overwrite = T, gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+  rm(s2_end_10km); gc(TRUE)
+}
 
 # ------------------------------------------ #
 # Re-sampling to 5 km or 10 km
 # ------------------------------------------ #
 
-tmp_05km <- terra::rast('https://github.com/haachicanoy/agroclimExtremes/raw/main/data/tmp_chirps.tif')
-tmp_10km <- terra::rast('https://github.com/haachicanoy/agroclimExtremes/raw/main/data/tmp_era5.tif')
+
 
 # One season - Season 1 pre-processing
 s1_ini <- terra::rast(paste0(out,'/one_s1_ini.tif'))
@@ -136,9 +193,13 @@ terra::writeRaster(x = s1_ini_05km, filename = paste0(out,'/one_s1_ini_5km.tif')
 terra::writeRaster(x = s1_end_05km, filename = paste0(out,'/one_s1_end_5km.tif'), overwrite = T, gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
 rm(s1_ini_05km, s1_end_05km); gc(T)
 # 10 km
-s1_ini_10km <- terra::resample(x = s1_ini, y = tmp_10km, method = 'near', threads = T, filename = paste0(out,'/one_s1_ini_10km.tif'), gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
-
-s1_end_10km <- terra::resample(x = s1_end, y = tmp_10km, method = 'near', threads = T, filename = paste0(out,'/one_s1_end_10km.tif'), gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+s1_ini_10km <- terra::resample(x = s1_ini, y = tmp_10km, method = 'near', threads = T)
+s1_end_10km <- terra::resample(x = s1_end, y = tmp_10km, method = 'near', threads = T)
+cnd <- ((s1_end_10km - s1_ini_10km) <= 0)
+s1_ini_10km[cnd] <- NA
+s1_end_10km[cnd] <- NA
+terra::writeRaster(x = s1_ini_10km, filename = paste0(out,'/one_s1_ini_10km.tif'), gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
+terra::writeRaster(x = s1_end_10km, filename = paste0(out,'/one_s1_end_10km.tif'), gdal = c('COMPRESS=NONE', 'TFW=YES'), datatype = 'INT1U')
 rm(s1_end, s1_end_05km, s1_end_10km); gc(T)
 # Two seasons - Season 1 pre-processing
 s1_ini <- terra::rast(paste0(out,'/two_s1_ini.tif'))
