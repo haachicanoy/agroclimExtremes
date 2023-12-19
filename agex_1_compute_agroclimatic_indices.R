@@ -27,6 +27,8 @@ s1_ini <- terra::rast(paste0(root,'/agroclimExtremes/data/results/one_s1_ini_10k
 s1_end <- terra::rast(paste0(root,'/agroclimExtremes/data/results/one_s1_end_10km.tif'))
 s1_dff <- s1_end - s1_ini
 s1_dff[s1_end < s1_ini] <- NA
+s1_ini[is.na(s1_dff)] <- NA
+s1_end[is.na(s1_dff)] <- NA
 
 yrs <- 1981:2019
 p95_index <- lapply(X = yrs, FUN = function(yr){
@@ -34,7 +36,7 @@ p95_index <- lapply(X = yrs, FUN = function(yr){
   prc_flt <- prc[grep(pattern = yr, x = prc)]
   rnf <- terra::rast(prc_flt)
   rsl <- terra::rapp(x = rnf, first = s1_ini, last = s1_end, fun = p95)
-  terra::writeRaster(x = rsl, filename = paste0(root,'/yr_',yr,'_world.tif'), gdal=c('COMPRESS=NONE', 'TFW=YES'), datatype='INT1U')
+  terra::writeRaster(x = rsl, filename = paste0(root,'/yr_',yr,'_world.tif'))
   return('Done.\n')
 })
 
