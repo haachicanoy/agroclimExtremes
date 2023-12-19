@@ -6,7 +6,7 @@
 # ------------------------------------------ #
 
 options(warn = -1, scipen = 999)
-rm(list = ls()); gc(TRUE)
+# rm(list = ls()); gc(TRUE)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
 suppressMessages(pacman::p_load(caTools))
 
