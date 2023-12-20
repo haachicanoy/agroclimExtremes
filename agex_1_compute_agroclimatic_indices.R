@@ -30,13 +30,22 @@ s1_dff[s1_end < s1_ini] <- NA
 s1_ini[is.na(s1_dff)] <- NA
 s1_end[is.na(s1_dff)] <- NA
 
+# Percentile 95th of daily precipitation
 yrs <- 1981:2019
-p95_index <- lapply(X = yrs, FUN = function(yr){
-  # Precipitation files filtered
-  prc_flt <- prc[grep(pattern = yr, x = prc)]
-  rnf <- terra::rast(prc_flt)
-  rsl <- terra::rapp(x = rnf, first = s1_ini, last = s1_end, fun = p95)
-  terra::writeRaster(x = rsl, filename = paste0(root,'/yr_',yr,'_world.tif'))
+lapply(X = yrs, FUN = function(yr){
+  prc_flt <- prc[grep(pattern = yr, x = prc)] # Files filtered per year
+  rnf <- terra::rast(prc_flt); gc(T)
+  rsl <- terra::rapp(x = rnf, first = s1_ini, last = s1_end, fun = p95); gc(T)
+  terra::writeRaster(x = rsl, filename = paste0(root,'/one_s1_p95_',yr,'.tif')); gc(T)
+  return('Done.\n')
+})
+
+# Maximum number of consecutive dry days
+lapply(X = yrs, FUN = function(yr){
+  prc_flt <- prc[grep(pattern = yr, x = prc)] # Files filtered per year
+  rnf <- terra::rast(prc_flt); gc(T)
+  rsl <- terra::rapp(x = rnf, first = s1_ini, last = s1_end, fun = cdd); gc(T)
+  terra::writeRaster(x = rsl, filename = paste0(root,'/one_s1_cdd_',yr,'.tif')); gc(T)
   return('Done.\n')
 })
 
