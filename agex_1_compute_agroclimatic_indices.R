@@ -36,7 +36,7 @@ lapply(X = yrs, FUN = function(yr){
   prc_flt <- prc[grep(pattern = yr, x = prc)] # Files filtered per year
   rnf <- terra::rast(prc_flt); gc(T)
   rsl <- terra::rapp(x = rnf, first = s1_ini, last = s1_end, fun = p95); gc(T)
-  terra::names(rsl) <- c('p95','day')
+  names(rsl) <- c('p95','day')
   terra::writeRaster(x = rsl, filename = paste0(root,'/agroclimExtremes/indices/p95/one_s1_p95_',yr,'.tif'), overwrite = T); gc(T)
   return('Done.\n')
 })
@@ -46,7 +46,7 @@ lapply(X = yrs, FUN = function(yr){
   prc_flt <- prc[grep(pattern = yr, x = prc)] # Files filtered per year
   rnf <- terra::rast(prc_flt); gc(T)
   rsl <- terra::rapp(x = rnf, first = s1_ini, last = s1_end, fun = cdd); gc(T)
-  terra::names(rsl) <- c('cdd','day')
+  names(rsl) <- paste0('cdd_',yr)
   terra::writeRaster(x = rsl, filename = paste0(root,'/agroclimExtremes/indices/cdd/one_s1_cdd_',yr,'.tif'), overwrite = T); gc(T)
   return('Done.\n')
 })
