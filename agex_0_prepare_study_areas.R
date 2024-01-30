@@ -25,21 +25,17 @@ crops_lnd <- purrr::map(.x = crops_fls, .f = function(x){ # Data
 crops_lnd[crops_lnd <= 0] <- NA
 crops_lnd[!is.na(crops_lnd)] <- 1
 
-terra::writeRaster(x = crops_lnd,
-                   filename = paste0(out_dir,'/data/cropgrids_harvested_area.tif'),
-                   gdal = c('COMPRESS=DEFLATE', 'TFW=YES'))
+terra::writeRaster(x = crops_lnd, filename = paste0(out_dir,'/data/cropgrids_harvested_area.tif'))
 
 # Cropland areas from MAPSPAM 2010
 crops_dir <- paste0(inp_dir,'/spam2010') # Directory
-crops_fls <- list.files(path = crops_dir, pattern = '_H.tif', full.names = T)
+crops_fls <- list.files(path = crops_dir, pattern = '_A.tif', full.names = T)
 
 crops_lnd <- terra::rast(crops_fls) |> sum(na.rm = T)
 crops_lnd[crops_lnd <= 0] <- NA
 crops_lnd[!is.na(crops_lnd)] <- 1
 
-terra::writeRaster(x = crops_lnd,
-                   filename = paste0(out_dir,'/data/mapspam_harvested_area.tif'),
-                   gdal = c('COMPRESS=DEFLATE', 'TFW=YES'))
+terra::writeRaster(x = crops_lnd, filename = paste0(out_dir,'/data/mapspam_harvested_area.tif'), overwrite = T)
 
 # Mask of water bodies and protected areas
 wbd <- terra::rast(paste0(inp_dir,'/water_bodies/glwd_3')) # Water bodies
@@ -60,8 +56,7 @@ mapspam <- terra::rast(paste0(out_dir,'/data/mapspam_harvested_area.tif'))
 msk_10 <- terra::resample(x = msk, y = mapspam, method = 'near')
 mapspam_mskd <- terra::mask(x = mapspam, mask = msk_10, inverse = T)
 terra::writeRaster(x = mapspam_mskd,
-                   filename = paste0(out_dir,'/data/mapspam_harvested_area_masked.tif'),
-                   gdal = c('COMPRESS=DEFLATE', 'TFW=YES'))
+                   filename = paste0(out_dir,'/data/mapspam_harvested_area_masked.tif'))
 
 geodata::cropland(source = 'WorldCover', path = paste0(out_dir,'/data'))
 geodata::cropland(source = 'GLAD', year = 2019, path = paste0(out_dir,'/data'))

@@ -1,9 +1,9 @@
-# ------------------------------------------ #
-# Compute agro-climatic indices
-# By: Harold Achicanoy
-# WUR & ABC
-# Dec. 2023
-# ------------------------------------------ #
+## ------------------------------------------ ##
+## Compute agro-climatic indices
+## By: Harold Achicanoy
+## WUR & ABC
+## Dec. 2023
+## ------------------------------------------ ##
 
 # R options and packages loading
 options(warn = -1, scipen = 999)
@@ -31,12 +31,13 @@ s1_ini[is.na(s1_dff)] <- NA
 s1_end[is.na(s1_dff)] <- NA
 
 # Percentile 95th of daily precipitation
-yrs <- 1981:2019
+yrs <- 1979:2023
 lapply(X = yrs, FUN = function(yr){
   prc_flt <- prc[grep(pattern = yr, x = prc)] # Files filtered per year
   rnf <- terra::rast(prc_flt); gc(T)
   rsl <- terra::rapp(x = rnf, first = s1_ini, last = s1_end, fun = p95); gc(T)
-  terra::writeRaster(x = rsl, filename = paste0(root,'/one_s1_p95_',yr,'.tif')); gc(T)
+  terra::names(rsl) <- c('p95','day')
+  terra::writeRaster(x = rsl, filename = paste0(root,'/agroclimExtremes/indices/p95/one_s1_p95_',yr,'.tif'), overwrite = T); gc(T)
   return('Done.\n')
 })
 
@@ -45,21 +46,22 @@ lapply(X = yrs, FUN = function(yr){
   prc_flt <- prc[grep(pattern = yr, x = prc)] # Files filtered per year
   rnf <- terra::rast(prc_flt); gc(T)
   rsl <- terra::rapp(x = rnf, first = s1_ini, last = s1_end, fun = cdd); gc(T)
-  terra::writeRaster(x = rsl, filename = paste0(root,'/one_s1_cdd_',yr,'.tif')); gc(T)
+  terra::names(rsl) <- c('cdd','day')
+  terra::writeRaster(x = rsl, filename = paste0(root,'/agroclimExtremes/indices/cdd/one_s1_cdd_',yr,'.tif'), overwrite = T); gc(T)
   return('Done.\n')
 })
 
 p95_idx <- index |> purrr::map(1) |> terra::rast()
 p95_whn <- index |> purrr::map(2) |> terra::rast()
 
-# Two-years
+# Two-years (TO DO)
 yrs <- 1981:2023
 p95_index <- lapply(X = yrs, FUN = function(yr){
   # Precipitation files filtered
   prc_flt <- prc[grep(pattern = c(yr,yr+1), x = prc)] # To implement
   rnf <- terra::rast(prc_flt)
   rsl <- terra::rapp(x = rnf, first = s1_ini_5km, last = s1_end_5km, fun = p95)
-  terra::writeRaster(x = rsl, filename = paste0(root,'/yr_',yr,'_world.tif'), gdal=c('COMPRESS=NONE', 'TFW=YES'), datatype='INT1U')
+  terra::writeRaster(x = rsl, filename = paste0(root,'/yr_',yr,'_world.tif'))
   return('Done.\n')
 })
 
