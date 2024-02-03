@@ -14,7 +14,7 @@ suppressMessages(pacman::p_load(caTools))
 ## ------------------------------------------ ##
 
 # Percentile 95 precipitation within growing season
-p95 <- function(x){
+p95 <- function(x){ # x: daily precipitation vector
   if(!all(is.na(x))){
     p <- 1:length(x) # Daily positions within growing season
     p <- p[x > 0]    # Daily positions with non-zero precipitation
@@ -34,7 +34,7 @@ p95 <- function(x){
 }
 
 # Maximum 5-day running average precipitation
-p5d <- function(x){
+p5d <- function(x){ # x: daily precipitation vector
   if(!all(is.na(x))){
     p <- 1:length(x)
     p5d <- caTools::runmean(x, k = 5, endrule = 'NA')
@@ -61,7 +61,7 @@ Spei <- function(x){
 }
 
 # Maximum number of consecutive days
-cdd <- function(x){
+cdd <- function(x){ # x: daily precipitation vector
   if(!all(is.na(x))){
     runs <- rle(x < 1)
     cdd  <- max(runs$lengths[runs$values==1], na.rm=TRUE)
@@ -76,12 +76,36 @@ cdd <- function(x){
 # ------------------------------------------ #
 
 # Temperature-humidity index
+thi <- function(x){
+  
+}
+
 # Warm spell duration
+wsd <- function(x){
+  
+}
 
 # ------------------------------------------ #
 ## Frost
 # ------------------------------------------ #
 
-# Number of frost days
+# Maximum number of consecutive frost days
+cfd <- function(x){ # x: daily minimum temperature vector
+  if(!all(is.na(x))){
+    runs <- rle(x < 0)
+    cfd  <- max(runs$lengths[runs$values==1], na.rm=TRUE)
+  } else {
+    cfd  <- NA
+  }
+  return(cfd)
+}
 
 # Number of ice days
+nid <- function(x){ # x: daily maximum temperature vector
+  if(!all(is.na(x))){
+    nid <- sum(x < 0)
+  } else {
+    nid <- NA
+  }
+  return(nid)
+}

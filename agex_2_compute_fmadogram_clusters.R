@@ -9,12 +9,13 @@
 options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
 suppressMessages(pacman::p_load(terra, geodata, Kendall, tidyverse, psych,
-                                FactoMineR, factoextra, modifiedmk, NbClust))
+                                FactoMineR, factoextra, modifiedmk, NbClust,
+                                rnaturalearth, RColorBrewer, MetBrewer))
 
 ## Directories
 root <- '//CATALOGUE/WFP_ClimateRiskPr1'
 
-yrs <- 1981:2019
+yrs <- 1981:2023
 
 ## List and load files
 fls <- list.files(path = paste0(root,'/agroclimExtremes/indices/cdd'), pattern = 'one_s[0-9]_cdd_', full.names = T)
@@ -23,7 +24,28 @@ names(cdd) <- paste0('Y',yrs)
 
 ## Region of interest
 roi <- geodata::gadm(country = 'ARG', level = 0, path = tempdir(), version = 'latest')
+crp <- terra::rast('D:/OneDrive - CGIAR/PhD/papers/paper1/data/mapspam_harvested_area.tif')
+crp <- terra::resample(x = crp, y = cdd[[1]], method = 'near')
 # roi <- terra::vect(paste0(root,'/agroclimExtremes/data/shapefiles/africa.gpkg'))
+
+wrl <- rnaturalearth::ne_countries(scale = 'large', returnclass = 'sv')
+wrl <- terra::aggregate(wrl)
+
+# my.palette <- RColorBrewer::brewer.pal(n = 20, name = 'Set1')
+my.palette <- MetBrewer::met.brewer(name = 'Tam', n = 20)
+
+tmp <- cdd[[terra::nlyr(cdd)]]
+tmp <- terra::trim(x = tmp)
+
+hist(terra::values(tmp))
+qnt <- quantile(x = terra::values(tmp), probs = 0.98, na.rm = T)
+
+terra::values(tmp)[terra::values(tmp) > qnt] <- qnt
+
+png(filename = "D:/test.png", width = 3132, height = 2359, units = 'px')
+plot(wrl, ext = terra::ext(tmp))
+plot(tmp, add = T, col = my.palette, plg = list(cex = 5), cex.main = 7)
+dev.off()
 
 ## Crop by region of interest
 cdd_roi <- terra::crop(x = cdd, y = terra::ext(roi))

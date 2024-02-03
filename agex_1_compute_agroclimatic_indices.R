@@ -17,7 +17,7 @@ source('https://raw.githubusercontent.com/haachicanoy/agroclimExtremes/main/agex
 root <- '//CATALOGUE/WFP_ClimateRiskPr1'
 
 # Precipitation files
-prc <- list.files(path = '//CATALOGUE/Workspace14/WFP_ClimateRiskPr/1.Data/ERA5/precipitation_flux', pattern = '.nc$', full.names = T)
+prc <- list.files(path = paste0(root,'/1.Data/AgERA5/precipitation_flux'), pattern = '.nc$', full.names = T)
 
 # ------------------------------------------ #
 # One season
@@ -33,7 +33,7 @@ s1_end[is.na(s1_dff)] <- NA
 # Percentile 95th of daily precipitation
 yrs <- 1979:2023
 lapply(X = yrs, FUN = function(yr){
-  prc_flt <- prc[grep(pattern = yr, x = prc)] # Files filtered per year
+  prc_flt <- prc[grep(pattern = paste0('_',yr,'[0-9][0-9][0-9][0-9]_'), x = prc)] # Files filtered per year
   rnf <- terra::rast(prc_flt); gc(T)
   rsl <- terra::rapp(x = rnf, first = s1_ini, last = s1_end, fun = p95); gc(T)
   names(rsl) <- c('p95','day')
@@ -43,7 +43,7 @@ lapply(X = yrs, FUN = function(yr){
 
 # Maximum number of consecutive dry days
 lapply(X = yrs, FUN = function(yr){
-  prc_flt <- prc[grep(pattern = yr, x = prc)] # Files filtered per year
+  prc_flt <- prc[grep(pattern = paste0('_',yr,'[0-9][0-9][0-9][0-9]_'), x = prc)] # Files filtered per year
   rnf <- terra::rast(prc_flt); gc(T)
   rsl <- terra::rapp(x = rnf, first = s1_ini, last = s1_end, fun = cdd); gc(T)
   names(rsl) <- paste0('cdd_',yr)
