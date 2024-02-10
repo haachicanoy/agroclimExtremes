@@ -7,7 +7,9 @@
 
 options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
-suppressMessages(pacman::p_load(terra,tidyverse,geodata))
+suppressMessages(pacman::p_load(terra,tidyverse,geodata,factoextra))
+
+list.files2 <- Vectorize(FUN = list.files, vectorize.args = 'path')
 
 # Template rasters
 tmp_10km <- terra::rast('https://github.com/haachicanoy/agroclimExtremes/raw/main/data/tmp_era5.tif')
@@ -68,8 +70,54 @@ terra::writeRaster(x = crops_lnd_10km, filename = paste0(root,'/agroclimExtremes
 # geodata::cropland(source = 'GLAD', year = 2019, path = paste0(out_dir,'/data'))
 # geodata::cropland(source = 'QED', path = paste0(out_dir,'/data'))
 
-# Cattle areas
-lvstc_lnd <- terra::rast('D:/OneDrive - CGIAR/African_Crisis_Observatory/data/_global/livestock/cattle/5_Ct_2010_Da.tif')
-lvstc_lnd <- lvstc_lnd >= 100
-plot(lvstc_lnd)
-plot(mapspam)
+# Global livestock production systems (GLPS). Not used
+lvstc_sys <- terra::rast(paste0(inp_dir,'/livestock_systems/glps_gleam_61113_10km.tif'))
+lvstc_sys[lvstc_sys == 15] <- NA # Removing unsuitable areas
+
+# Animal areas
+lvs_dir <- 'D:/OneDrive - CGIAR/African_Crisis_Observatory/data/_global/livestock'
+anmls   <- list.dirs(path = lvs_dir, full.names = F, recursive = F)
+lvstc_fls <- list.files2(path = paste0(lvs_dir,'/',anmls), pattern = '_Da.tif$', full.names = T); rm(lvs_dir, anmls)
+lvstc_cnt <- terra::rast(lvstc_fls)
+
+# Computing Livestock Units
+# LU: Livestock Unit
+# LU = Buffaloes * 1 + Cattle * 1 + Chickens * ((0.007 + 0.014)/2)  + Ducks * 0.01 + Goats * 0.1 +
+#      Horses * 0.8 + Pigs * ((0.5+0.027)/2) + Sheep * 0.1
+# Source: https://ec.europa.eu/eurostat/statistics-explained/index.php?title=Glossary:Livestock_unit_(LSU)
+lsu <- lvstc_cnt[[1]] + lvstc_cnt[[2]] + lvstc_cnt[[3]]*((0.007 + 0.014)/2) +
+  lvstc_cnt[[4]]*0.01 + lvstc_cnt[[5]]*0.1 + lvstc_cnt[[6]]*0.8 +
+  lvstc_cnt[[7]]*((0.5+0.027)/2) + lvstc_cnt[[8]]*0.1
+rm(lvstc_fls, lvstc_cnt)
+
+vls <- terra::values(lsu, na.rm = T) |> as.numeric()
+hist(vls[vls > 0])
+round(stats::quantile(x = vls[vls > 0], probs = seq(0,1,0.1)), 2)
+plot(lsu > 0)
+plot(lsu > 100)    # Selected threshold
+plot(lsu > 145.96) # Median (distribution > 0)
+rm(vls)
+
+lsu <- (lsu > 100) * 1; lsu[lsu == 0] <- NA
+# Resampling Livestock Units into AgERA5 template resolution
+lvstc_lnd_10km <- terra::resample(x = lsu, y = tmp_10km, method = 'near')
+terra::writeRaster(x = lvstc_lnd_10km, filename = paste0(root,'/agroclimExtremes/agex_raw_data/agex_livestockunits_FAO_10km.tif'), overwrite = T)
+
+# # Replacing 0's with the minimum value of the distribution
+# for(i in 1:(terra::nlyr(lvstc_cnt))){
+#   vls <- as.numeric(terra::values(lvstc_cnt[[i]], na.rm = T))
+#   vls_min <- min(vls[vls > 0])
+#   lvstc_cnt[[i]][lvstc_cnt[[i]] == 0] <- vls_min; rm(vls_min)
+# }
+# lvstc_cnt <- log(lvstc_cnt) # Apply logarithm transformation to correct skewness
+# lvstc_pca <- terra::prcomp(lvstc_cnt, center = T, scale = T) # PCA
+# lvstc_pca
+# 
+# get_pca_var(lvstc_pca)$contrib
+# 
+# names(lvstc_cnt) <- paste0('X',names(lvstc_cnt))
+# 
+# lvstc_res <- terra::predict(lvstc_cnt, lvstc_pca)
+# plot(lvstc_res[[1]] > 0)
+# plot(lvstc_res[[2]] > 0)
+# plot(lvstc_res[[6]] > 0)

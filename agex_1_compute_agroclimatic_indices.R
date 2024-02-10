@@ -38,7 +38,7 @@ lapply(X = yrs, FUN = function(yr){
   rnf <- terra::rast(prc_flt); gc(T)
   rsl <- terra::rapp(x = rnf, first = s1_ini, last = s1_end, fun = p95); gc(T)
   names(rsl) <- c('p95','day')
-  terra::writeRaster(x = rsl, filename = paste0(root,'/agroclimExtremes/agex_indices/agex_p95/one_s1_p95_',yr,'.tif'), overwrite = T); gc(T)
+  terra::writeRaster(x = rsl, filename = paste0(root,'/agroclimExtremes/agex_indices/agex_p95/one_s1_y1_p95_',yr,'.tif'), overwrite = T); gc(T)
   return('Done.\n')
 })
 
@@ -91,6 +91,15 @@ lapply(X = yrs, FUN = function(yr){
     break
     return('Done.\n')
   }
+})
+
+# Merge results
+yrs <- 1979:2022
+lapply(X = yrs, FUN = function(yr){
+  fls <- list.files(pattern = paste0('_',yr,'.tif'), path = paste0(root,'/agroclimExtremes/agex_indices/agex_cdd'), full.names = T)
+  cdd <- lapply(fls, terra::rast)
+  cdd <- terra::merge(x = cdd[[1]], y = cdd[[2]])
+  terra::writeRaster(x = cdd, filename = paste0(root,'/agroclimExtremes/agex_indices/agex_cdd/one_s1_cdd_',yr,'.tif'), overwrite = T)
 })
 
 # ------------------------------------------ #
