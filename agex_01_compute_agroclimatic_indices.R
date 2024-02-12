@@ -93,7 +93,19 @@ lapply(X = yrs, FUN = function(yr){
   }
 })
 
+####
 # Merge results
+####
+# Percentile 95th of daily precipitation
+yrs <- 1979:2022
+lapply(X = yrs, FUN = function(yr){
+  fls <- list.files(pattern = paste0('_',yr,'.tif'), path = paste0(root,'/agroclimExtremes/agex_indices/agex_p95'), full.names = T)
+  p95 <- lapply(fls, terra::rast)
+  p95 <- terra::merge(x = p95[[1]], y = p95[[2]])
+  terra::writeRaster(x = p95, filename = paste0(root,'/agroclimExtremes/agex_indices/agex_p95/one_s1_p95_',yr,'.tif'), overwrite = T)
+})
+
+# Maximum number of consecutive dry days
 yrs <- 1979:2022
 lapply(X = yrs, FUN = function(yr){
   fls <- list.files(pattern = paste0('_',yr,'.tif'), path = paste0(root,'/agroclimExtremes/agex_indices/agex_cdd'), full.names = T)
@@ -105,3 +117,36 @@ lapply(X = yrs, FUN = function(yr){
 # ------------------------------------------ #
 # Two seasons
 # ------------------------------------------ #
+## Season 1
+# One-year
+s1_ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s1_ini_10km_croplands.tif'))
+s1_end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s1_end_10km_croplands.tif'))
+s1_dff <- s1_end - s1_ini
+s1_dff[s1_end < s1_ini] <- NA
+s1_ini[is.na(s1_dff)] <- NA
+s1_end[is.na(s1_dff)] <- NA
+
+# Two-years
+s1_ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s1_ini_10km_croplands.tif'))
+s1_end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s1_end_10km_croplands.tif'))
+s1_dff <- s1_end - s1_ini
+s1_dff[s1_end > s1_ini] <- NA
+s1_ini[is.na(s1_dff)] <- NA
+s1_end[is.na(s1_dff)] <- NA
+
+## Season 2
+# One-year
+s2_ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s2_ini_10km_croplands.tif'))
+s2_end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s2_end_10km_croplands.tif'))
+s2_dff <- s2_end - s2_ini
+s2_dff[s2_end < s2_ini] <- NA
+s2_ini[is.na(s2_dff)] <- NA
+s2_end[is.na(s2_dff)] <- NA
+
+# Two-years
+s2_ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s2_ini_10km_croplands.tif'))
+s2_end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s2_end_10km_croplands.tif'))
+s2_dff <- s2_end - s2_ini
+s2_dff[s2_end > s2_ini] <- NA
+s2_ini[is.na(s2_dff)] <- NA
+s2_end[is.na(s2_dff)] <- NA

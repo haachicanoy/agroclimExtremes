@@ -98,7 +98,8 @@ get_fmado_dist <- function(x){
 }
 
 ## Obtain distance matrices
-geogr_dist <- parallelDist::parDist(x = as.matrix(cdd_roi_ntrd[,c('x','y')]), # Geographical distance
+geogr <- as.matrix(scale(cdd_roi_ntrd[,c('x','y')]))
+geogr_dist <- parallelDist::parDist(x = geogr, # Geographical distance
                                     method = 'euclidean',
                                     diag = T, upper = T)
 fmado_dist  <- get_fmado_dist(x)       # F-madogram distances matrix
@@ -124,6 +125,7 @@ fmado_hcl_wd2 <- fastcluster::hclust(fmado_dist, method = 'ward.D2') # F-madogra
 fmado_hcl_cnt <- fastcluster::hclust(fmado_dist, method = 'centroid') # F-madogram
 fmado_hcl_mdn <- fastcluster::hclust(fmado_dist, method = 'median') # F-madogram
 eucld_hcl <- fastcluster::hclust(eucld_dist, method = 'complete') # Euclidean
+geogr_hcl <- fastcluster::hclust(geogr_dist, method = 'complete') # F-madogram
 
 # Query data.frame
 qry <- cdd_roi_ntrd[,c('cell','x','y')]
