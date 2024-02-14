@@ -106,6 +106,8 @@ cap_fmado_dist <- function(DD_fmado){
 
 ## Obtain distance matrices
 fmado_dist <- get_fmado_dist(x); gc(T) # F-madogram distances
+# Saving F-madogram distance matrix. Not efficient.
+# saveRDS(object = fmado_dist, file = paste0(root,'/agroclimExtremes/agex_results/cdd_extreme_distance.rds'))
 fmado_dist <- cap_fmado_dist(fmado_dist); gc(T) # Truncated F-madogram distances
 eucld_dist  <- parallelDist::parDist(x = t(x), # Euclidean distances matrix
                                      method = 'euclidean',
