@@ -249,7 +249,7 @@ yrs <- 1979:2023
 lapply(X = yrs, FUN = function(yr){
   prc_flt <- prc[grep(pattern = paste0('_',yr,'[0-9][0-9][0-9][0-9]_'), x = prc)] # Files filtered per year
   rnf <- terra::rast(prc_flt); gc(T)
-  rsl <- terra::rapp(x = rnf, first = s1_ini, last = s1_end, fun = p95); gc(T)
+  rsl <- terra::rapp(x = rnf, first = s2_ini, last = s2_end, fun = p95); gc(T)
   names(rsl) <- c('p95','day')
   terra::writeRaster(x = rsl, filename = paste0(root,'/agroclimExtremes/agex_indices/agex_p95/two_s2_y1_p95_',yr,'.tif'), overwrite = T); gc(T)
   return('Done.\n')
@@ -259,7 +259,7 @@ lapply(X = yrs, FUN = function(yr){
 lapply(X = yrs, FUN = function(yr){
   prc_flt <- prc[grep(pattern = paste0('_',yr,'[0-9][0-9][0-9][0-9]_'), x = prc)] # Files filtered per year
   rnf <- terra::rast(prc_flt); gc(T)
-  rsl <- terra::rapp(x = rnf, first = s1_ini, last = s1_end, fun = cdd); gc(T)
+  rsl <- terra::rapp(x = rnf, first = s2_ini, last = s2_end, fun = cdd); gc(T)
   names(rsl) <- paste0('cdd_',yr)
   terra::writeRaster(x = rsl, filename = paste0(root,'/agroclimExtremes/agex_indices/agex_cdd/two_s2_y1_cdd_',yr,'.tif'), overwrite = T); gc(T)
   return('Done.\n')
@@ -283,7 +283,7 @@ lapply(X = yrs, FUN = function(yr){
     prc_flt <- prc[unlist(grep2(pattern = c(paste0('_',yr,'[0-9][0-9][0-9][0-9]_'),paste0('_',yr+1,'[0-9][0-9][0-9][0-9]_')), x = prc))] # To implement
     rnf <- terra::rast(prc_flt)
     dys <- ifelse(lubridate::leap_year(yr),366,365)
-    rsl <- terra::rapp(x = rnf, first = s1_ini, last = s1_end+dys, fun = p95)
+    rsl <- terra::rapp(x = rnf, first = s2_ini, last = s2_end+dys, fun = p95)
     names(rsl) <- c('p95','day')
     terra::writeRaster(x = rsl, filename = paste0(root,'/agroclimExtremes/agex_indices/agex_p95/two_s2_y2_p95_',yr,'.tif'), overwrite = T); gc(T)
     return('Done.\n')
@@ -300,7 +300,7 @@ lapply(X = yrs, FUN = function(yr){
     prc_flt <- prc[unlist(grep2(pattern = c(paste0('_',yr,'[0-9][0-9][0-9][0-9]_'),paste0('_',yr+1,'[0-9][0-9][0-9][0-9]_')), x = prc))] # To implement
     rnf <- terra::rast(prc_flt)
     dys <- ifelse(lubridate::leap_year(yr),366,365)
-    rsl <- terra::rapp(x = rnf, first = s1_ini, last = s1_end+dys, fun = cdd)
+    rsl <- terra::rapp(x = rnf, first = s2_ini, last = s2_end+dys, fun = cdd)
     names(rsl) <- paste0('cdd_',yr)
     terra::writeRaster(x = rsl, filename = paste0(root,'/agroclimExtremes/agex_indices/agex_cdd/two_s2_y2_cdd_',yr,'.tif'), overwrite = T); gc(T)
     return('Done.\n')
