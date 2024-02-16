@@ -123,6 +123,10 @@ eucld_hcl <- fastcluster::hclust(eucld_dist, method = 'ward.D2') # Euclidean
 qry <- cdd_roi_ntrd[,c('cell','x','y')]
 
 # How to determine number of clusters?
+# 1. Execute a K-means/PAM algorithm with a sample of pixels
+# 2. Vary the number of clusters between 2 to 200/100 to 200
+# 3. Evaluate a metric (e.g., silhouette) and pick a K-number
+# 4. Execute the hierarchical clustering with that K-number
 
 qry$fmado_cluster <- cutree(tree = fmado_hcl, k = 10)
 qry$eucld_cluster <- cutree(tree = eucld_hcl, k = 10)
