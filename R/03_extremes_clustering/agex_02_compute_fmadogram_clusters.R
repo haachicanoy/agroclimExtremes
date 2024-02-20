@@ -19,7 +19,7 @@ root <- '//CATALOGUE/WFP_ClimateRiskPr1'
 yrs <- 1979:2022
 
 ## List and load files
-fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_indices/agex_cdd'), pattern = 'one_s[0-9]_cdd_', full.names = T)
+fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_indices/agex_cdd/agex_cdd_10km'), pattern = 'one_s[0-9]_cdd_', full.names = T)
 cdd <- terra::rast(fls)
 names(cdd) <- paste0('Y',yrs)
 
