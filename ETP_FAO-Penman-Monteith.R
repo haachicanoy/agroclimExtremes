@@ -126,7 +126,7 @@ ws_pth <- paste0(root,'/1.Data/ERA5/10m_wind_speed/')                 # Wind spe
 dp_pth <- paste0(root,'/1.Data/ERA5/2m_dewpoint_temperature/')        # Dewpoint temperature
 
 out_dir <- '//CATALOGUE/AgriLACRes_WP2/1.Data/Guatemala/SPEI_Historical_analysis'
-# loop for each year and month 
+# loop for each year and month
 1:nrow(stp) %>%
   purrr::map(.f = function(i){calc_ET0(yr = stp$yrs[i], mn = stp$mns[i]); gc(verbose=F, full=T, reset=T)})
 #
