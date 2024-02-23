@@ -58,18 +58,24 @@ out_dir <- 'D:/OneDrive - CGIAR/PhD/papers/paper1' # local
 ## Cropland areas from MapSPAM 2010
 crops_dir <- paste0(inp_dir,'/spam2010') # Directory
 
-grps <- unique(agr$GROUP) # 10 groups
+# Food and non-food groups: 10
+grps <- unique(agr$GROUP)
 
+# Count the number of crops per crop class
 for(i in 1:length(grps)){
-  # List files per group
-  crops_fls <- list.files2(path = crops_dir,
-                           pattern = paste0(toupper(agr$`SPAM name`[agr$GROUP == grps[i]]),'_A.tif'),
-                           full.names = T) |> as.character()
-  crops_lnd <- crops_fls |> purrr::map(.f = function(x){
-    r <- terra::rast(x); r[r != 0] <- 1; return(r)
-  }) |> terra::rast() |> sum()
-  terra::writeRaster(x = crops_lnd, filename = paste0(out_dir,'/data/agex_',gsub(' ','_',grps[i]),'_count.tif'), overwrite = T)
-  # Resampling MapSPAM into AgERA5 template resolution
-  crops_lnd_10km <- terra::resample(x = crops_lnd, y = tmp_10km, method = 'near')
-  terra::writeRaster(x = crops_lnd_10km, filename = paste0(root,'/agroclimExtremes/agex_raw_data/agex_',gsub(' ','_',grps[i]),'_count_10km.tif'), overwrite = T)
+  if(!file.exists(paste0(out_dir,'/data/agex_',gsub(' ','_',grps[i]),'_count.tif'))){
+    # List files per group
+    crops_fls <- list.files2(path = crops_dir,
+                             pattern = paste0(toupper(agr$`SPAM name`[agr$GROUP == grps[i]]),'_A.tif'),
+                             full.names = T) |> as.character()
+    crops_lnd <- crops_fls |> purrr::map(.f = function(x){
+      r <- terra::rast(x); r[r != 0] <- 1; return(r)
+    }) |> terra::rast() |> sum()
+    terra::writeRaster(x = crops_lnd, filename = paste0(out_dir,'/data/agex_',gsub(' ','_',grps[i]),'_count.tif'), overwrite = T)
+    if(!file.exists(paste0(root,'/agroclimExtremes/agex_raw_data/agex_',gsub(' ','_',grps[i]),'_count_10km.tif'))){
+      # Resampling MapSPAM into AgERA5 template resolution
+      crops_lnd_10km <- terra::resample(x = crops_lnd, y = tmp_10km, method = 'near')
+      terra::writeRaster(x = crops_lnd_10km, filename = paste0(root,'/agroclimExtremes/agex_raw_data/agex_',gsub(' ','_',grps[i]),'_count_10km.tif'), overwrite = T)
+    }
+  }
 }
