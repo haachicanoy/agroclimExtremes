@@ -79,3 +79,21 @@ for(i in 1:length(grps)){
     }
   }
 }
+
+# Population
+pop <- list.files(path = paste0(root,'/1.Data/wpop/2020'), pattern = '.tif$', full.names = T)
+pop <- pop[file.size(pop) != 196]
+pop <- pop |> purrr::map(.f = terra::rast)
+# for(i in 2:length(pop)){
+#   aux <- terra::mosaic(pop[[1]], pop[[i]])
+# }
+# plot()
+# pop_10km <- terra::resample(x = pop, y = tmp_10km, method = 'sum')
+
+i <- 2
+aux <- pop[[1]]
+while(i < length(pop)){
+  aux <- terra::mosaic(aux, pop[[i]]); gc(T)
+  i <- i + 1
+  cat(paste0('Iteration ',i,'\n'))
+}; gc(T)

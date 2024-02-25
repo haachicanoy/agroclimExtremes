@@ -95,7 +95,7 @@ calc_ET0 <- function(yr, mn){
 }
 
 # Historical setup
-yrs <- 1979:2022
+yrs <- 1979:2023
 mns <- c(paste0('0',1:9),10:12)
 stp <- base::expand.grid(yrs, mns) %>% base::as.data.frame(); rm(yrs,mns)
 names(stp) <- c('yrs','mns')
@@ -111,5 +111,5 @@ dp_pth <- paste0(root,'/1.Data/AgERA5/2m_dewpoint_temperature')        # Dewpoin
 
 out_dir <- paste0(root,'/agroclimExtremes/agex_raw_data')
 # loop for each year and month
-1:nrow(stp) %>%
+1:nrow(stp) |>
   purrr::map(.f = function(i){calc_ET0(yr = stp$yrs[i], mn = stp$mns[i]); gc(T)})
