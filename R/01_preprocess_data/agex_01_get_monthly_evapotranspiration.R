@@ -16,7 +16,7 @@ root <- '//CATALOGUE/WFP_ClimateRiskPr1'
 # Calculate FAO-Penman-Monteith ET function
 calc_ET0 <- function(yr, mn){
   # Define output file
-  outfile <- paste0(out_dir,'/FAO_evapotranspiration/ET-',yr,'-',mn,'.tif')
+  outfile <- paste0(out_dir,'/monthly_evapotranspiration/ET-',yr,'-',mn,'.tif')
   cat('>>> Processing year: ',yr,', month: ',mn,'\n')
   if(!file.exists(outfile)){
     dir.create(dirname(outfile),F,T) # Create directory
