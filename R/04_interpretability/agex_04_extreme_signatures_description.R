@@ -70,6 +70,14 @@ tst |>
   ggplot2::geom_point() +
   ggplot2::geom_smooth(se = F)
 
+# Value of production per tertiles
+vTert <- stats::quantile(tst$value_of_production, c(0:3/3))
+tst$vop_tert = with(tst, cut(value_of_production, vTert, include.lowest = T, labels = c('Low', 'Medium', 'High')))
+vTert <- stats::quantile(tst$median, c(0:3/3))
+tst$cdd_tert = with(tst, cut(median, vTert, include.lowest = T, labels = c('Low', 'Medium', 'High')))
+
+table(tst$cdd_tert, tst$vop_tert)
+
 lapply(1:length(unique(crds_sgn$signature)), function(i){
   # Coordinates within countries
   crds_cty <- terra::intersect(x = wrl, terra::vect(crds_sgn[crds_sgn$signature == i,], c('x','y'), crs = 'EPSG:4326')) |> base::as.data.frame()
@@ -99,16 +107,3 @@ lapply(1:length(unique(crds_sgn$signature)), function(i){
   }
   
 })
-
-
-
-
-
-tst <- terra::as.data.frame(x = c(ent, vop), xy = T, cell = T, na.rm = T)
-names(tst)[4:5] <- c('Entropy','VoP')
-
-library(scales)
-plot(tst$Entropy, tst$VoP, pch = 20, col = scales::alpha('black',0.05), xlab = 'Entropy', ylab = 'Value of Production')
-
-
-#
