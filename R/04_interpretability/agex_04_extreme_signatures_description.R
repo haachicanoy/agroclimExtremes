@@ -8,7 +8,7 @@
 # R options and packages loading
 options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
-suppressMessages(pacman::p_load(terra,geodata,NbClust,entropy,scales))
+suppressMessages(pacman::p_load(terra,geodata,NbClust,entropy,scales,dplyr,ggplot2,RColorBrewer))
 
 # Root directory
 root <- '//CATALOGUE/WFP_ClimateRiskPr1'
@@ -49,7 +49,7 @@ tst <- terra::zonal(x = c(crp_ntp_25km, vop_25km), z = agex_sgn, fun = 'mean', n
 plot(tst$crop_types_diversity, tst$value_of_production, pch = 20)
 
 tst |>
-  ggplot2::ggplot(aes(x = crop_types_diversity, y = log(value_of_production))) +
+  ggplot2::ggplot(aes(x = crop_types_diversity, y = value_of_production)) +
   ggplot2::geom_point() +
   ggplot2::geom_smooth(se = F)
 
@@ -78,9 +78,31 @@ tst$cdd_tert = with(tst, cut(median, vTert, include.lowest = T, labels = c('Low'
 
 table(tst$cdd_tert, tst$vop_tert)
 
-lapply(1:length(unique(crds_sgn$signature)), function(i){
+View(tst)
+
+tst <- tst |> dplyr::arrange(value_of_production) |> base::as.data.frame()
+tst$vop_colors <- NA
+tst$vop_colors[tst$vop_tert == 'Low'] <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(9,'YlGn'))(sum(tst$vop_tert == 'Low'))
+tst$vop_colors[tst$vop_tert == 'Medium'] <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(9,'Oranges'))(sum(tst$vop_tert == 'Medium'))
+tst$vop_colors[tst$vop_tert == 'High'] <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(9,'Reds'))(sum(tst$vop_tert == 'High'))
+
+tst <- tst |> dplyr::arrange(extreme_signature) |> base::as.data.frame()
+
+## Graph of global cluster
+wrl <- rnaturalearth::ne_countries(scale = 'large', returnclass = 'sv')
+wrl <- terra::aggregate(wrl)
+tmp <- agex_sgn
+tmp <- terra::trim(x = tmp)
+hist(terra::values(tmp))
+png(filename = "D:/global_cluster_3palettes.png", width = 3132, height = 2359, units = 'px')
+plot(wrl, ext = terra::ext(tmp))
+plot(tmp, add = T, col = tst$vop_colors, plg = list(cex = 5), cex.main = 7)
+dev.off()
+
+
+lapply(1:length(unique(crds_sgn$extreme_signature)), function(i){
   # Coordinates within countries
-  crds_cty <- terra::intersect(x = wrl, terra::vect(crds_sgn[crds_sgn$signature == i,], c('x','y'), crs = 'EPSG:4326')) |> base::as.data.frame()
+  crds_cty <- terra::intersect(x = wrl, terra::vect(crds_sgn[crds_sgn$extreme_signature == i,], c('x','y'), crs = 'EPSG:4326')) |> base::as.data.frame()
   # Get the list of countries
   countries_list <- unique(crds_cty$NAME_0)
   # Count the number of pixels within each country
@@ -107,3 +129,6 @@ lapply(1:length(unique(crds_sgn$signature)), function(i){
   }
   
 })
+
+agex_chs <- landscapemetrics::lsm_c_cohesion(landscape = agex_sgn) |> base::as.data.frame()
+View(agex_chs)
