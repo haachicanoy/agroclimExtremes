@@ -8,7 +8,8 @@
 # R options and packages loading
 options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
-suppressMessages(pacman::p_load(terra,geodata,NbClust,entropy,scales,dplyr,ggplot2,RColorBrewer))
+suppressMessages(pacman::p_load(terra,geodata,NbClust,entropy,scales,dplyr,
+                                ggplot2,RColorBrewer,landscapemetrics))
 
 # Root directory
 root <- '//CATALOGUE/WFP_ClimateRiskPr1'
@@ -130,5 +131,14 @@ lapply(1:length(unique(crds_sgn$extreme_signature)), function(i){
   
 })
 
+# Cohesion index: Equals 0 if patches of class i become more isolated.
+# Increases if patches of class i become more aggregated
 agex_chs <- landscapemetrics::lsm_c_cohesion(landscape = agex_sgn) |> base::as.data.frame()
 View(agex_chs)
+# Contiguity index mean: equals the mean of the contiguity index on class
+# level for all patches
+agex_ctg <- landscapemetrics::lsm_c_contig_mn(landscape = agex_sgn) |> base::as.data.frame()
+View(agex_ctg)
+# Aggregation index: Equals 0 for maximally disaggregated
+# and 100 for maximally aggregated classes
+landscapemetrics::lsm_c_ai(landscape = agex_sgn) |> base::as.data.frame() |> View()
