@@ -187,3 +187,13 @@ s2_end_10km <- terra::rast(paste0(out,'/agex_two_s2_end_10km.tif'))
 s2_end_10km_msk <- terra::mask(x = s2_end_10km, mask = croplnds)
 terra::writeRaster(x = s2_end_10km_msk, filename = paste0(out,'/agex_two_s2_end_10km_croplands.tif'))
 rm(s2_ini_10km, s2_ini_10km_msk, s2_end_10km, s2_end_10km_msk); gc(T)
+
+## ------------------------------------------ ##
+## Growing seasons at 25 km
+## ------------------------------------------ ##
+
+## Number of growing seasons at 25 km
+ngs <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_phenology/phenonseasons_v03.tif'))
+tmp <- terra::rast('https://github.com/haachicanoy/agroclimExtremes/raw/main/data/tmp_era5_25km.tif')
+ngs <- terra::resample(x = ngs, y = tmp, method = 'near')
+terra::writeRaster(x = ngs, filename = paste0(root,'/agroclimExtremes/agex_raw_data/agex_nseasons_25km.tif'), overwrite = T)

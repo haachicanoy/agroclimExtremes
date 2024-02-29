@@ -15,69 +15,52 @@ root <- '//CATALOGUE/WFP_ClimateRiskPr1'
 # Raster template at 25 km
 tmp <- terra::rast('https://github.com/haachicanoy/agroclimExtremes/raw/main/data/tmp_era5_25km.tif')
 
+# Resampling function
+resampling_indices <- function(index = 'spei-6'){
+  
+  cat(paste0('>>> Resampling index: ',index,'... \n'))
+  cat(paste0('> One growing season\n'))
+  # List files
+  fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_indices/agex_',index,'/agex_',index,'_10km'), pattern = paste0('^one_s1_',index,'_[0-9]*.*.tif$'), full.names = T)
+  # Load indices at 10 km
+  idx <- terra::rast(fls)
+  # Resample indices at 25 km
+  idx_25km <- terra::resample(x = idx, y = tmp, method = 'max')
+  outfile <- paste0(root,'/agroclimExtremes/agex_indices/agex_',index,'/agex_',index,'_25km/one_s1_',index,'_25km.tif')
+  dir.create(dirname(outfile),F,T)
+  terra::writeRaster(x = idx_25km, filename = outfile, overwrite = T)
+  
+  cat(paste0('> Two growing seasons: season 1.\n'))
+  # List files
+  fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_indices/agex_',index,'/agex_',index,'_10km'), pattern = paste0('^two_s1_',index,'_[0-9]*.*.tif$'), full.names = T)
+  # Load indices at 10 km
+  idx <- terra::rast(fls)
+  # Resample indices at 25 km
+  idx_25km <- terra::resample(x = idx, y = tmp, method = 'max')
+  outfile <- paste0(root,'/agroclimExtremes/agex_indices/agex_',index,'/agex_',index,'_25km/two_s1_',index,'_25km.tif')
+  dir.create(dirname(outfile),F,T)
+  terra::writeRaster(x = idx_25km, filename = outfile, overwrite = T)
+  
+  cat(paste0('> Two growing seasons: season 2.\n'))
+  # List files
+  fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_indices/agex_',index,'/agex_',index,'_10km'), pattern = paste0('^two_s2_',index,'_[0-9]*.*.tif$'), full.names = T)
+  # Load indices at 10 km
+  idx <- terra::rast(fls)
+  # Resample indices at 25 km
+  idx_25km <- terra::resample(x = idx, y = tmp, method = 'max')
+  outfile <- paste0(root,'/agroclimExtremes/agex_indices/agex_',index,'/agex_',index,'_25km/two_s2_',index,'_25km.tif')
+  dir.create(dirname(outfile),F,T)
+  terra::writeRaster(x = idx_25km, filename = outfile, overwrite = T)
+  cat('Done!\n\n')
+  
+}
+
 # ------------------------------------------ #
-# Maximum number of consecutive dry days
-# ------------------------------------------ #
 
-## One season
-# List files
-fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_indices/agex_cdd/agex_cdd_10km'), pattern = '^one_s1_cdd_[0-9]*.*.tif$', full.names = T)
-# Load indices at 10 km
-idx <- terra::rast(fls)
-# Resample indices at 25 km
-idx_25km <- terra::resample(x = idx, y = tmp, method = 'max')
-terra::writeRaster(x = idx_25km, filename = paste0(root,'/agroclimExtremes/agex_indices/agex_cdd/agex_cdd_25km/one_s1_cdd_25km.tif'), overwrite = T)
-
-## Two seasons
-## Season 1
-# List files
-fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_indices/agex_cdd/agex_cdd_10km'), pattern = '^two_s1_cdd_[0-9]*.*.tif$', full.names = T)
-# Load indices at 10 km
-idx <- terra::rast(fls)
-# Resample indices at 25 km
-idx_25km <- terra::resample(x = idx, y = tmp, method = 'max')
-terra::writeRaster(x = idx_25km, filename = paste0(root,'/agroclimExtremes/agex_indices/agex_cdd/agex_cdd_25km/two_s1_cdd_25km.tif'), overwrite = T)
-
-## Season 2
-# List files
-fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_indices/agex_cdd/agex_cdd_10km'), pattern = '^two_s2_cdd_[0-9]*.*.tif$', full.names = T)
-# Load indices at 10 km
-idx <- terra::rast(fls)
-# Resample indices at 25 km
-idx_25km <- terra::resample(x = idx, y = tmp, method = 'max')
-terra::writeRaster(x = idx_25km, filename = paste0(root,'/agroclimExtremes/agex_indices/agex_cdd/agex_cdd_25km/two_s2_cdd_25km.tif'), overwrite = T)
+resampling_indices(index = 'cdd')    # Maximum number of consecutive dry days
+resampling_indices(index = 'spei-6') # SPEI-6
 
 # ------------------------------------------ #
-# Percentile 95th of daily precipitation
-# ------------------------------------------ #
-
-## One season
-# List files
-fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_indices/agex_p95/agex_p95_10km'), pattern = '^one_s1_p95_[0-9]*.*.tif$', full.names = T)
-# Load indices at 10 km
-idx <- terra::rast(fls)
-# Resample indices at 25 km
-idx_25km <- terra::resample(x = idx, y = tmp, method = 'max')
-terra::writeRaster(x = idx_25km, filename = paste0(root,'/agroclimExtremes/agex_indices/agex_cdd/agex_cdd_25km/one_s1_cdd_25km.tif'), overwrite = T)
-
-## Two seasons
-## Season 1
-# List files
-fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_indices/agex_cdd/agex_cdd_10km'), pattern = '^two_s1_cdd_[0-9]*.*.tif$', full.names = T)
-# Load indices at 10 km
-idx <- terra::rast(fls)
-# Resample indices at 25 km
-idx_25km <- terra::resample(x = idx, y = tmp, method = 'max')
-terra::writeRaster(x = idx_25km, filename = paste0(root,'/agroclimExtremes/agex_indices/agex_cdd/agex_cdd_25km/two_s1_cdd_25km.tif'), overwrite = T)
-
-## Season 2
-# List files
-fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_indices/agex_cdd/agex_cdd_10km'), pattern = '^two_s2_cdd_[0-9]*.*.tif$', full.names = T)
-# Load indices at 10 km
-idx <- terra::rast(fls)
-# Resample indices at 25 km
-idx_25km <- terra::resample(x = idx, y = tmp, method = 'max')
-terra::writeRaster(x = idx_25km, filename = paste0(root,'/agroclimExtremes/agex_indices/agex_cdd/agex_cdd_25km/two_s2_cdd_25km.tif'), overwrite = T)
 
 
 
@@ -92,8 +75,7 @@ terra::writeRaster(x = idx_25km, filename = paste0(root,'/agroclimExtremes/agex_
 
 
 
-
-
+## GRAPHS TO CHECK
 
 # Load clustering results
 # fmc <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/clusters/WORLD_cdd_fmado_trimmed_clusters_100.tif'))
@@ -161,11 +143,6 @@ plot(wrl, ext = terra::ext(tmp))
 plot(tmp, add = T, col = my.palette, plg = list(cex = 5), cex.main = 7)
 dev.off()
 
-## Number of growing seasons at 25 km
-ngs <- terra::rast('//CATALOGUE/WFP_ClimateRiskPr1/agroclimExtremes/agex_raw_data/agex_phenology/phenonseasons_v03.tif')
-tmp <- terra::rast('https://github.com/haachicanoy/agroclimExtremes/raw/main/data/tmp_era5_25km.tif')
-ngs <- terra::resample(x = ngs, y = tmp, method = 'near')
-terra::writeRaster(x = ngs, filename = paste0(root,'/agroclimExtremes/agex_raw_data/agex_nseasons_25km.tif'), overwrite = T)
 
 plot(ngs == 1)
 
