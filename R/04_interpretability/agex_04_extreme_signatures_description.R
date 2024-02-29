@@ -54,7 +54,7 @@ tst |>
   ggplot2::geom_point() +
   ggplot2::geom_smooth(se = F)
 
-# Severity
+# CDD Severity
 cdd <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_cdd/agex_cdd_25km/one_s1_cdd_25km.tif'))
 for(i in 1:(terra::nlyr(cdd))){
   cdd[[i]][is.infinite(cdd[[i]])] <- 0
@@ -74,6 +74,7 @@ tst |>
 # Value of production per tertiles
 vTert <- stats::quantile(tst$value_of_production, c(0:3/3))
 tst$vop_tert = with(tst, cut(value_of_production, vTert, include.lowest = T, labels = c('Low', 'Medium', 'High')))
+# CDD severity per tertiles
 vTert <- stats::quantile(tst$median, c(0:3/3))
 tst$cdd_tert = with(tst, cut(median, vTert, include.lowest = T, labels = c('Low', 'Medium', 'High')))
 
@@ -88,6 +89,14 @@ tst$vop_colors[tst$vop_tert == 'Medium'] <- grDevices::colorRampPalette(RColorBr
 tst$vop_colors[tst$vop_tert == 'High'] <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(9,'Reds'))(sum(tst$vop_tert == 'High'))
 
 tst <- tst |> dplyr::arrange(extreme_signature) |> base::as.data.frame()
+
+# Population density
+pop <- geodata::population(year = 2020, res = 10, path = tempdir())
+pop_25km <- terra::resample(x = pop, y = agex_sgn, method = 'sum')
+
+tst <- terra::zonal(x = c(crp_ntp_25km, vop_25km, cdd_avg, cdd_max, cdd_mdn, pop_25km), z = agex_sgn, fun = 'mean', na.rm = T)
+
+tst[,-1] |> cor(method = 'spearman') |> round(2)
 
 ## Graph of global cluster
 wrl <- rnaturalearth::ne_countries(scale = 'large', returnclass = 'sv')
