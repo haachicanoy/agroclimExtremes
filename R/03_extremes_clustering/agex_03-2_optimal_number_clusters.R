@@ -6,7 +6,7 @@
 ## ------------------------------------------ ##
 
 ## R options and packages loading
-suppressMessages(pacman::p_load(cluster))
+suppressMessages(pacman::p_load(cluster, future, furrr))
 
 # Sample a number of pixels
 set.seed(1235)

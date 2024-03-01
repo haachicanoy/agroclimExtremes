@@ -105,7 +105,7 @@ cap_fmado_dist <- function(DD_fmado){
 ## Obtain distance matrices
 fmado_dist <- get_fmado_dist(x); gc(T)          # F-madogram distances
 fmado_dist <- cap_fmado_dist(fmado_dist); gc(T) # Truncated F-madogram distances
-saveRDS(object = fmado_dist, file = paste0(root,'/agroclimExtremes/agex_results/WORLD_',index,'_',gs,'_s',season,'_fmado_distance.rds'))
+# saveRDS(object = fmado_dist, file = paste0(root,'/agroclimExtremes/agex_results/WORLD_',index,'_',gs,'_s',season,'_fmado_distance.rds'))
 eucld_dist <- parallelDist::parDist(x = t(x),   # Euclidean distances matrix
                                     method = 'euclidean',
                                     diag = T, upper = T); gc(T)
@@ -128,54 +128,32 @@ source('https://raw.githubusercontent.com/haachicanoy/agroclimExtremes/main/R/03
 qry$fmado_cluster <- cutree(tree = fmado_hcl, k = optimal_k)
 qry$eucld_cluster <- cutree(tree = eucld_hcl, k = optimal_k)
 
-# res <- NbClust::NbClust(diss     = fmado_dist,
-#                         distance = NULL,
-#                         min.nc   = 2,
-#                         max.nc   = 140,
-#                         method   = 'ward.D2',
-#                         index    = 'frey')
-
-# cut_heights = data.frame(h = full_tree$height,
-#                          k = (nrow(cdd_roi_dfm)-1):1)
-
 # Raster template
 tmp <- idx_roi_fnl[[1]]
 terra::values(tmp) <- NA
 
+# Assign clusters to pixels
 fmado_r <- tmp; fmado_r[qry$cell] <- qry$fmado_cluster; plot(fmado_r)
 eucld_r <- tmp; eucld_r[qry$cell] <- qry$eucld_cluster; plot(eucld_r)
 
-# fmado_r <- c(fmado_r_cmp,
-#              fmado_r_avg,
-#              fmado_r_mcq,
-#              fmado_r_wrd,
-#              fmado_r_wd2)
+terra::writeRaster(x = fmado_r, filename = paste0(root,'/agroclimExtremes/agex_results/clusters/agex_global_',index,'_',gs,'_s',season,'_fmadogram_k',optimal_k,'.tif'), overwrite = T)
+terra::writeRaster(x = eucld_r, filename = paste0(root,'/agroclimExtremes/agex_results/clusters/agex_global_',index,'_',gs,'_s',season,'_euclidean_k',optimal_k,'.tif'), overwrite = T)
+
+# par(mfrow = c(2,5))
+# for(i in 1:10){
+#   plot(roi)
+#   plot(terra::mask(x = fmado_r, mask = fmado_r, maskvalues = i, inverse = T), add = T)
+# }; rm(i)
 # 
-# fmado_r <- terra::rast('//CATALOGUE/WFP_ClimateRiskPr1/agroclimExtremes/agex_results/clusters/test.tif')
-# names(fmado_r) <- c('complete','average','mcq','ward','ward2')
+# # Describe results
+# cdd_sts <- cdd_roi_ntrd[,c('cell','x','y')]
+# cdd_sts$avg <- apply(cdd_roi_ntrd[,4:ncol(cdd_roi_ntrd)], 1, mean)
+# cdd_sts$std <- apply(cdd_roi_ntrd[,4:ncol(cdd_roi_ntrd)], 1, sd)
+# cdd_sts$mdn <- apply(cdd_roi_ntrd[,4:ncol(cdd_roi_ntrd)], 1, median)
+# cdd_sts$min <- apply(cdd_roi_ntrd[,4:ncol(cdd_roi_ntrd)], 1, min)
+# cdd_sts$max <- apply(cdd_roi_ntrd[,4:ncol(cdd_roi_ntrd)], 1, max)
+# cdd_sts$trd <- apply(cdd_roi_ntrd[,4:ncol(cdd_roi_ntrd)], 1, function(x) trend::sens.slope(x)$estimates)
 # 
-# pca_model <- terra::prcomp(x = fmado_r)
-# pca_r <- terra::predict(fmado_r, pca_model)
-
-terra::writeRaster(x = fmado_r, filename = paste0(root,'/agroclimExtremes/agex_results/clusters/WORLD_',index,'_fmado_trimmed_clusters_200.tif'), overwrite = T)
-terra::writeRaster(x = eucld_r, filename = paste0(root,'/agroclimExtremes/agex_results/clusters/WORLD_',index,'_eucld_clusters_200.tif'), overwrite = T)
-# saveRDS(object = cdd_roi_ntrd, file = paste0(root,'/agroclimExtremes/results/ts_processed.rds'))
-
-par(mfrow = c(2,5))
-for(i in 1:10){
-  plot(roi)
-  plot(terra::mask(x = fmado_r, mask = fmado_r, maskvalues = i, inverse = T), add = T)
-}; rm(i)
-
-# Describe results
-cdd_sts <- cdd_roi_ntrd[,c('cell','x','y')]
-cdd_sts$avg <- apply(cdd_roi_ntrd[,4:ncol(cdd_roi_ntrd)], 1, mean)
-cdd_sts$std <- apply(cdd_roi_ntrd[,4:ncol(cdd_roi_ntrd)], 1, sd)
-cdd_sts$mdn <- apply(cdd_roi_ntrd[,4:ncol(cdd_roi_ntrd)], 1, median)
-cdd_sts$min <- apply(cdd_roi_ntrd[,4:ncol(cdd_roi_ntrd)], 1, min)
-cdd_sts$max <- apply(cdd_roi_ntrd[,4:ncol(cdd_roi_ntrd)], 1, max)
-cdd_sts$trd <- apply(cdd_roi_ntrd[,4:ncol(cdd_roi_ntrd)], 1, function(x) trend::sens.slope(x)$estimates)
-
-psych::describeBy(x = cdd_sts, group = qry$fmado_cluster)
-pca.res <- FactoMineR::PCA(X = cdd_sts[,4:ncol(cdd_sts)], scale.unit = T, graph = F)
-factoextra::fviz_pca_ind(pca.res,  label = 'none', habillage = qry$fmado_cluster)
+# psych::describeBy(x = cdd_sts, group = qry$fmado_cluster)
+# pca.res <- FactoMineR::PCA(X = cdd_sts[,4:ncol(cdd_sts)], scale.unit = T, graph = F)
+# factoextra::fviz_pca_ind(pca.res,  label = 'none', habillage = qry$fmado_cluster)
