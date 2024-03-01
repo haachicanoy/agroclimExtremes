@@ -17,8 +17,8 @@ suppressMessages(pacman::p_load(terra, geodata, Kendall, tidyverse, psych,
 root   <- '//CATALOGUE/WFP_ClimateRiskPr1'
 yrs    <- 1980:2022
 index  <- 'spei-6'
-gs     <- 'one'
-season <- 1
+gs     <- 'two'
+season <- 2
 
 ## List and load files
 fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_indices/agex_',index,'/agex_',index,'_25km'), pattern = paste0(gs,'_s',season,'_',index,'_'), full.names = T)
@@ -138,22 +138,3 @@ eucld_r <- tmp; eucld_r[qry$cell] <- qry$eucld_cluster; plot(eucld_r)
 
 terra::writeRaster(x = fmado_r, filename = paste0(root,'/agroclimExtremes/agex_results/clusters/agex_global_',index,'_',gs,'_s',season,'_fmadogram_k',optimal_k,'.tif'), overwrite = T)
 terra::writeRaster(x = eucld_r, filename = paste0(root,'/agroclimExtremes/agex_results/clusters/agex_global_',index,'_',gs,'_s',season,'_euclidean_k',optimal_k,'.tif'), overwrite = T)
-
-# par(mfrow = c(2,5))
-# for(i in 1:10){
-#   plot(roi)
-#   plot(terra::mask(x = fmado_r, mask = fmado_r, maskvalues = i, inverse = T), add = T)
-# }; rm(i)
-# 
-# # Describe results
-# cdd_sts <- cdd_roi_ntrd[,c('cell','x','y')]
-# cdd_sts$avg <- apply(cdd_roi_ntrd[,4:ncol(cdd_roi_ntrd)], 1, mean)
-# cdd_sts$std <- apply(cdd_roi_ntrd[,4:ncol(cdd_roi_ntrd)], 1, sd)
-# cdd_sts$mdn <- apply(cdd_roi_ntrd[,4:ncol(cdd_roi_ntrd)], 1, median)
-# cdd_sts$min <- apply(cdd_roi_ntrd[,4:ncol(cdd_roi_ntrd)], 1, min)
-# cdd_sts$max <- apply(cdd_roi_ntrd[,4:ncol(cdd_roi_ntrd)], 1, max)
-# cdd_sts$trd <- apply(cdd_roi_ntrd[,4:ncol(cdd_roi_ntrd)], 1, function(x) trend::sens.slope(x)$estimates)
-# 
-# psych::describeBy(x = cdd_sts, group = qry$fmado_cluster)
-# pca.res <- FactoMineR::PCA(X = cdd_sts[,4:ncol(cdd_sts)], scale.unit = T, graph = F)
-# factoextra::fviz_pca_ind(pca.res,  label = 'none', habillage = qry$fmado_cluster)
