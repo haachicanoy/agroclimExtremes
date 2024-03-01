@@ -129,19 +129,7 @@ plot(wrl, ext = terra::ext(tmp))
 plot(tmp, add = T, col = my.palette, plg = list(cex = 5), cex.main = 7)
 dev.off()
 
-## Graph of global cluster
-wrl <- rnaturalearth::ne_countries(scale = 'large', returnclass = 'sv')
-wrl <- terra::aggregate(wrl)
-# my.palette <- RColorBrewer::brewer.pal(n = 20, name = 'Set1')
-my.palette <- MetBrewer::met.brewer(name = 'Signac', n = 100)
-set.seed(1235); my.palette <- sample(x = my.palette, size = 100, replace = F)
-tmp <- fmc
-tmp <- terra::trim(x = tmp)
-hist(terra::values(tmp))
-png(filename = "D:/global_cluster.png", width = 3132, height = 2359, units = 'px')
-plot(wrl, ext = terra::ext(tmp))
-plot(tmp, add = T, col = my.palette, plg = list(cex = 5), cex.main = 7)
-dev.off()
+
 
 
 plot(ngs == 1)

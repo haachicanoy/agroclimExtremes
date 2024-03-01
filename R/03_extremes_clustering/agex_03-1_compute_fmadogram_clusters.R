@@ -13,70 +13,68 @@ suppressMessages(pacman::p_load(terra, geodata, Kendall, tidyverse, psych,
                                 rnaturalearth, RColorBrewer, MetBrewer,
                                 fastcluster, eurostat, giscoR))
 
-## Directories
-root <- '//CATALOGUE/WFP_ClimateRiskPr1'
-
-yrs <- 1979:2022
+## Key arguments
+root   <- '//CATALOGUE/WFP_ClimateRiskPr1'
+yrs    <- 1980:2022
+index  <- 'spei-6'
+gs     <- 'one'
+season <- 1
 
 ## List and load files
-fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_indices/agex_cdd/agex_cdd_10km'), pattern = 'one_s[0-9]_cdd_', full.names = T)
-cdd <- terra::rast(fls)
-names(cdd) <- paste0('Y',yrs)
+fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_indices/agex_',index,'/agex_',index,'_25km'), pattern = paste0(gs,'_s',season,'_',index,'_'), full.names = T)
+# Leave it open to compute for 10 km resolution
+# fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_indices/agex_',index,'/agex_',index,'_10km'), pattern = paste0(gs,'_s',season,'_',index,'_'), full.names = T)
+idx <- terra::rast(fls)
+names(idx) <- paste0('Y',yrs)
+
+# Mask by resampled growing season id
+ngs <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_nseasons_25km.tif'))
+if(gs == 'one'){ngs[ngs == 2] <- NA} else {ngs[ngs == 1] <- NA; ngs[!is.na(ngs)] <- 1}
 
 ## Region of interest
-# roi <- geodata::gadm(country = 'AUS', level = 0, path = tempdir(), version = 'latest')
-# roi <- terra::vect(paste0(root,'/agroclimExtremes/agex_raw_data/agex_africa_shape.gpkg'))
-roi <- eurostat::get_eurostat_geospatial(output_class = 'sf', resolution = '60', year = '2016', crs = '4326')
-roi <- terra::vect(roi)
-
-# ## Graph of one index-year
-# wrl <- rnaturalearth::ne_countries(scale = 'large', returnclass = 'sv')
-# wrl <- terra::aggregate(wrl)
-# # my.palette <- RColorBrewer::brewer.pal(n = 20, name = 'Set1')
-# my.palette <- MetBrewer::met.brewer(name = 'Tam', n = 20)
-# tmp <- cdd[[terra::nlyr(cdd)]]
-# tmp <- terra::trim(x = tmp)
-# hist(terra::values(tmp))
-# qnt <- quantile(x = terra::values(tmp), probs = 0.98, na.rm = T)
-# terra::values(tmp)[terra::values(tmp) > qnt] <- qnt
-# png(filename = "D:/test.png", width = 3132, height = 2359, units = 'px')
-# plot(wrl, ext = terra::ext(tmp))
-# plot(tmp, add = T, col = my.palette, plg = list(cex = 5), cex.main = 7)
-# dev.off()
-
 ## Crop by region of interest
-cdd_roi <- terra::crop(x = cdd, y = terra::ext(roi))
-cdd_roi <- terra::mask(x = cdd_roi, mask = roi)
+idx_roi <- terra::mask(x = idx, mask = ngs)
+# # Country level
+# roi <- geodata::gadm(country = 'AUS', level = 0, path = tempdir(), version = 'latest')
+# # Continental level
+# roi <- terra::vect(paste0(root,'/agroclimExtremes/agex_raw_data/agex_africa_shape.gpkg'))
+# roi <- eurostat::get_eurostat_geospatial(output_class = 'sf', resolution = '60', year = '2016', crs = '4326')
+# roi <- terra::vect(roi)
+# idx_roi <- terra::crop(x = idx, y = terra::ext(roi))
+# idx_roi <- terra::mask(x = idx_roi, mask = roi)
 
-## Apply transformations
-cdd_roi_fnl <- terra::app(x = cdd_roi,
-                          fun = function(x){
-                            if(!all(is.na(x))){
-                              # Remove NA and -Inf values
-                              x[is.na(x)] <- 0
-                              x[is.infinite(x)] <- 0
-                              # Scale the time series
-                              x_scl <- scale(x)
-                              # Mann-Kendall test for evaluating trend significance
-                              trd <- Kendall::MannKendall(x_scl)$sl
-                              cnd <- ifelse(trd <= 0.05, T, F)
-                              if(cnd){ # Remove trend by fitting loess regression
-                                dfm <- data.frame(x = yrs, y = x_scl)
-                                fit <- loess(y ~ x, data = dfm)
-                                x_ntrd <- dfm$y - fit$fitted
-                              } else { # Same scaled time series
-                                x_ntrd <- x_scl
-                              }
-                            } else {
-                              x_ntrd <- rep(NA, length(x))
-                            }
-                            return(x_ntrd)
-                          })
-names(cdd_roi_fnl) <- paste0('Y',yrs); gc(T)
+# Maybe it is important to show a map of trends, positive and negative significant trends
 
-## Transform into a data.frame
-cdd_roi_ntrd <- terra::as.data.frame(x = cdd_roi_fnl, xy = T, cell = T, na.rm = T)
-x <- t(cdd_roi_ntrd[,4:ncol(cdd_roi_ntrd)])
+## Final index: applying transformations
+transformations <- function(x){
+  if(!all(is.na(x))){
+    ## Remove NA and -Inf values
+    # x[is.na(x)] <- 0
+    # x[is.infinite(x)] <- 0
+    # Scale the time series
+    x_scl <- scale(x)
+    # Mann-Kendall test for evaluating trend significance
+    trd <- Kendall::MannKendall(x_scl)$sl
+    cnd <- ifelse(trd <= 0.05, T, F)
+    if(cnd){ # Remove trend by fitting loess regression
+      dfm <- data.frame(x = 1:length(x_scl), y = x_scl)
+      fit <- loess(y ~ x, data = dfm)
+      x_ntrd <- dfm$y - fit$fitted
+    } else { # Same scaled time series
+      x_ntrd <- x_scl
+    }
+  } else {
+    x_ntrd <- rep(NA, length(x))
+  }
+  return(x_ntrd)
+}
+
+idx_roi_fnl <- terra::app(x = idx_roi, fun = function(i, ff) ff(i), cores = 20, ff = transformations)
+names(idx_roi_fnl) <- paste0('Y',yrs); gc(T)
+
+## Transform raster into a data.frame of stationary processes
+idx_roi_ntrd <- terra::as.data.frame(x = idx_roi_fnl, xy = T, cell = T, na.rm = T)
+x <- t(idx_roi_ntrd[,4:ncol(idx_roi_ntrd)])
 
 ## Compute F-madogram distance
 get_fmado_dist <- function(x){
@@ -105,33 +103,30 @@ cap_fmado_dist <- function(DD_fmado){
 }
 
 ## Obtain distance matrices
-fmado_dist <- get_fmado_dist(x); gc(T) # F-madogram distances
-# Saving F-madogram distance matrix. Not efficient.
-# saveRDS(object = fmado_dist, file = paste0(root,'/agroclimExtremes/agex_results/cdd_extreme_distance.rds'))
+fmado_dist <- get_fmado_dist(x); gc(T)          # F-madogram distances
 fmado_dist <- cap_fmado_dist(fmado_dist); gc(T) # Truncated F-madogram distances
-eucld_dist  <- parallelDist::parDist(x = t(x), # Euclidean distances matrix
-                                     method = 'euclidean',
-                                     diag = T, upper = T); gc(T)
+saveRDS(object = fmado_dist, file = paste0(root,'/agroclimExtremes/agex_results/WORLD_',index,'_',gs,'_s',season,'_fmado_distance.rds'))
+eucld_dist <- parallelDist::parDist(x = t(x),   # Euclidean distances matrix
+                                    method = 'euclidean',
+                                    diag = T, upper = T); gc(T)
 
 # Hierarchical clustering for distance matrices
 fmado_hcl <- fastcluster::hclust(fmado_dist, method = 'ward.D2') # F-madogram
 eucld_hcl <- fastcluster::hclust(eucld_dist, method = 'ward.D2') # Euclidean
-# fmado_hdb <- dbscan::hdbscan(x = fmado_dist, minPts = 100) # Hierarchical DBSCAN
-# geogr_hcl <- fastcluster::hclust(geogr_dist, method = 'complete') # F-madogram
+gc(T)
 
 # Query data.frame
-qry <- cdd_roi_ntrd[,c('cell','x','y')]
+qry <- idx_roi_ntrd[,c('cell','x','y')]
 
-# How to determine number of clusters?
-# 1. Execute a K-means/PAM algorithm with a sample of pixels
-# 2. Vary the number of clusters between 2 to 200/100 to 200
-# 3. Evaluate a metric (e.g., silhouette) and pick a K-number
+# Optimal number of clusters
+# 1. Execute a PAM (Partition Around Medoids) algorithm with a sample of pixels
+# 2. Vary the number of clusters between 2 to 200 and test each partition
+# 3. Evaluate a metric (e.g., silhouette) and pick the optimal K-number
+source('https://raw.githubusercontent.com/haachicanoy/agroclimExtremes/main/R/03_extremes_clustering/agex_03-2_optimal_number_clusters.R')
+
 # 4. Execute the hierarchical clustering with that K-number
-
-qry$fmado_cluster <- cutree(tree = fmado_hcl, k = 10)
-qry$eucld_cluster <- cutree(tree = eucld_hcl, k = 10)
-
-# saveRDS(object = qry, file = paste0(root,'/agroclimExtremes/results/cluster_info.rds'))
+qry$fmado_cluster <- cutree(tree = fmado_hcl, k = optimal_k)
+qry$eucld_cluster <- cutree(tree = eucld_hcl, k = optimal_k)
 
 # res <- NbClust::NbClust(diss     = fmado_dist,
 #                         distance = NULL,
@@ -144,7 +139,7 @@ qry$eucld_cluster <- cutree(tree = eucld_hcl, k = 10)
 #                          k = (nrow(cdd_roi_dfm)-1):1)
 
 # Raster template
-tmp <- cdd_roi_fnl[[1]]
+tmp <- idx_roi_fnl[[1]]
 terra::values(tmp) <- NA
 
 fmado_r <- tmp; fmado_r[qry$cell] <- qry$fmado_cluster; plot(fmado_r)
@@ -162,8 +157,8 @@ eucld_r <- tmp; eucld_r[qry$cell] <- qry$eucld_cluster; plot(eucld_r)
 # pca_model <- terra::prcomp(x = fmado_r)
 # pca_r <- terra::predict(fmado_r, pca_model)
 
-terra::writeRaster(x = fmado_r, filename = paste0(root,'/agroclimExtremes/agex_results/clusters/AUS_cdd_fmado_trimmed_clusters.tif'), overwrite = T)
-terra::writeRaster(x = eucld_r, filename = paste0(root,'/agroclimExtremes/agex_results/clusters/AUS_cdd_eucld_clusters.tif'), overwrite = T)
+terra::writeRaster(x = fmado_r, filename = paste0(root,'/agroclimExtremes/agex_results/clusters/WORLD_',index,'_fmado_trimmed_clusters_200.tif'), overwrite = T)
+terra::writeRaster(x = eucld_r, filename = paste0(root,'/agroclimExtremes/agex_results/clusters/WORLD_',index,'_eucld_clusters_200.tif'), overwrite = T)
 # saveRDS(object = cdd_roi_ntrd, file = paste0(root,'/agroclimExtremes/results/ts_processed.rds'))
 
 par(mfrow = c(2,5))
