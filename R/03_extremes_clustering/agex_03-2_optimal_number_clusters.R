@@ -31,6 +31,6 @@ future:::ClusterRegistry('stop'); gc(T)
 ggplot(sil_width, aes(x = k, y = avg_silhouette)) +
   geom_line() + geom_point() +
   scale_x_continuous(breaks = 2:200)
-rm(fmado_smp_dist, x_smp, smp)
 
 optimal_k <- sil_width$k[which.max(sil_width$avg_silhouette)]
+rm(fmado_smp_dist, x_smp, smp, sil_width)

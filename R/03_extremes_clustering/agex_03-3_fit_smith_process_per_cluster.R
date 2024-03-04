@@ -12,7 +12,7 @@ pacman::p_load(terra,clusterExtremes,landscapemetrics,geosphere,RColorBrewer,sca
 ## Directories
 root <- '//CATALOGUE/WFP_ClimateRiskPr1'
 
-yrs <- 1979:2022
+yrs <- 1980:2022
 
 ## Clustering results
 # Cluster map
