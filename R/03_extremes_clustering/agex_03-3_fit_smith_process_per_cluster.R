@@ -9,19 +9,25 @@ options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
 pacman::p_load(terra,clusterExtremes,landscapemetrics,geosphere,RColorBrewer,scales)
 
-## Directories
-root <- '//CATALOGUE/WFP_ClimateRiskPr1'
+## Key arguments
+root   <- '//CATALOGUE/WFP_ClimateRiskPr1'
+yrs    <- 1980:2022
+index  <- 'spei-6'
+gs     <- 'one'
+season <- 1
 
 yrs <- 1980:2022
 
-## Clustering results
-# Cluster map
-# fmado_r <- terra::rast(paste0(root,'/agroclimExtremes/results/clusters/ARG_fmado_clusters.tif'))
-fmado_r <- terra::rast('D:/WORLD_fmado_trimmed_100_gs1.tif')
-plot(fmado_r == 93)
+# Load extreme weather signatures
+fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_results/clusters'), pattern = paste0('agex_global_',index,'_',gs,'_s',season,'_fmadogram_*.*.tif$'), full.names = T)
+agex_sgn <- terra::rast(fls)
+names(agex_sgn) <- 'extreme_signature'
+crds_sgn <- terra::as.data.frame(x = agex_sgn, xy = T, cell = T, na.rm = T) # Coordinates
+
+plot(agex_sgn == 143)
 fmado_r[fmado_r != 93] <- NA
 fmado_r[!is.na(fmado_r)] <- 1; plot(fmado_r)
-# fmado_r <- terra::focal(x = fmado_r, w = 3, fun = 'mean', na.rm = T); plot(fmado_r)
+# fmado_r <- terra::focal(x = agex_sgn, w = 3, fun = 'mean', na.rm = T); plot(fmado_r)
 
 # Get coordinates
 crd <- terra::as.data.frame(x = fmado_r, xy = T, cell = T, na.rm = T)
