@@ -22,53 +22,67 @@ yrs <- 1980:2022
 fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_results/clusters'), pattern = paste0('agex_global_',index,'_',gs,'_s',season,'_fmadogram_*.*.tif$'), full.names = T)
 agex_sgn <- terra::rast(fls)
 names(agex_sgn) <- 'extreme_signature'
-crds_sgn <- terra::as.data.frame(x = agex_sgn, xy = T, cell = T, na.rm = T) # Coordinates
 
-plot(agex_sgn == 143)
-fmado_r[fmado_r != 93] <- NA
-fmado_r[!is.na(fmado_r)] <- 1; plot(fmado_r)
-# fmado_r <- terra::focal(x = agex_sgn, w = 3, fun = 'mean', na.rm = T); plot(fmado_r)
+sgntr <- 143
+
+auxl_sgn <- agex_sgn
+auxl_sgn[auxl_sgn != sgntr] <- NA
+auxl_sgn[!is.na(auxl_sgn)] <- 1; plot(auxl_sgn)
+# auxl_sgn <- terra::focal(x = auxl_sgn, w = 3, fun = 'mean', na.rm = F); plot(auxl_sgn)
 
 # Get coordinates
-crd <- terra::as.data.frame(x = fmado_r, xy = T, cell = T, na.rm = T)
+crd <- terra::as.data.frame(x = auxl_sgn, xy = T, cell = T, na.rm = T) # Coordinates
 
-# Raw time series
-cdd_roi <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_cdd/agex_cdd_25km/one_s1_cdd_25km.tif'))
-names(cdd_roi) <- paste0('Y',yrs)
+## List and load files
+fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_indices/agex_',index,'/agex_',index,'_25km'), pattern = paste0(gs,'_s',season,'_',index,'_'), full.names = T)
+# Leave it open to compute for 10 km resolution
+# fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_indices/agex_',index,'/agex_',index,'_10km'), pattern = paste0(gs,'_s',season,'_',index,'_'), full.names = T)
+idx <- terra::rast(fls)
+names(idx) <- paste0('Y',yrs)
 
-## Apply transformations
-cdd_roi_fnl <- terra::app(x = cdd_roi,
-                          fun = function(x){
-                            if(!all(is.na(x))){
-                              # Remove NA and -Inf values
-                              x[is.na(x)] <- 0
-                              x[is.infinite(x)] <- 0
-                              # Scale the time series
-                              x_scl <- scale(x)
-                              # Mann-Kendall test for evaluating trend significance
-                              trd <- Kendall::MannKendall(x_scl)$sl
-                              cnd <- ifelse(trd <= 0.05, T, F)
-                              if(cnd){ # Remove trend by fitting loess regression
-                                dfm <- data.frame(x = yrs, y = x_scl)
-                                fit <- loess(y ~ x, data = dfm)
-                                x_ntrd <- dfm$y - fit$fitted
-                              } else { # Same scaled time series
-                                x_ntrd <- x_scl
-                              }
-                            } else {
-                              x_ntrd <- rep(NA, length(x))
-                            }
-                            return(x_ntrd)
-                          })
-names(cdd_roi_fnl) <- paste0('Y',yrs); gc(T)
+# Mask by resampled growing season id
+ngs <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_nseasons_25km.tif'))
+if(gs == 'one'){ngs[ngs == 2] <- NA} else {ngs[ngs == 1] <- NA; ngs[!is.na(ngs)] <- 1}
 
-# Get time series
-tsr <- terra::extract(x = cdd_roi_fnl, y = crd[,c('x','y')], cell = T)
+## Region of interest
+## Crop by region of interest
+idx_roi <- terra::mask(x = idx, mask = ngs)
+
+## Final index: applying transformations
+transformations <- function(x){
+  if(!all(is.na(x))){
+    ## Remove NA and -Inf values
+    # x[is.na(x)] <- 0
+    # x[is.infinite(x)] <- 0
+    # Scale the time series
+    x_scl <- scale(x)
+    # Mann-Kendall test for evaluating trend significance
+    trd <- Kendall::MannKendall(x_scl)$sl
+    cnd <- ifelse(trd <= 0.05, T, F)
+    if(cnd){ # Remove trend by fitting loess regression
+      dfm <- data.frame(x = 1:length(x_scl), y = x_scl)
+      fit <- loess(y ~ x, data = dfm)
+      x_ntrd <- dfm$y - fit$fitted
+    } else { # Same scaled time series
+      x_ntrd <- x_scl
+    }
+  } else {
+    x_ntrd <- rep(NA, length(x))
+  }
+  return(x_ntrd)
+}
+
+idx_roi_fnl <- terra::app(x = idx_roi, fun = function(i, ff) ff(i), cores = 20, ff = transformations)
+names(idx_roi_fnl) <- paste0('Y',yrs); gc(T)
+
+## Transform raster into a data.frame of stationary processes
+tsr <- terra::extract(x = idx_roi_fnl, y = crd[,c('x','y')])
+tsr$cell <- crd$cell
 
 # Plotting time series
-plot(x = 1979:2022, y = as.numeric(tsr[1,2:(ncol(tsr)-1)]), ty = 'l', col = scales::alpha('red', 0.05), ylim = c(-2,4))
+plot(x = 1980:2022, y = as.numeric(tsr[1,2:(ncol(tsr)-1)]), ty = 'l', col = scales::alpha('red', 0.05), ylim = c(-4,4))
 for(i in 2:nrow(tsr)){
-  lines(x = 1979:2022, y = as.numeric(tsr[i,2:(ncol(tsr)-1)]), col = scales::alpha('red', 0.05))
+  lines(x = 1980:2022, y = as.numeric(tsr[i,2:(ncol(tsr)-1)]), col = scales::alpha('red', 0.05))
 }; rm(i)
 
 # Obtain medoid coordinates
@@ -76,9 +90,9 @@ med_crd <- t(apply(crd[,c('x','y')], 2, median)) |> base::as.data.frame()
 plot(crd[,c('x','y')], pch = 20, col = 'black')
 points(med_crd, pch = 20, col = 'red')
 # Obtain medoid cell
-med_cll <- terra::extract(fmado_r, med_crd, cell = T)$cell
+med_cll <- terra::extract(auxl_sgn, med_crd, cell = T)$cell
 # Get adjacent cells. TO DO. Think in a way to define the pixels to compute the Smith process
-aux <- fmado_r
+aux <- auxl_sgn
 terra::values(aux) <- NA
 aux[med_cll] <- 1
 bfr <- terra::buffer(x = aux, width = 500000)
@@ -187,10 +201,20 @@ rerun_i <- check_ellipses$sim_index
 model_list[rerun_i] <- NA
 
 # get start values
+frech_bool <- F
 start_list <- get_start_list(model_list, frech_bool)
 
 convergence_issue = lapply(model_list, function(l){all(is.na(l))}) |> unlist() |> sum()
 print(paste(convergence_issue, "samples with suspect convergence"))
+
+frech_bool      = F
+num_samps       = 10 # number of pixels to choose
+samp_size       = 20 # number of samples per pixel
+min_common_obs  = 0
+min_pairs       = 0
+ratio_threshold = 0.1
+ellipse_alpha   = 0.05
+max_iter        = 5
 
 iter <- 1
 old_convergence_number <- convergence_issue
@@ -280,9 +304,10 @@ while(iter < max_iter){
   
 }
 
-# visualise the result
+# Visualize the result
 med_crd
 ellipse_df <- get_ellipse_from_smith_model_list(model_list, medoid = med_crd)
+ellipse_df <- ellipse_df[!is.na(ellipse_df$x),]
 
 # plot result
 ggplot2::ggplot(data = ellipse_df) +
@@ -290,7 +315,7 @@ ggplot2::ggplot(data = ellipse_df) +
   ggplot2::coord_equal() +
   ggplot2::theme_bw()
 
-crd$Values <- apply(tsr[,2:(ncol(tsr)-1)], 1, median)
+crd$Values <- apply(tsr[,2:(ncol(tsr)-1)], 1, max)
 
 crdref <- "+proj=longlat +datum=WGS84"
 
@@ -300,14 +325,15 @@ ellipse_lst <- split(ellipse_df[,c('lon','lat')], ellipse_df$sim_index)
 polygons    <- purrr::map(.x = ellipse_lst, .f = function(x){terra::vect(x = as.matrix(x), type = 'polygons', crs = crdref)})
 polygons    <- terra::vect(polygons)
 plot(polygons)
-terra::writeVector(x = polygons, filename = 'D:/cluster_COL_test.gpkg', overwrite = T)
+terra::writeVector(x = polygons, filename = paste0(root,'/agroclimExtremes/agex_results/clusters/',index,'_',gs,'_s',season,'_signature_',sgntr,'.gpkg'), overwrite = T)
 
-ggplot(data = crd) +
-    geom_raster(aes(x = x, y = y, fill = Values)) +
-    theme_void() +
-    theme(legend.position = 'bottom') +
-  coord_equal() +
-  geom_path(data = ellipse_df, aes(x=x, y =y, group = sim_index), alpha = 0.25)
+crd |>
+  ggplot2::ggplot() +
+  ggplot2::geom_raster(aes(x = x, y = y, fill = Values)) +
+  ggplot2::theme_void() +
+  ggplot2::theme(legend.position = 'bottom') +
+  ggplot2::coord_equal() +
+  ggplot2::geom_path(data = ellipse_df, aes(x = lon, y = lat, group = sim_index), alpha = 0.25, size = 1.2)
 
 cdd_roi
 chk <- fmado_r
