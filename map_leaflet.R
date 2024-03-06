@@ -8,9 +8,8 @@ my.palette    <- sample(x = my.palette, size = length(my.palette), replace = F)
 
 int_map <- leaflet() |>
   addProviderTiles(providers$CartoDB.Positron) |>
-  # addProviderTiles(providers$Esri.WorldImagery, group = "Aerial") |> # aerial map
-  addResetMapButton() |> # reset map extent on click
-  addSearchOSM() |> # search for towns/coords
+  addResetMapButton() |>
+  addSearchOSM() |>
   addPolygons(data    = agex_sgn_poly,
               color   = my.palette,
               opacity = 0.8,
@@ -25,5 +24,5 @@ int_map <- leaflet() |>
                                 '<b>', 'Population density:  ', '</b>', population_density, "<br>",
                                 '<b>', 'Signature cohesion: ', '</b>', sgn_cohesion, "<br>",
                                 '<b>', 'Signature contiguity:  ', '</b>', sgn_contiguity, "<br>"),
-              highlightOptions = highlightOptions(fillColor = 'yellow', bringToFront = T))
+              highlightOptions = highlightOptions(fillColor = 'cyan', bringToFront = T))
 int_map
