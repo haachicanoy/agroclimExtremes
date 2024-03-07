@@ -23,6 +23,34 @@ agex_sgn <- terra::rast(fls)
 names(agex_sgn) <- 'extreme_signature'
 crds_sgn <- terra::as.data.frame(x = agex_sgn, xy = T, cell = T, na.rm = T) # Coordinates
 
+# Cluster quality measures
+# They are computed to get rid of anomalous signatures
+# Cohesion index
+# 0 if patches of class become more isolated
+# 100 if patches of class i become more aggregated
+agex_chs <- landscapemetrics::lsm_c_cohesion(landscape = agex_sgn) |> base::as.data.frame()
+agex_chs <- agex_chs[,c('class','value')]
+names(agex_chs) <- c('extreme_signature','sgn_cohesion')
+# Contiguity index mean: equals the mean of the contiguity index on class level for all patches
+# 0 maximally non-contiguous
+# 1 maximally contiguous
+agex_ctg <- landscapemetrics::lsm_c_contig_mn(landscape = agex_sgn) |> base::as.data.frame()
+agex_ctg <- agex_ctg[,c('class','value')]
+names(agex_ctg) <- c('extreme_signature','sgn_contiguity')
+# Aggregation index
+# 0 maximally disaggregated
+# 100 maximally aggregated
+agex_agr <- landscapemetrics::lsm_c_ai(landscape = agex_sgn) |> base::as.data.frame()
+agex_agr <- agex_agr[,c('class','value')]
+names(agex_agr) <- c('extreme_signature','sgn_aggregation')
+
+qlt_mtrcs <- dplyr::left_join(x = agex_chs, y = agex_ctg, by = 'extreme_signature')
+qlt_mtrcs <- dplyr::left_join(x = qlt_mtrcs, y = agex_agr, by = 'extreme_signature')
+rm(agex_chs, agex_ctg, agex_agr)
+
+agex_qly_pca <- stats::prcomp(x = qlt_mtrcs[,-1], retx = T, center = T, scale. = T)
+qlt_mtrcs$rank <- rank(agex_qly_pca$x[,1])
+
 # Load global shapefile
 wrl <- geodata::world(resolution = 1, level = 0, path = tempdir())
 
@@ -66,6 +94,20 @@ idx_slp <- terra::app(x = idx, fun = function(i, ff) ff(i), cores = 20, ff = get
 plot(idx_slp)
 
 tst <- terra::zonal(x = idx_slp, z = agex_sgn, fun = 'mean', na.rm = T)
+names(tst)[ncol(tst)] <- 'slope'
+tst <- dplyr::arrange(.data = tst, -slope) |> base::as.data.frame()
+n_col <- length(unique(terra::values(agex_sgn,na.rm = T)))
+col_pltt <- MetBrewer::met.brewer(name = 'OKeeffe1', n = n_col)
+tst$palette <- col_pltt
+tst <- dplyr::arrange(.data = tst, extreme_signature) |> base::as.data.frame()
+
+auxl_plt <- agex_sgn
+auxl_plt <- terra::trim(x = auxl_plt)
+# Figure
+png(filename = paste0(root,'/agroclimExtremes/agex_global_',index,'_',gs,'_s',season,'_fmadogram.png'), width = 3132, height = 2359, units = 'px')
+plot(wrl, ext = terra::ext(auxl_plt))
+plot(auxl_plt, add = T, col = tst$palette, plg = list(cex = 5), cex.main = 7)
+dev.off()
 
 tst <- terra::zonal(x = c(crp_ntp_25km, vop_25km, cdd_avg, cdd_max, cdd_mdn), z = agex_sgn, fun = 'mean', na.rm = T)
 
@@ -159,21 +201,7 @@ lapply(1:length(unique(crds_sgn$extreme_signature)), function(i){
 
 data.frame(Extreme_signature = i, Countries = paste0(countries_list, collapse = ','))
 
-# Cohesion index: Equals 0 if patches of class i become more isolated.
-# Increases if patches of class i become more aggregated
-agex_chs <- landscapemetrics::lsm_c_cohesion(landscape = agex_sgn) |> base::as.data.frame()
-agex_chs <- agex_chs[,c('class','value')]
-names(agex_chs) <- c('extreme_signature','sgn_cohesion')
-# Contiguity index mean: equals the mean of the contiguity index on class
-# level for all patches
-agex_ctg <- landscapemetrics::lsm_c_contig_mn(landscape = agex_sgn) |> base::as.data.frame()
-agex_ctg <- agex_ctg[,c('class','value')]
-names(agex_ctg) <- c('extreme_signature','sgn_contiguity')
-# Aggregation index: Equals 0 for maximally disaggregated
-# and 100 for maximally aggregated classes
-agex_agr <- landscapemetrics::lsm_c_ai(landscape = agex_sgn) |> base::as.data.frame()
-agex_agr <- agex_agr[,c('class','value')]
-names(agex_agr) <- c('extreme_signature','sgn_aggregation')
+
 
 mtrcs <- dplyr::left_join(x = agex_chs, y = agex_ctg, by = 'extreme_signature')
 mtrcs <- dplyr::left_join(x = mtrcs, y = agex_agr, by = 'extreme_signature')
