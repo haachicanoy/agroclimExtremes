@@ -53,6 +53,19 @@ idx <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_',index,'/ag
 idx_avg <- mean(idx)
 idx_max <- max(idx)
 idx_mdn <- median(idx)
+get_trend <- function(x){
+  if(!all(is.na(x))){
+    x <- na.omit(x) |> as.numeric()
+    y <- trend::sens.slope(x)$estimates |> as.numeric()
+  } else {
+    y <- NA
+  }
+  return(y)
+}
+idx_slp <- terra::app(x = idx, fun = function(i, ff) ff(i), cores = 20, ff = get_trend)
+plot(idx_slp)
+
+tst <- terra::zonal(x = idx_slp, z = agex_sgn, fun = 'mean', na.rm = T)
 
 tst <- terra::zonal(x = c(crp_ntp_25km, vop_25km, cdd_avg, cdd_max, cdd_mdn), z = agex_sgn, fun = 'mean', na.rm = T)
 
