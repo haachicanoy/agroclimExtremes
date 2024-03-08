@@ -11,7 +11,7 @@ suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pa
 suppressMessages(pacman::p_load(terra, geodata, Kendall, tidyverse, psych,
                                 FactoMineR, factoextra, modifiedmk, NbClust,
                                 rnaturalearth, RColorBrewer, MetBrewer,
-                                fastcluster, eurostat, giscoR))
+                                fastcluster, eurostat, giscoR,parallelDist))
 
 ## Key arguments
 root   <- '//CATALOGUE/WFP_ClimateRiskPr1'
