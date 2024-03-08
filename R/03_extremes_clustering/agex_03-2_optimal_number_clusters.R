@@ -21,7 +21,7 @@ gc(T)
 
 OSys <- Sys.info()[1]
 
-f(OSys == 'Windows'){
+if(OSys == 'Windows'){
   future::plan(cluster, workers = 30, gc = T)
   sil_width <- furrr::future_map(.x = 2:200, .f = function(k){
     model <- cluster::pam(x = fmado_smp_dist, k = k)
