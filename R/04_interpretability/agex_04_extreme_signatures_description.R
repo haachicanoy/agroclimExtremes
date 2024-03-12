@@ -23,6 +23,52 @@ agex_sgn <- terra::rast(fls)
 names(agex_sgn) <- 'extreme_signature'
 crds_sgn <- terra::as.data.frame(x = agex_sgn, xy = T, cell = T, na.rm = T) # Coordinates
 
+# Clean weather signatures from random miss-classification issues
+vls <- terra::values(agex_sgn, na.rm = T) |> as.numeric() |> unique() |> sort()
+agex_sgn_cln <- lapply(vls, FUN = function(i){
+  agex_sgn_cln <- agex_sgn
+  agex_sgn_cln[agex_sgn_cln != i] <- NA
+  agex_sgn_cln[!is.na(agex_sgn_cln)] <- 1
+  agex_sgn_cln <- terra::focal(x = agex_sgn_cln, w = 3, fun = 'mean')
+  agex_sgn_cln[!is.na(agex_sgn_cln)] <- i
+  return(agex_sgn_cln)
+}) |> terra::sprc()
+agex_sgn_cln <- terra::merge(agex_sgn_cln)
+terra::writeRaster(x = agex_sgn_cln, filename = paste0(root,'/agroclimExtremes/agex_results/clusters/agex_global_',index,'_',gs,'_s',season,'_fmadogram_k192_clean.tif'))
+
+crds_sgn_cln <- terra::as.data.frame(x = agex_sgn_cln, xy = T, cell = T, na.rm = T) # Coordinates
+names(crds_sgn_cln)[ncol(crds_sgn_cln)] <- 'extreme_signature'
+
+# Load global shapefile
+wrl <- rnaturalearth::ne_countries(scale = 'large', returnclass = 'sv')
+wrl <- wrl[,c('adm0_iso','name_en','continent','subregion')]
+
+# Identify pixels within countries
+crds_cty_cln <- terra::intersect(x = wrl, terra::vect(crds_sgn_cln, c('x','y'), crs = 'EPSG:4326')) |> base::as.data.frame()
+crds_cty_cln <- unique(crds_cty_cln[,c('adm0_iso','continent','subregion','extreme_signature')])
+crds_cty_cln <- dplyr::arrange(.data = crds_cty_cln, extreme_signature) |> base::as.data.frame()
+
+# Identify collaboration opportunities among countries
+vls <- sort(unique(crds_cty_cln$extreme_signature))
+collaborations <- lapply(vls, function(i){
+  smm <- data.frame(extreme_signature = i,
+                    countries_count = length(crds_cty_cln[crds_cty_cln$extreme_signature == i,'adm0_iso']),
+                    countries = paste0(crds_cty_cln[crds_cty_cln$extreme_signature == i,'adm0_iso'], collapse = ','),
+                    continents = paste0(unique(crds_cty_cln[crds_cty_cln$extreme_signature == i,'continent']), collapse = ','),
+                    regions = paste0(unique(crds_cty_cln[crds_cty_cln$extreme_signature == i,'subregion']), collapse = ','))
+  return(smm)
+}) |> dplyr::bind_rows()
+
+collaborations <- collaborations[collaborations$extreme_signature != 3,]
+
+# Missing signatures
+base::setdiff(1:length(unique(as.numeric(terra::values(agex_sgn, na.rm = T)))), collaborations$extreme_signature)
+
+collaborations <- rbind(collaborations,
+                        data.frame(extreme_signature=155, countries_count=1, countries='IDN', continents='Asia', regions='South-Eastern Asia'))
+collaborations <- dplyr::arrange(.data = collaborations, -countries_count) |> base::as.data.frame()
+utils::write.csv(x = collaborations, file = paste0(root,'/agroclimExtremes/agex_results/collaborations_',index,'_',gs,'_s',season,'.csv'), row.names = F)
+
 # Cluster quality measures
 # They are computed to get rid of anomalous signatures
 # Cohesion index
@@ -93,8 +139,14 @@ get_trend <- function(x){
 idx_slp <- terra::app(x = idx, fun = function(i, ff) ff(i), cores = 20, ff = get_trend)
 plot(idx_slp)
 
-tst <- terra::zonal(x = idx_slp, z = agex_sgn, fun = 'mean', na.rm = T)
-names(tst)[ncol(tst)] <- 'slope'
+tst <- terra::zonal(x = c(idx_slp, crp_ntp_25km), z = agex_sgn, fun = 'mean', na.rm = T)
+names(tst)[-1] <- c('Response_speed','Food_diversity')
+
+tst <- biscale::bi_class(.data = tst, x = Food_diversity, y = Response_speed, style = 'quantile', dim = 3)
+colours <- data.frame(bi_class = sort(unique(tst$bi_class)))
+colours$col <- pals::stevens.bluered(n = nrow(colours))
+tst <- dplyr::left_join(x = tst, y = colours, by = 'bi_class') |> base::as.data.frame()
+
 tst <- dplyr::arrange(.data = tst, -slope) |> base::as.data.frame()
 n_col <- length(unique(terra::values(agex_sgn,na.rm = T)))
 col_pltt <- MetBrewer::met.brewer(name = 'OKeeffe1', n = n_col)
@@ -108,6 +160,31 @@ png(filename = paste0(root,'/agroclimExtremes/agex_global_',index,'_',gs,'_s',se
 plot(wrl, ext = terra::ext(auxl_plt))
 plot(auxl_plt, add = T, col = tst$palette, plg = list(cex = 5), cex.main = 7)
 dev.off()
+
+# Figure
+png(filename = paste0(root,'/agroclimExtremes/agex_global_',index,'_',gs,'_s',season,'_fmadogram_bivariate.png'), width = 3132, height = 2359, units = 'px')
+plot(wrl, ext = terra::ext(auxl_plt))
+plot(auxl_plt, add = T, col = tst$col, plg = list(cex = 5), cex.main = 7)
+dev.off()
+
+# Legend box
+tst$x <- as.numeric(substr(x = tst$bi_class, start=1, stop=1))
+tst$y <- as.numeric(substr(x = tst$bi_class, start=3, stop=3))
+tst %>%
+  ggplot2::ggplot(aes(x = x, y = y)) +
+  ggplot2::geom_tile(fill = tst$col, alpha = 1) +
+  ggplot2::coord_equal() +
+  ggplot2::theme_minimal() +
+  ggplot2::xlab('Food classes diversity') +
+  ggplot2::ylab('Response speed to drought') +
+  ggplot2::theme(axis.text       = element_blank(),
+                 axis.title      = element_text(size = 35),
+                 legend.text     = element_text(size = 17),
+                 legend.title    = element_blank(),
+                 plot.title      = element_text(size = 25),
+                 plot.subtitle   = element_text(size = 17),
+                 plot.caption    = element_text(size = 15, hjust = 0),
+                 legend.position = "bottom")
 
 tst <- terra::zonal(x = c(crp_ntp_25km, vop_25km, cdd_avg, cdd_max, cdd_mdn), z = agex_sgn, fun = 'mean', na.rm = T)
 
@@ -155,6 +232,7 @@ plot(wrl, ext = terra::ext(tmp))
 plot(tmp, add = T, col = tst$vop_colors, plg = list(cex = 5), cex.main = 7)
 dev.off()
 
+biscale::bi_class(.data = tbl, x = Heat, y = Waterlogging, style = "quantile", dim = 3)
 
 lapply(1:length(unique(crds_sgn$extreme_signature)), function(i){
   cat(paste0('>>> Extracting features from extreme signature: ',i,'\n'))

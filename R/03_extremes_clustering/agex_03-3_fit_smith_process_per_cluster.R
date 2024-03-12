@@ -23,7 +23,7 @@ fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_results/clusters'),
 agex_sgn <- terra::rast(fls)
 names(agex_sgn) <- 'extreme_signature'
 
-sgntr <- 141
+sgntr <- 39
 
 auxl_sgn <- agex_sgn
 auxl_sgn[auxl_sgn != sgntr] <- NA

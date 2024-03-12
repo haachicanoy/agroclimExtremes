@@ -13,6 +13,7 @@ suppressMessages(pacman::p_load(terra))
 
 # Template rasters
 tmp_10km <- terra::rast('https://github.com/haachicanoy/agroclimExtremes/raw/main/data/tmp_era5.tif')
+tmp_25km <- terra::rast('https://github.com/haachicanoy/agroclimExtremes/raw/main/data/tmp_era5_25km.tif')
 
 # Directories
 root <- '//CATALOGUE/WFP_ClimateRiskPr1'
@@ -38,7 +39,7 @@ dks_map$day[dks_map$dekad == 36] <- 1
 
 # Load number of growing seasons per site
 n_seasons <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_phenology/phenonseasons_v03.tif')); gc(T)
-n_seasons <- terra::resample(x = n_seasons, y = tmp_10km, method = 'near', threads = T); gc(T) # Growing seasons per site at 10 km resolution
+n_seasons <- terra::resample(x = n_seasons, y = tmp_25km, method = 'near', threads = T); gc(T) # Growing seasons per site at 25 km resolution
 
 # ------------------------------------------ #
 # One season - Season 1 pre-processing

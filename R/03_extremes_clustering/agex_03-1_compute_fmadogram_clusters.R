@@ -91,7 +91,7 @@ get_fmado_dist <- function(x){
     V[,p] <- Femp
   }
   # DD_fmado = dist(t(V), method = "manhattan", diag = TRUE, upper = TRUE)/(2*Tnb)
-  DD_fmado <- parallelDist::parDist(x = t(V), method = 'manhattan', diag = T, upper = T)/(2*Tnb)
+  DD_fmado <- parallelDist::parDist(x = t(V), method = 'manhattan', diag = F, upper = F)/(2*Tnb)
   return(DD_fmado)
 }
 # Trim distribution of F-madogram distances greater than 1/6
