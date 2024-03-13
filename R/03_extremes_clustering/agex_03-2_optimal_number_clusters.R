@@ -21,23 +21,13 @@ gc(T)
 
 OSys <- Sys.info()[1]
 
-if(OSys == 'Windows'){
-  future::plan(cluster, workers = 30, gc = T)
-  sil_width <- furrr::future_map(.x = 2:200, .f = function(k){
-    model <- cluster::pam(x = fmado_smp_dist, k = k)
-    results <- data.frame(k = k, avg_silhouette = model$silinfo$avg.width)
-    return(results)
-  }) |> dplyr::bind_rows()
-  future:::ClusterRegistry('stop'); gc(T)
-} else {
-  future::plan(multicore, workers = 30, gc = T)
-  sil_width <- future.apply::future_lapply(X = 2:200, FUN = function(k){
-    model <- cluster::pam(x = fmado_smp_dist, k = k)
-    results <- data.frame(k = k, avg_silhouette = model$silinfo$avg.width)
-    return(results)
-  }) |> dplyr::bind_rows()
-  future:::ClusterRegistry('stop'); gc(T)
-}
+future::plan(cluster, workers = 30, gc = T)
+sil_width <- furrr::future_map(.x = 2:200, .f = function(k){
+  model <- cluster::pam(x = fmado_smp_dist, k = k)
+  results <- data.frame(k = k, avg_silhouette = model$silinfo$avg.width)
+  return(results)
+}) |> dplyr::bind_rows()
+future:::ClusterRegistry('stop'); gc(T)
 
 # Plot the relationship between k and avg_silhouette
 ggplot(sil_width, aes(x = k, y = avg_silhouette)) +
