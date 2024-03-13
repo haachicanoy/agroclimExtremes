@@ -19,6 +19,8 @@ fmado_smp_dist <- get_fmado_dist(x_smp); gc(T)   # F-madogram distances
 fmado_smp_dist <- cap_fmado_dist(fmado_smp_dist) # Truncated F-madogram distances
 gc(T)
 
+OSys <- Sys.info()[1]
+
 if(OSys == 'Windows'){
   future::plan(cluster, workers = 30, gc = T)
   sil_width <- furrr::future_map(.x = 2:200, .f = function(k){

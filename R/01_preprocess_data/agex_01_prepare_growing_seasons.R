@@ -9,7 +9,7 @@
 options(warn = -1, scipen = 999)
 rm(list = ls()); gc(TRUE)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
-suppressMessages(pacman::p_load(terra))
+suppressMessages(pacman::p_load(terra,gstat))
 
 # Template rasters
 tmp_10km <- terra::rast('https://github.com/haachicanoy/agroclimExtremes/raw/main/data/tmp_era5.tif')
@@ -40,6 +40,29 @@ dks_map$day[dks_map$dekad == 36] <- 1
 # Load number of growing seasons per site
 n_seasons <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_phenology/phenonseasons_v03.tif')); gc(T)
 n_seasons <- terra::resample(x = n_seasons, y = tmp_25km, method = 'near', threads = T); gc(T) # Growing seasons per site at 25 km resolution
+n_seasons_dfm <- terra::as.data.frame(x = n_seasons, xy = T, cell = T, na.rm = T)
+names(n_seasons_dfm)[ncol(n_seasons_dfm)] <- 'nseasons'
+
+set.seed(1235)
+seeds <- round(runif(n = 100, min = 0, max = 100000))
+
+aux <- n_seasons
+terra::values(aux) <- NA
+
+for(seed in seeds){
+  # seed <- seeds[1]
+  set.seed(seed)
+  smp <- sample(x = n_seasons_dfm$cell, size = 50000, replace = F)
+  sub_dfm <- n_seasons_dfm[n_seasons_dfm$cell %in% smp,]
+  idw_fit <- gstat::gstat(id = 'nseasons', formula = nseasons~1, locations = ~x+y, data = sub_dfm, nmax = 7, set = list(idp = .5))
+  idw_int <- terra::interpolate(object = aux, idw_fit, debug.level = 0, index = 1)
+  idw_int <- terra::mask(idw_int, n_seasons)
+  plot(idw_int)
+}
+
+mg <- gstat::gstat(id = "zinc", formula = zinc~1, locations = ~x+y, data=meuse, nmax=7, set=list(idp = .5))
+z <- interpolate(r, mg, debug.level=0, index=1)
+z <- mask(z, r)
 
 # ------------------------------------------ #
 # One season - Season 1 pre-processing
