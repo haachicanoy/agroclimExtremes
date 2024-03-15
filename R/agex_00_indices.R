@@ -55,11 +55,6 @@ p5d <- function(x){ # x: daily precipitation vector
 ## Drought
 ## ------------------------------------------ ##
 
-# Standardized Precipitation Evapotranspiration Index
-Spei <- function(x){
-  
-}
-
 # Maximum number of consecutive days
 cdd <- function(x){ # x: daily precipitation vector
   if(!all(is.na(x))){
@@ -76,36 +71,7 @@ cdd <- function(x){ # x: daily precipitation vector
 # ------------------------------------------ #
 
 # Temperature-humidity index
-thi <- function(x){
-  
-}
-
-# Warm spell duration
-wsd <- function(x){
-  
-}
-
-# ------------------------------------------ #
-## Frost
-# ------------------------------------------ #
-
-# Maximum number of consecutive frost days
-cfd <- function(x){ # x: daily minimum temperature vector
-  if(!all(is.na(x))){
-    runs <- rle(x < 0)
-    cfd  <- max(runs$lengths[runs$values==1], na.rm=TRUE)
-  } else {
-    cfd  <- NA
-  }
-  return(cfd)
-}
-
-# Number of ice days
-nid <- function(x){ # x: daily maximum temperature vector
-  if(!all(is.na(x))){
-    nid <- sum(x < 0)
-  } else {
-    nid <- NA
-  }
-  return(nid)
+thi <- function(tmax, rhum){
+  thi <- (1.8 * tmax + 32) - ((0.55 - 0.0055 * rhum) * (1.8 * tmax - 26.8))
+  return(thi)
 }

@@ -103,6 +103,7 @@ wrl <- geodata::world(resolution = 1, level = 0, path = tempdir())
 # Compute diversity of crop types
 # High entropy means high variation of food/non-food classes
 crp_fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_raw_data'), pattern = '^agex_cropclass_', full.names = T)
+crp_fls <- crp_fls[-grep2(pattern = c('fibres','stimulant'), x = crp_fls)]
 crp_typ <- terra::rast(crp_fls)
 crp_ntp <- terra::app(x = crp_typ, fun = function(i, ff) ff(i), cores = 20, ff = entropy::entropy)
 names(crp_ntp) <- 'crop_types_diversity'
@@ -138,6 +139,18 @@ get_trend <- function(x){
 }
 idx_slp <- terra::app(x = idx, fun = function(i, ff) ff(i), cores = 20, ff = get_trend)
 plot(idx_slp)
+
+get_p95_trend <- function(x){
+  if(!all(is.na(x))){
+    x <- as.numeric(na.omit(x))
+    dfm <- data.frame(time = 1:length(x), ts = x)
+    qrf <- quantreg::rq(formula = ts ~ time, tau = .95, data = dfm)
+    y <- as.numeric(qrf$coefficients[2])
+  } else {
+    y <- NA
+  }
+  return(y)
+}
 
 tst <- terra::zonal(x = c(idx_slp, crp_ntp_25km), z = agex_sgn, fun = 'mean', na.rm = T)
 names(tst)[-1] <- c('Response_speed','Food_diversity')

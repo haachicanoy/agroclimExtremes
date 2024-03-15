@@ -7,9 +7,8 @@
 
 # R options and packages loading
 options(warn = -1, scipen = 999)
-rm(list = ls()); gc(TRUE)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
-suppressMessages(pacman::p_load(terra,gstat))
+suppressMessages(pacman::p_load(terra,fields,spatstat,future,furrr))
 
 # Template rasters
 tmp_10km <- terra::rast('https://github.com/haachicanoy/agroclimExtremes/raw/main/data/tmp_era5.tif')
@@ -40,8 +39,48 @@ dks_map$day[dks_map$dekad == 36] <- 1
 # Load number of growing seasons per site
 n_seasons <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_phenology/phenonseasons_v03.tif')); gc(T)
 n_seasons <- terra::resample(x = n_seasons, y = tmp_25km, method = 'near', threads = T); gc(T) # Growing seasons per site at 25 km resolution
-n_seasons_dfm <- terra::as.data.frame(x = n_seasons, xy = T, cell = T, na.rm = T)
-names(n_seasons_dfm)[ncol(n_seasons_dfm)] <- 'nseasons'
+croplands <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_croplands_foods_mapspam_25km.tif'))
+n_seasons <- terra::mask(x = n_seasons, mask = croplands)
+
+# Split seasons
+n_seasons_1 <- n_seasons # Season 1
+n_seasons_1[n_seasons_1 != 1] <- NA
+n_seasons_1_dfm <- terra::as.data.frame(x = n_seasons_1, xy = T, cell = T, na.rm = T) # Coordinates
+
+n_seasons_2 <- n_seasons # Season 2
+n_seasons_2[n_seasons_2 != 2] <- NA
+n_seasons_2_dfm <- terra::as.data.frame(x = n_seasons_2, xy = T, cell = T, na.rm = T)
+
+r_owin <- as.owin(unlist(as.list(terra::ext(n_seasons))))
+
+# Get probabilities from Season 1 coordinates
+p1 <- ppp(x = n_seasons_1_dfm$x, y = n_seasons_1_dfm$y, window = r_owin)
+ds1 <- density(p1)
+ds_r1 <- terra::rast(ds1)
+ds_r1 <- terra::resample(x = ds_r1, y = n_seasons_1)
+ds_r1 <- terra::mask(x = ds_r1, mask = n_seasons_1)
+ds_r1 <- ds_r1/sum(terra::values(ds_r1, na.rm = T))
+
+# Get probabilities from Season 2 coordinates
+p2 <- ppp(x = n_seasons_2_dfm$x, y = n_seasons_2_dfm$y, window = r_owin)
+ds2 <- density(p2)
+ds_r2 <- terra::rast(ds2)
+ds_r2 <- terra::resample(x = ds_r2, y = n_seasons_2)
+ds_r2 <- terra::mask(x = ds_r2, mask = n_seasons_2)
+ds_r2 <- ds_r2/sum(terra::values(ds_r2, na.rm = T))
+
+names(n_seasons_1_dfm)[ncol(n_seasons_1_dfm)] <- 'nseasons'
+names(n_seasons_2_dfm)[ncol(n_seasons_2_dfm)] <- 'nseasons'
+
+n_seasons_dfm <- rbind(n_seasons_1_dfm, n_seasons_2_dfm)
+
+probs <- rbind(terra::as.data.frame(x = ds_r1, xy = T, cell = T, na.rm = T),
+               terra::as.data.frame(x = ds_r2, xy = T, cell = T, na.rm = T))
+names(probs)[ncol(probs)] <- 'probability'
+probs$probability <- probs$probability/2
+
+n_seasons_dfm <- dplyr::left_join(x = n_seasons_dfm, y = probs[,c('cell','probability')], by = 'cell')
+rm(probs, ds_r1, ds_r2, ds1, ds2, p1, p2, r_owin, n_seasons_1_dfm, n_seasons_2_dfm)
 
 set.seed(1235)
 seeds <- round(runif(n = 100, min = 0, max = 100000))
@@ -49,20 +88,18 @@ seeds <- round(runif(n = 100, min = 0, max = 100000))
 aux <- n_seasons
 terra::values(aux) <- NA
 
-for(seed in seeds){
-  # seed <- seeds[1]
+# Run the process over 100 random samples of 1000 coordinates
+tsp_simulation <- lapply(seeds, function(seed){
   set.seed(seed)
-  smp <- sample(x = n_seasons_dfm$cell, size = 50000, replace = F)
+  smp <- sample(x = n_seasons_dfm$cell, size = 1000, replace = F, prob = n_seasons_dfm$probability)
   sub_dfm <- n_seasons_dfm[n_seasons_dfm$cell %in% smp,]
-  idw_fit <- gstat::gstat(id = 'nseasons', formula = nseasons~1, locations = ~x+y, data = sub_dfm, nmax = 7, set = list(idp = .5))
-  idw_int <- terra::interpolate(object = aux, idw_fit, debug.level = 0, index = 1)
-  idw_int <- terra::mask(idw_int, n_seasons)
-  plot(idw_int)
-}
-
-mg <- gstat::gstat(id = "zinc", formula = zinc~1, locations = ~x+y, data=meuse, nmax=7, set=list(idp = .5))
-z <- interpolate(r, mg, debug.level=0, index=1)
-z <- mask(z, r)
+  tps_fit <- fields::Tps(x = as.matrix(sub_dfm[,c('x','y')]), Y = sub_dfm$nseasons)
+  aux <- terra::rast(n_seasons)
+  aux <- terra::interpolate(aux, tps_fit)
+  aux <- terra::mask(aux, n_seasons)
+  return(aux)
+})
+tsp_simulation <- terra::rast(tsp_simulation)
 
 # ------------------------------------------ #
 # One season - Season 1 pre-processing
