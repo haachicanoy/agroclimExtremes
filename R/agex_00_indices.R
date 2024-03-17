@@ -70,7 +70,7 @@ cdd <- function(x){ # x: daily precipitation vector
 ## Heat
 # ------------------------------------------ #
 
-# Temperature-humidity index
+# Thermal humidity index
 thi <- function(tmax, rhum){
   thi <- (1.8 * tmax + 32) - ((0.55 - 0.0055 * rhum) * (1.8 * tmax - 26.8))
   return(thi)
