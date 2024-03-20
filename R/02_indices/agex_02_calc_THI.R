@@ -11,7 +11,7 @@ suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pa
 suppressMessages(pacman::p_load(tidyverse,terra,gtools,lubridate))
 
 # Source agro-climatic indices functions
-source('https://raw.githubusercontent.com/haachicanoy/agroclimExtremes/main/agex_00_indices.R')
+source('https://raw.githubusercontent.com/haachicanoy/agroclimExtremes/main/R/agex_00_indices.R')
 grep2 <- Vectorize(FUN = grep, vectorize.args = 'pattern')
 
 # Root directory
@@ -33,7 +33,7 @@ calc_thi <- function(yr, mn){
     dts <- seq(from = as.Date(paste0(yr,'-',mn,'-01')), to = as.Date(paste0(yr,'-',mn,'-',last_day)), by = 'day')
     
     # Files
-    tav_fls <- paste0(ae5tx_pth,'/Temperature-Air-2m-Max-24h_C3S-glob-agric_AgERA5_',gsub(pattern='-', replacement='', x=dts, fixed=T),'_final-v1.1.nc')
+    tav_fls <- paste0(ae5tx_pth,'/Temperature-Air-2m-Mean-24h_C3S-glob-agric_AgERA5_',gsub(pattern='-', replacement='', x=dts, fixed=T),'_final-v1.1.nc')
     tav_fls <- tav_fls[file.exists(tav_fls)]
     rhm_fls <- paste0(ae5rh_pth,'/Relative-Humidity-2m-12h_C3S-glob-agric_AgERA5_',gsub(pattern='-', replacement='', x=dts, fixed=T),'_final-v1.1.nc')
     rhm_fls <- rhm_fls[file.exists(rhm_fls)]

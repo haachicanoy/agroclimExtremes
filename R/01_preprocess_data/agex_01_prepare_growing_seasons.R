@@ -101,6 +101,20 @@ tsp_simulation <- lapply(seeds, function(seed){
 })
 tsp_simulation <- terra::rast(tsp_simulation)
 
+tps_res <- terra::rast('//CATALOGUE/WFP_ClimateRiskPr1/agroclimExtremes/agex_raw_data/tps_simulation.tif')
+tst <- terra::values(tps_res, na.rm = T)
+colnames(tst) <- paste0('sim_',1:ncol(tst))
+summary(tst)
+min(tst)
+max(tst)
+
+hist(terra::values(tps_res[[1]], na.rm = T))
+
+plot(ecdf(x = terra::values(tps_res[[3]], na.rm = T)))
+
+terra::writeRaster(x = sum(tps_res <= 1.5), 'D:/one-gs_sites.tif')
+terra::writeRaster(x = sum(tps_res > 1.5), 'D:/two-gs_sites.tif')
+
 # ------------------------------------------ #
 # One season - Season 1 pre-processing
 # ------------------------------------------ #
