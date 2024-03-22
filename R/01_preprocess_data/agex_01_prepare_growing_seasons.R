@@ -11,7 +11,7 @@ suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pa
 suppressMessages(pacman::p_load(terra,fields,spatstat,future,furrr))
 
 # Template rasters
-tmp_10km <- terra::rast('https://github.com/haachicanoy/agroclimExtremes/raw/main/data/tmp_era5.tif')
+# tmp_10km <- terra::rast('https://github.com/haachicanoy/agroclimExtremes/raw/main/data/tmp_era5.tif')
 tmp_25km <- terra::rast('https://github.com/haachicanoy/agroclimExtremes/raw/main/data/tmp_era5_25km.tif')
 
 # Directories
@@ -37,50 +37,86 @@ dks_map <- data.frame(day = doy, dekad = 1:36); rm(yrs, doy)
 dks_map$day[dks_map$dekad == 36] <- 1
 
 # Load number of growing seasons per site
-n_seasons <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_phenology/phenonseasons_v03.tif')); gc(T)
-n_seasons <- terra::resample(x = n_seasons, y = tmp_25km, method = 'near', threads = T); gc(T) # Growing seasons per site at 25 km resolution
-croplands <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_croplands_foods_mapspam_25km.tif'))
-n_seasons <- terra::mask(x = n_seasons, mask = croplands)
+if(!file.exists(paste0(out,'/agex_nseasons_25km_corrected.tif'))){
+  n_seasons <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_phenology/phenonseasons_v03.tif')); gc(T)
+  n_seasons <- terra::resample(x = n_seasons, y = tmp_25km, method = 'near', threads = T); gc(T) # Growing seasons per site at 25 km resolution
+  croplands <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_croplands_foods_mapspam_25km.tif'))
+  n_seasons <- terra::mask(x = n_seasons, mask = croplands)
+  terra::writeRaster(x = n_seasons, filename = paste0(out,'/agex_nseasons_25km.tif'), overwrite = T)
+  
+  # Split seasons
+  n_seasons_1 <- n_seasons # Season 1
+  n_seasons_1[n_seasons_1 != 1] <- NA
+  n_seasons_1_dfm <- terra::as.data.frame(x = n_seasons_1, xy = T, cell = T, na.rm = T) # Coordinates
+  
+  n_seasons_2 <- n_seasons # Season 2
+  n_seasons_2[n_seasons_2 != 2] <- NA
+  n_seasons_2_dfm <- terra::as.data.frame(x = n_seasons_2, xy = T, cell = T, na.rm = T)
+  
+  r_owin <- as.owin(unlist(as.list(terra::ext(n_seasons))))
+  
+  # Get probabilities from Season 1 coordinates
+  p1 <- ppp(x = n_seasons_1_dfm$x, y = n_seasons_1_dfm$y, window = r_owin)
+  ds1 <- density(p1)
+  ds_r1 <- terra::rast(ds1)
+  ds_r1 <- terra::resample(x = ds_r1, y = n_seasons_1)
+  ds_r1 <- terra::mask(x = ds_r1, mask = n_seasons_1)
+  ds_r1 <- ds_r1/sum(terra::values(ds_r1, na.rm = T))
+  
+  # Get probabilities from Season 2 coordinates
+  p2 <- ppp(x = n_seasons_2_dfm$x, y = n_seasons_2_dfm$y, window = r_owin)
+  ds2 <- density(p2)
+  ds_r2 <- terra::rast(ds2)
+  ds_r2 <- terra::resample(x = ds_r2, y = n_seasons_2)
+  ds_r2 <- terra::mask(x = ds_r2, mask = n_seasons_2)
+  ds_r2 <- ds_r2/sum(terra::values(ds_r2, na.rm = T))
+  
+  names(n_seasons_1_dfm)[ncol(n_seasons_1_dfm)] <- 'nseasons'
+  names(n_seasons_2_dfm)[ncol(n_seasons_2_dfm)] <- 'nseasons'
+  
+  n_seasons_dfm <- rbind(n_seasons_1_dfm, n_seasons_2_dfm)
+  
+  probs <- rbind(terra::as.data.frame(x = ds_r1, xy = T, cell = T, na.rm = T),
+                 terra::as.data.frame(x = ds_r2, xy = T, cell = T, na.rm = T))
+  names(probs)[ncol(probs)] <- 'probability'
+  probs$probability <- probs$probability/2
+  
+  n_seasons_dfm <- dplyr::left_join(x = n_seasons_dfm, y = probs[,c('cell','probability')], by = 'cell')
+  rm(probs, ds_r1, ds_r2, ds1, ds2, p1, p2, r_owin, n_seasons_1_dfm, n_seasons_2_dfm, n_seasons_1, n_seasons_2)
+  
+  # Visualize outliers
+  hist(n_seasons_dfm$probability[n_seasons_dfm$nseasons == 2])
+  thr <- 0.000017
+  abline(v = thr, col = 2, lty = 2)
+  plot(n_seasons)
+  points(n_seasons_dfm[n_seasons_dfm$nseasons == 2 & n_seasons_dfm$probability < thr,c('x','y')],
+         col = 'red', pch = 20)
+  
+  n_seasons_dfm2 <- n_seasons_dfm
+  n_seasons_dfm2$nseasons[n_seasons_dfm2$nseasons == 2 & n_seasons_dfm2$probability < thr] <- 1
+  
+  aux <- n_seasons
+  terra::values(aux) <- NA
+  aux[n_seasons_dfm2$cell] <- n_seasons_dfm2$nseasons
+  
+  terra::writeRaster(x = aux, filename = paste0(out,'/agex_nseasons_25km_corrected.tif'), overwrite = T)
+  rm(n_seasons_dfm2, n_seasons_dfm, aux, croplands, thr)
+  
+  # hist(n_seasons_dfm$probability[n_seasons_dfm$nseasons == 1])
+  # thr <- 0.0000011
+  # abline(v = thr, col = 2, lty = 2)
+  # plot(-1*(n_seasons-2))
+  # points(n_seasons_dfm[n_seasons_dfm$nseasons == 1 & n_seasons_dfm$probability < thr,c('x','y')],
+  #        col = 'red', pch = 20)
+} else {
+  n_seasons <- terra::rast(paste0(out,'/agex_nseasons_25km_corrected.tif'))
+}
 
-# Split seasons
-n_seasons_1 <- n_seasons # Season 1
-n_seasons_1[n_seasons_1 != 1] <- NA
-n_seasons_1_dfm <- terra::as.data.frame(x = n_seasons_1, xy = T, cell = T, na.rm = T) # Coordinates
 
-n_seasons_2 <- n_seasons # Season 2
-n_seasons_2[n_seasons_2 != 2] <- NA
-n_seasons_2_dfm <- terra::as.data.frame(x = n_seasons_2, xy = T, cell = T, na.rm = T)
+clls <- n_seasons_dfm$cell[n_seasons_dfm$nseasons == 2 & n_seasons_dfm$probability < thr]
 
-r_owin <- as.owin(unlist(as.list(terra::ext(n_seasons))))
-
-# Get probabilities from Season 1 coordinates
-p1 <- ppp(x = n_seasons_1_dfm$x, y = n_seasons_1_dfm$y, window = r_owin)
-ds1 <- density(p1)
-ds_r1 <- terra::rast(ds1)
-ds_r1 <- terra::resample(x = ds_r1, y = n_seasons_1)
-ds_r1 <- terra::mask(x = ds_r1, mask = n_seasons_1)
-ds_r1 <- ds_r1/sum(terra::values(ds_r1, na.rm = T))
-
-# Get probabilities from Season 2 coordinates
-p2 <- ppp(x = n_seasons_2_dfm$x, y = n_seasons_2_dfm$y, window = r_owin)
-ds2 <- density(p2)
-ds_r2 <- terra::rast(ds2)
-ds_r2 <- terra::resample(x = ds_r2, y = n_seasons_2)
-ds_r2 <- terra::mask(x = ds_r2, mask = n_seasons_2)
-ds_r2 <- ds_r2/sum(terra::values(ds_r2, na.rm = T))
-
-names(n_seasons_1_dfm)[ncol(n_seasons_1_dfm)] <- 'nseasons'
-names(n_seasons_2_dfm)[ncol(n_seasons_2_dfm)] <- 'nseasons'
-
-n_seasons_dfm <- rbind(n_seasons_1_dfm, n_seasons_2_dfm)
-
-probs <- rbind(terra::as.data.frame(x = ds_r1, xy = T, cell = T, na.rm = T),
-               terra::as.data.frame(x = ds_r2, xy = T, cell = T, na.rm = T))
-names(probs)[ncol(probs)] <- 'probability'
-probs$probability <- probs$probability/2
-
-n_seasons_dfm <- dplyr::left_join(x = n_seasons_dfm, y = probs[,c('cell','probability')], by = 'cell')
-rm(probs, ds_r1, ds_r2, ds1, ds2, p1, p2, r_owin, n_seasons_1_dfm, n_seasons_2_dfm)
+adj_clls <- terra::adjacent(x = n_seasons, cells = clls[4], directions = 'queen', pairs = F, symmetrical = T) |> as.numeric()
+terra::extract(x = n_seasons, y = terra::xyFromCell(n_seasons, cell = adj_clls))
 
 set.seed(1235)
 seeds <- round(runif(n = 100, min = 0, max = 100000))

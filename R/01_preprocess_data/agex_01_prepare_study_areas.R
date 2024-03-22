@@ -13,7 +13,7 @@ list.files2 <- Vectorize(FUN = list.files, vectorize.args = 'path')
 grep2 <- Vectorize(FUN = grep, vectorize.args = 'pattern')
 
 # Template rasters
-tmp_10km <- terra::rast('https://github.com/haachicanoy/agroclimExtremes/raw/main/data/tmp_era5.tif')
+# tmp_10km <- terra::rast('https://github.com/haachicanoy/agroclimExtremes/raw/main/data/tmp_era5.tif')
 tmp_25km <- terra::rast('https://github.com/haachicanoy/agroclimExtremes/raw/main/data/tmp_era5_25km.tif')
 
 # Define directories
