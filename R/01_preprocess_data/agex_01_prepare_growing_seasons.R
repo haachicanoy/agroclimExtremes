@@ -100,6 +100,7 @@ if(!file.exists(paste0(out,'/agex_nseasons_25km_corrected.tif'))){
   aux[n_seasons_dfm2$cell] <- n_seasons_dfm2$nseasons
   
   terra::writeRaster(x = aux, filename = paste0(out,'/agex_nseasons_25km_corrected.tif'), overwrite = T)
+  saveRDS(object = n_seasons_dfm, file = paste0(out,'/agex_nseasons_25km_dfm.rds'))
   rm(n_seasons_dfm2, n_seasons_dfm, aux, croplands, thr)
   
   # hist(n_seasons_dfm$probability[n_seasons_dfm$nseasons == 1])
@@ -110,201 +111,159 @@ if(!file.exists(paste0(out,'/agex_nseasons_25km_corrected.tif'))){
   #        col = 'red', pch = 20)
 } else {
   n_seasons <- terra::rast(paste0(out,'/agex_nseasons_25km_corrected.tif'))
+  n_seasons_dfm <- readRDS(file = paste0(out,'/agex_nseasons_25km_dfm.rds'))
+  thr <- 0.000017
 }
 
-
-clls <- n_seasons_dfm$cell[n_seasons_dfm$nseasons == 2 & n_seasons_dfm$probability < thr]
-
-adj_clls <- terra::adjacent(x = n_seasons, cells = clls[4], directions = 'queen', pairs = F, symmetrical = T) |> as.numeric()
-terra::extract(x = n_seasons, y = terra::xyFromCell(n_seasons, cell = adj_clls))
-
-set.seed(1235)
-seeds <- round(runif(n = 100, min = 0, max = 100000))
-
-aux <- n_seasons
-terra::values(aux) <- NA
-
-# Run the process over 100 random samples of 1000 coordinates
-tsp_simulation <- lapply(seeds, function(seed){
-  set.seed(seed)
-  smp <- sample(x = n_seasons_dfm$cell, size = 1000, replace = F, prob = n_seasons_dfm$probability)
-  sub_dfm <- n_seasons_dfm[n_seasons_dfm$cell %in% smp,]
-  tps_fit <- fields::Tps(x = as.matrix(sub_dfm[,c('x','y')]), Y = sub_dfm$nseasons)
-  aux <- terra::rast(n_seasons)
-  aux <- terra::interpolate(aux, tps_fit)
-  aux <- terra::mask(aux, n_seasons)
-  return(aux)
-})
-tsp_simulation <- terra::rast(tsp_simulation)
-
-tps_res <- terra::rast('//CATALOGUE/WFP_ClimateRiskPr1/agroclimExtremes/agex_raw_data/tps_simulation.tif')
-tst <- terra::values(tps_res, na.rm = T)
-colnames(tst) <- paste0('sim_',1:ncol(tst))
-summary(tst)
-min(tst)
-max(tst)
-
-hist(terra::values(tps_res[[1]], na.rm = T))
-
-plot(ecdf(x = terra::values(tps_res[[3]], na.rm = T)))
-
-terra::writeRaster(x = sum(tps_res <= 1.5), 'D:/one-gs_sites.tif')
-terra::writeRaster(x = sum(tps_res > 1.5), 'D:/two-gs_sites.tif')
+# clls <- n_seasons_dfm$cell[n_seasons_dfm$nseasons == 2 & n_seasons_dfm$probability < thr]
+# 
+# adj_clls <- terra::adjacent(x = n_seasons, cells = clls, directions = 'queen', pairs = F, symmetrical = T)
+# terra::extract(x = n_seasons, y = terra::xyFromCell(n_seasons, cell = adj_clls[6,]))
 
 # ------------------------------------------ #
 # One season - Season 1 pre-processing
 # ------------------------------------------ #
 # Start date
-if(!file.exists(paste0(aux,'/agex_one_s1_ini_raw_10km.tif'))){
+if(!file.exists(paste0(aux,'/agex_one_s1_ini_raw_25km.tif'))){
   s1_ini <- terra::rast(paste0(aux,'/phenos1_v03.tif'))
   s1_ini[s1_ini > 250] <- NA # Remove missing data
-  s1_ini_10km <- terra::resample(x = s1_ini, y = tmp_10km, method = 'near', threads = T)
-  s1_ini_10km[n_seasons == 2] <- NA
-  terra::writeRaster(x = s1_ini_10km, filename = paste0(aux,'/agex_one_s1_ini_raw_10km.tif'), overwrite = T)
+  s1_ini_25km <- terra::resample(x = s1_ini, y = tmp_25km, method = 'near', threads = T)
+  s1_ini_25km[n_seasons == 2] <- NA
+  terra::writeRaster(x = s1_ini_25km, filename = paste0(aux,'/agex_one_s1_ini_raw_25km.tif'), overwrite = T)
   rm(s1_ini); gc(T)
 }
-s1_ini_10km <- terra::rast(paste0(aux,'/agex_one_s1_ini_raw_10km.tif'))
-s1_ini_10km[s1_ini_10km > 36 & s1_ini_10km <= 72] <- s1_ini_10km[s1_ini_10km > 36 & s1_ini_10km <= 72] - 36 # Circularity
-if(any(terra::values(s1_ini_10km) > 72, na.rm = T)){
-  s1_ini_10km[s1_ini_10km > 72] <- s1_ini_10km[s1_ini_10km > 72] - 72
+s1_ini_25km <- terra::rast(paste0(aux,'/agex_one_s1_ini_raw_25km.tif'))
+s1_ini_25km[s1_ini_25km > 36 & s1_ini_25km <= 72] <- s1_ini_25km[s1_ini_25km > 36 & s1_ini_25km <= 72] - 36 # Circularity
+if(any(terra::values(s1_ini_25km) > 72, na.rm = T)){
+  s1_ini_25km[s1_ini_25km > 72] <- s1_ini_25km[s1_ini_25km > 72] - 72
 } # Circularity
-s1_ini_10km <- terra::subst(s1_ini_10km, from = dks_map$dekad, to = dks_map$day)
-terra::writeRaster(s1_ini_10km, filename = paste0(out,'/agex_one_s1_ini_10km.tif'), overwrite = T)
-rm(s1_ini_10km); gc(T)
+s1_ini_25km <- terra::subst(s1_ini_25km, from = dks_map$dekad, to = dks_map$day)
+terra::writeRaster(s1_ini_25km, filename = paste0(out,'/agex_one_s1_ini_25km.tif'), overwrite = T)
+rm(s1_ini_25km); gc(T)
 
 # End date
-if(!file.exists(paste0(aux,'/agex_one_s1_end_raw_10km.tif'))){
+if(!file.exists(paste0(aux,'/agex_one_s1_end_raw_25km.tif'))){
   s1_end <- terra::rast(paste0(aux,'/phenoe1_v03.tif'))
   s1_end[s1_end > 250] <- NA
-  s1_end_10km <- terra::resample(x = s1_end, y = tmp_10km, method = 'near', threads = T)
-  s1_end_10km[n_seasons == 2] <- NA
-  terra::writeRaster(x = s1_end_10km, filename = paste0(aux,'/agex_one_s1_end_raw_10km.tif'), overwrite = T)
+  s1_end_25km <- terra::resample(x = s1_end, y = tmp_25km, method = 'near', threads = T)
+  s1_end_25km[n_seasons == 2] <- NA
+  terra::writeRaster(x = s1_end_25km, filename = paste0(aux,'/agex_one_s1_end_raw_25km.tif'), overwrite = T)
   rm(s1_end); gc(T)
 }
-s1_end_10km <- terra::rast(paste0(aux,'/agex_one_s1_end_raw_10km.tif'))
-s1_end_10km[s1_end_10km > 36 & s1_end_10km <= 72] <- s1_end_10km[s1_end_10km > 36 & s1_end_10km <= 72] - 36
-if(any(terra::values(s1_end_10km) > 72, na.rm = T)){
-  s1_end_10km[s1_end_10km > 72] <- s1_end_10km[s1_end_10km > 72] - 72
+s1_end_25km <- terra::rast(paste0(aux,'/agex_one_s1_end_raw_25km.tif'))
+s1_end_25km[s1_end_25km > 36 & s1_end_25km <= 72] <- s1_end_25km[s1_end_25km > 36 & s1_end_25km <= 72] - 36
+if(any(terra::values(s1_end_25km) > 72, na.rm = T)){
+  s1_end_25km[s1_end_25km > 72] <- s1_end_25km[s1_end_25km > 72] - 72
 }
-s1_end_10km <- terra::subst(s1_end_10km, from = dks_map$dekad, to = dks_map$day)
-terra::writeRaster(s1_end_10km, filename = paste0(out,'/agex_one_s1_end_10km.tif'), overwrite = T)
-rm(s1_end_10km); gc(T)
+s1_end_25km <- terra::subst(s1_end_25km, from = dks_map$dekad, to = dks_map$day)
+terra::writeRaster(s1_end_25km, filename = paste0(out,'/agex_one_s1_end_25km.tif'), overwrite = T)
+rm(s1_end_25km); gc(T)
 
 # ------------------------------------------ #
 # Two seasons - Season 1 pre-processing
 # ------------------------------------------ #
 # Start date
-if(!file.exists(paste0(aux,'/agex_two_s1_ini_raw_10km.tif'))){
+if(!file.exists(paste0(aux,'/agex_two_s1_ini_raw_25km.tif'))){
   s1_ini <- terra::rast(paste0(aux,'/phenos1_v03.tif'))
   s1_ini[s1_ini > 250] <- NA # Remove missing data
-  s1_ini_10km <- terra::resample(x = s1_ini, y = tmp_10km, method = 'near', threads = T)
-  s1_ini_10km[n_seasons == 1] <- NA
-  terra::writeRaster(x = s1_ini_10km, filename = paste0(aux,'/agex_two_s1_ini_raw_10km.tif'), overwrite = T)
+  s1_ini_25km <- terra::resample(x = s1_ini, y = tmp_25km, method = 'near', threads = T)
+  s1_ini_25km[n_seasons == 1] <- NA
+  terra::writeRaster(x = s1_ini_25km, filename = paste0(aux,'/agex_two_s1_ini_raw_25km.tif'), overwrite = T)
   rm(s1_ini); gc(T)
 }
-s1_ini_10km <- terra::rast(paste0(aux,'/agex_two_s1_ini_raw_10km.tif'))
-s1_ini_10km[s1_ini_10km > 36 & s1_ini_10km <= 72] <- s1_ini_10km[s1_ini_10km > 36 & s1_ini_10km <= 72] - 36 # Circularity
-if(any(terra::values(s1_ini_10km) > 72, na.rm = T)){
-  s1_ini_10km[s1_ini_10km > 72] <- s1_ini_10km[s1_ini_10km > 72] - 72
+s1_ini_25km <- terra::rast(paste0(aux,'/agex_two_s1_ini_raw_25km.tif'))
+s1_ini_25km[s1_ini_25km > 36 & s1_ini_25km <= 72] <- s1_ini_25km[s1_ini_25km > 36 & s1_ini_25km <= 72] - 36 # Circularity
+if(any(terra::values(s1_ini_25km) > 72, na.rm = T)){
+  s1_ini_25km[s1_ini_25km > 72] <- s1_ini_25km[s1_ini_25km > 72] - 72
 } # Circularity
-s1_ini_10km <- terra::subst(s1_ini_10km, from = dks_map$dekad, to = dks_map$day)
-terra::writeRaster(s1_ini_10km, filename = paste0(out,'/agex_two_s1_ini_10km.tif'), overwrite = T)
-rm(s1_ini_10km); gc(T)
+s1_ini_25km <- terra::subst(s1_ini_25km, from = dks_map$dekad, to = dks_map$day)
+terra::writeRaster(s1_ini_25km, filename = paste0(out,'/agex_two_s1_ini_25km.tif'), overwrite = T)
+rm(s1_ini_25km); gc(T)
 
 # End date
-if(!file.exists(paste0(aux,'/agex_two_s1_end_raw_10km.tif'))){
+if(!file.exists(paste0(aux,'/agex_two_s1_end_raw_25km.tif'))){
   s1_end <- terra::rast(paste0(aux,'/phenoe1_v03.tif'))
   s1_end[s1_end > 250] <- NA
-  s1_end_10km <- terra::resample(x = s1_end, y = tmp_10km, method = 'near', threads = T)
-  s1_end_10km[n_seasons == 1] <- NA
-  terra::writeRaster(x = s1_end_10km, filename = paste0(aux,'/agex_two_s1_end_raw_10km.tif'), overwrite = T)
+  s1_end_25km <- terra::resample(x = s1_end, y = tmp_25km, method = 'near', threads = T)
+  s1_end_25km[n_seasons == 1] <- NA
+  terra::writeRaster(x = s1_end_25km, filename = paste0(aux,'/agex_two_s1_end_raw_25km.tif'), overwrite = T)
   rm(s1_end); gc(T)
 }
-s1_end_10km <- terra::rast(paste0(aux,'/agex_two_s1_end_raw_10km.tif'))
-s1_end_10km[s1_end_10km > 36 & s1_end_10km <= 72] <- s1_end_10km[s1_end_10km > 36 & s1_end_10km <= 72] - 36
-if(any(terra::values(s1_end_10km) > 72, na.rm = T)){
-  s1_end_10km[s1_end_10km > 72] <- s1_end_10km[s1_end_10km > 72] - 72
+s1_end_25km <- terra::rast(paste0(aux,'/agex_two_s1_end_raw_25km.tif'))
+s1_end_25km[s1_end_25km > 36 & s1_end_25km <= 72] <- s1_end_25km[s1_end_25km > 36 & s1_end_25km <= 72] - 36
+if(any(terra::values(s1_end_25km) > 72, na.rm = T)){
+  s1_end_25km[s1_end_25km > 72] <- s1_end_25km[s1_end_25km > 72] - 72
 }
-s1_end_10km <- terra::subst(s1_end_10km, from = dks_map$dekad, to = dks_map$day)
-terra::writeRaster(s1_end_10km, filename = paste0(out,'/agex_two_s1_end_10km.tif'), overwrite = T)
-rm(s1_end_10km); gc(T)
+s1_end_25km <- terra::subst(s1_end_25km, from = dks_map$dekad, to = dks_map$day)
+terra::writeRaster(s1_end_25km, filename = paste0(out,'/agex_two_s1_end_25km.tif'), overwrite = T)
+rm(s1_end_25km); gc(T)
 
 # ------------------------------------------ #
 # Two seasons - Season 2 pre-processing
 # ------------------------------------------ #
 # Start date
-if(!file.exists(paste0(aux,'/agex_two_s2_ini_raw_10km.tif'))){
+if(!file.exists(paste0(aux,'/agex_two_s2_ini_raw_25km.tif'))){
   s2_ini <- terra::rast(paste0(aux,'/phenos2_v03.tif'))
   s2_ini[s2_ini > 250] <- NA # Remove missing data
-  s2_ini_10km <- terra::resample(x = s2_ini, y = tmp_10km, method = 'near', threads = T)
-  s2_ini_10km[n_seasons == 1] <- NA
-  terra::writeRaster(x = s2_ini_10km, filename = paste0(aux,'/agex_two_s2_ini_raw_10km.tif'), overwrite = T)
+  s2_ini_25km <- terra::resample(x = s2_ini, y = tmp_25km, method = 'near', threads = T)
+  s2_ini_25km[n_seasons == 1] <- NA
+  terra::writeRaster(x = s2_ini_25km, filename = paste0(aux,'/agex_two_s2_ini_raw_25km.tif'), overwrite = T)
   rm(s2_ini); gc(T)
 }
-s2_ini_10km <- terra::rast(paste0(aux,'/agex_two_s2_ini_raw_10km.tif'))
-s2_ini_10km[s2_ini_10km > 36 & s2_ini_10km <= 72] <- s2_ini_10km[s2_ini_10km > 36 & s2_ini_10km <= 72] - 36 # Circularity
-if(any(terra::values(s2_ini_10km) > 72, na.rm = T)){
-  s2_ini_10km[s2_ini_10km > 72] <- s2_ini_10km[s2_ini_10km > 72] - 72
+s2_ini_25km <- terra::rast(paste0(aux,'/agex_two_s2_ini_raw_25km.tif'))
+s2_ini_25km[s2_ini_25km > 36 & s2_ini_25km <= 72] <- s2_ini_25km[s2_ini_25km > 36 & s2_ini_25km <= 72] - 36 # Circularity
+if(any(terra::values(s2_ini_25km) > 72, na.rm = T)){
+  s2_ini_25km[s2_ini_25km > 72] <- s2_ini_25km[s2_ini_25km > 72] - 72
 } # Circularity
-s2_ini_10km <- terra::subst(s2_ini_10km, from = dks_map$dekad, to = dks_map$day)
-terra::writeRaster(s2_ini_10km, filename = paste0(out,'/agex_two_s2_ini_10km.tif'), overwrite = T)
-rm(s2_ini_10km); gc(T)
+s2_ini_25km <- terra::subst(s2_ini_25km, from = dks_map$dekad, to = dks_map$day)
+terra::writeRaster(s2_ini_25km, filename = paste0(out,'/agex_two_s2_ini_25km.tif'), overwrite = T)
+rm(s2_ini_25km); gc(T)
 
 # End date
-if(!file.exists(paste0(aux,'/agex_two_s2_end_raw_10km.tif'))){
+if(!file.exists(paste0(aux,'/agex_two_s2_end_raw_25km.tif'))){
   s2_end <- terra::rast(paste0(aux,'/phenoe2_v03.tif'))
   s2_end[s2_end > 250] <- NA
-  s2_end_10km <- terra::resample(x = s2_end, y = tmp_10km, method = 'near', threads = T)
-  s2_end_10km[n_seasons == 1] <- NA
-  terra::writeRaster(x = s2_end_10km, filename = paste0(aux,'/agex_two_s2_end_raw_10km.tif'), overwrite = T)
+  s2_end_25km <- terra::resample(x = s2_end, y = tmp_25km, method = 'near', threads = T)
+  s2_end_25km[n_seasons == 1] <- NA
+  terra::writeRaster(x = s2_end_25km, filename = paste0(aux,'/agex_two_s2_end_raw_25km.tif'), overwrite = T)
   rm(s2_end); gc(T)
 }
-s2_end_10km <- terra::rast(paste0(aux,'/agex_two_s2_end_raw_10km.tif'))
-s2_end_10km[s2_end_10km > 36 & s2_end_10km <= 72] <- s2_end_10km[s2_end_10km > 36 & s2_end_10km <= 72] - 36
-if(any(terra::values(s2_end_10km) > 72, na.rm = T)){
-  s2_end_10km[s2_end_10km > 72] <- s2_end_10km[s2_end_10km > 72] - 72
+s2_end_25km <- terra::rast(paste0(aux,'/agex_two_s2_end_raw_25km.tif'))
+s2_end_25km[s2_end_25km > 36 & s2_end_25km <= 72] <- s2_end_25km[s2_end_25km > 36 & s2_end_25km <= 72] - 36
+if(any(terra::values(s2_end_25km) > 72, na.rm = T)){
+  s2_end_25km[s2_end_25km > 72] <- s2_end_25km[s2_end_25km > 72] - 72
 }
-s2_end_10km <- terra::subst(s2_end_10km, from = dks_map$dekad, to = dks_map$day)
-terra::writeRaster(s2_end_10km, filename = paste0(out,'/agex_two_s2_end_10km.tif'), overwrite = T)
-rm(s2_end_10km); gc(T)
+s2_end_25km <- terra::subst(s2_end_25km, from = dks_map$dekad, to = dks_map$day)
+terra::writeRaster(s2_end_25km, filename = paste0(out,'/agex_two_s2_end_25km.tif'), overwrite = T)
+rm(s2_end_25km); gc(T)
 
 ## ------------------------------------------ ##
 ## Filtering of growing seasons within croplands
 ## ------------------------------------------ ##
 
 # One season
-s1_ini_10km <- terra::rast(paste0(out,'/agex_one_s1_ini_10km.tif'))
-croplnds    <- terra::rast(paste0(out,'/agex_croplands_mapspam_10km.tif'))
-s1_ini_10km_msk <- terra::mask(x = s1_ini_10km, mask = croplnds)
-terra::writeRaster(x = s1_ini_10km_msk, filename = paste0(out,'/agex_one_s1_ini_10km_croplands.tif'))
-s1_end_10km <- terra::rast(paste0(out,'/agex_one_s1_end_10km.tif'))
-s1_end_10km_msk <- terra::mask(x = s1_end_10km, mask = croplnds)
-terra::writeRaster(x = s1_end_10km_msk, filename = paste0(out,'/agex_one_s1_end_10km_croplands.tif'))
-rm(s1_ini_10km, s1_ini_10km_msk, s1_end_10km, s1_end_10km_msk); gc(T)
+s1_ini_25km <- terra::rast(paste0(out,'/agex_one_s1_ini_25km.tif'))
+croplnds    <- terra::rast(paste0(out,'/agex_croplands_foods_mapspam_25km.tif'))
+s1_ini_25km_msk <- terra::mask(x = s1_ini_25km, mask = croplnds)
+terra::writeRaster(x = s1_ini_25km_msk, filename = paste0(out,'/agex_one_s1_ini_25km_croplands.tif'))
+s1_end_25km <- terra::rast(paste0(out,'/agex_one_s1_end_25km.tif'))
+s1_end_25km_msk <- terra::mask(x = s1_end_25km, mask = croplnds)
+terra::writeRaster(x = s1_end_25km_msk, filename = paste0(out,'/agex_one_s1_end_25km_croplands.tif'))
+rm(s1_ini_25km, s1_ini_25km_msk, s1_end_25km, s1_end_25km_msk); gc(T)
 
 # Two seasons - Season 1
-s1_ini_10km <- terra::rast(paste0(out,'/agex_two_s1_ini_10km.tif'))
-s1_ini_10km_msk <- terra::mask(x = s1_ini_10km, mask = croplnds)
-terra::writeRaster(x = s1_ini_10km_msk, filename = paste0(out,'/agex_two_s1_ini_10km_croplands.tif'))
-s1_end_10km <- terra::rast(paste0(out,'/agex_two_s1_end_10km.tif'))
-s1_end_10km_msk <- terra::mask(x = s1_end_10km, mask = croplnds)
-terra::writeRaster(x = s1_end_10km_msk, filename = paste0(out,'/agex_two_s1_end_10km_croplands.tif'))
-rm(s1_ini_10km, s1_ini_10km_msk, s1_end_10km, s1_end_10km_msk); gc(T)
+s1_ini_25km <- terra::rast(paste0(out,'/agex_two_s1_ini_25km.tif'))
+s1_ini_25km_msk <- terra::mask(x = s1_ini_25km, mask = croplnds)
+terra::writeRaster(x = s1_ini_25km_msk, filename = paste0(out,'/agex_two_s1_ini_25km_croplands.tif'))
+s1_end_25km <- terra::rast(paste0(out,'/agex_two_s1_end_25km.tif'))
+s1_end_25km_msk <- terra::mask(x = s1_end_25km, mask = croplnds)
+terra::writeRaster(x = s1_end_25km_msk, filename = paste0(out,'/agex_two_s1_end_25km_croplands.tif'))
+rm(s1_ini_25km, s1_ini_25km_msk, s1_end_25km, s1_end_25km_msk); gc(T)
 # Two seasons - Season 2
-s2_ini_10km <- terra::rast(paste0(out,'/agex_two_s2_ini_10km.tif'))
-s2_ini_10km_msk <- terra::mask(x = s2_ini_10km, mask = croplnds)
-terra::writeRaster(x = s2_ini_10km_msk, filename = paste0(out,'/agex_two_s2_ini_10km_croplands.tif'))
-s2_end_10km <- terra::rast(paste0(out,'/agex_two_s2_end_10km.tif'))
-s2_end_10km_msk <- terra::mask(x = s2_end_10km, mask = croplnds)
-terra::writeRaster(x = s2_end_10km_msk, filename = paste0(out,'/agex_two_s2_end_10km_croplands.tif'))
-rm(s2_ini_10km, s2_ini_10km_msk, s2_end_10km, s2_end_10km_msk); gc(T)
-
-## ------------------------------------------ ##
-## Growing seasons at 25 km
-## ------------------------------------------ ##
-
-## Number of growing seasons at 25 km
-ngs <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_phenology/phenonseasons_v03.tif'))
-tmp <- terra::rast('https://github.com/haachicanoy/agroclimExtremes/raw/main/data/tmp_era5_25km.tif')
-ngs <- terra::resample(x = ngs, y = tmp, method = 'near')
-terra::writeRaster(x = ngs, filename = paste0(root,'/agroclimExtremes/agex_raw_data/agex_nseasons_25km.tif'), overwrite = T)
+s2_ini_25km <- terra::rast(paste0(out,'/agex_two_s2_ini_25km.tif'))
+s2_ini_25km_msk <- terra::mask(x = s2_ini_25km, mask = croplnds)
+terra::writeRaster(x = s2_ini_25km_msk, filename = paste0(out,'/agex_two_s2_ini_25km_croplands.tif'))
+s2_end_25km <- terra::rast(paste0(out,'/agex_two_s2_end_25km.tif'))
+s2_end_25km_msk <- terra::mask(x = s2_end_25km, mask = croplnds)
+terra::writeRaster(x = s2_end_25km_msk, filename = paste0(out,'/agex_two_s2_end_25km_croplands.tif'))
+rm(s2_ini_25km, s2_ini_25km_msk, s2_end_25km, s2_end_25km_msk); gc(T)
