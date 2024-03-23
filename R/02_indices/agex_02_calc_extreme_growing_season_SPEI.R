@@ -21,8 +21,11 @@ fmin <- function(x){
   min(x)
 }
 
+# Spatial resolution
+res <- 25
+
 # SPEI files
-fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_raw_data/monthly_spei'), pattern = '.tif$', full.names = T)
+fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_raw_data/monthly_spei_',res,'km'), pattern = '.tif$', full.names = T)
 fls <- fls[-(1:5)]
 
 # ------------------------------------------ #
@@ -34,8 +37,8 @@ fls <- fls[-(1:5)]
 # indicating that the start and ending dates cover two consecutive years.
 
 # >>> Processing of One-year growing season
-s1_ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_ini_10km_croplands.tif'))
-s1_end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_end_10km_croplands.tif'))
+s1_ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_ini_',res,'km_croplands.tif'))
+s1_end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_end_',res,'km_croplands.tif'))
 s1_dff <- s1_end - s1_ini
 # Selecting the pixels with One-year growing season
 s1_dff[s1_end < s1_ini] <- NA
@@ -54,15 +57,15 @@ lapply(X = yrs, FUN = function(yr){
   mxSpei <- terra::rapp(x = Spei, first = s1_ini, last = s1_end, fun = fmin); gc(T)
   mxSpei <- -1 * mxSpei
   names(mxSpei) <- paste0('spei-6_',yr)
-  outfile <- paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_intermediate/one_s1_y1_spei-6_',yr,'.tif')
+  outfile <- paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_intermediate_',res,'km/one_s1_y1_spei-6_',yr,'.tif')
   dir.create(dirname(outfile),F,T)
   terra::writeRaster(x = mxSpei, filename = outfile, overwrite = T); gc(T)
   return('Done.\n')
 })
 
 # >>> Processing of Two-years growing season
-s1_ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_ini_10km_croplands.tif'))
-s1_end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_end_10km_croplands.tif'))
+s1_ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_ini_',res,'km_croplands.tif'))
+s1_end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_end_',res,'km_croplands.tif'))
 s1_dff <- s1_end - s1_ini
 # Selecting the pixels with Two-years growing season
 s1_dff[s1_end > s1_ini] <- NA
@@ -82,7 +85,7 @@ lapply(X = yrs, FUN = function(yr){
     mxSpei <- terra::rapp(x = Spei, first = s1_ini, last = s1_end+12, fun = fmin)
     mxSpei <- -1 * mxSpei
     names(mxSpei) <- paste0('spei-6_',yr)
-    outfile <- paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_intermediate/one_s1_y2_spei-6_',yr,'.tif')
+    outfile <- paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_intermediate_',res,'km/one_s1_y2_spei-6_',yr,'.tif')
     dir.create(dirname(outfile),F,T)
     terra::writeRaster(x = mxSpei, filename = outfile, overwrite = T); gc(T)
     return('Done.\n')
@@ -96,10 +99,10 @@ lapply(X = yrs, FUN = function(yr){
 # Maximum number of consecutive dry days
 yrs <- 1980:2022
 lapply(X = yrs, FUN = function(yr){
-  fls <- list.files(pattern = paste0('_',yr,'.tif$'), path = paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_intermediate'), full.names = T)
+  fls <- list.files(pattern = paste0('_',yr,'.tif$'), path = paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_intermediate_',res,'km'), full.names = T)
   mxSpei <- lapply(fls, terra::rast)
   mxSpei <- terra::merge(x = mxSpei[[1]], y = mxSpei[[2]])
-  outfile <- paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_10km/one_s1_spei-6_',yr,'.tif')
+  outfile <- paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_',res,'km/one_s1_spei-6_',yr,'.tif')
   dir.create(dirname(outfile),F,T)
   terra::writeRaster(x = mxSpei, filename = outfile, overwrite = T)
 })
@@ -115,8 +118,8 @@ lapply(X = yrs, FUN = function(yr){
 
 ## Season 1
 # >>> Processing of One-year growing season
-s1_ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s1_ini_10km_croplands.tif'))
-s1_end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s1_end_10km_croplands.tif'))
+s1_ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s1_ini_',res,'km_croplands.tif'))
+s1_end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s1_end_',res,'km_croplands.tif'))
 s1_dff <- s1_end - s1_ini
 # Selecting the pixels with One-year growing season
 s1_dff[s1_end < s1_ini] <- NA
@@ -135,15 +138,15 @@ lapply(X = yrs, FUN = function(yr){
   mxSpei <- terra::rapp(x = Spei, first = s1_ini, last = s1_end, fun = fmin); gc(T)
   mxSpei <- -1 * mxSpei
   names(mxSpei) <- paste0('spei-6_',yr)
-  outfile <- paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_intermediate/two_s1_y1_spei-6_',yr,'.tif')
+  outfile <- paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_intermediate_',res,'km/two_s1_y1_spei-6_',yr,'.tif')
   dir.create(dirname(outfile),F,T)
   terra::writeRaster(x = mxSpei, filename = outfile, overwrite = T); gc(T)
   return('Done.\n')
 })
 
 # >>> Processing of Two-years growing season
-s1_ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s1_ini_10km_croplands.tif'))
-s1_end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s1_end_10km_croplands.tif'))
+s1_ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s1_ini_',res,'km_croplands.tif'))
+s1_end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s1_end_',res,'km_croplands.tif'))
 s1_dff <- s1_end - s1_ini
 # Selecting the pixels with Two-years growing season
 s1_dff[s1_end > s1_ini] <- NA
@@ -163,7 +166,7 @@ lapply(X = yrs, FUN = function(yr){
     mxSpei <- terra::rapp(x = Spei, first = s1_ini, last = s1_end+12, fun = fmin)
     mxSpei <- -1 * mxSpei
     names(mxSpei) <- paste0('spei-6_',yr)
-    outfile <- paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_intermediate/two_s1_y2_spei-6_',yr,'.tif')
+    outfile <- paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_intermediate_',res,'km/two_s1_y2_spei-6_',yr,'.tif')
     dir.create(dirname(outfile),F,T)
     terra::writeRaster(x = mxSpei, filename = outfile, overwrite = T); gc(T)
     return('Done.\n')
@@ -177,18 +180,18 @@ lapply(X = yrs, FUN = function(yr){
 # Maximum SPEI within growing season
 yrs <- 1980:2022
 lapply(X = yrs, FUN = function(yr){
-  fls <- list.files(pattern = paste0('two_s1_y[0-9]_spei-6_',yr,'.tif'), path = paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_intermediate'), full.names = T)
+  fls <- list.files(pattern = paste0('two_s1_y[0-9]_spei-6_',yr,'.tif'), path = paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_intermediate_',res,'km'), full.names = T)
   mxSpei <- lapply(fls, terra::rast)
   mxSpei <- terra::merge(x = mxSpei[[1]], y = mxSpei[[2]])
-  outfile <- paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_10km/two_s1_spei-6_',yr,'.tif')
+  outfile <- paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_',res,'km/two_s1_spei-6_',yr,'.tif')
   dir.create(dirname(outfile),F,T)
   terra::writeRaster(x = mxSpei, filename = outfile, overwrite = T)
 })
 
 ## Season 2
 # >>> Processing of One-year growing season
-s2_ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s2_ini_10km_croplands.tif'))
-s2_end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s2_end_10km_croplands.tif'))
+s2_ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s2_ini_',res,'km_croplands.tif'))
+s2_end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s2_end_',res,'km_croplands.tif'))
 s2_dff <- s2_end - s2_ini
 # Selecting the pixels with One-year growing season
 s2_dff[s2_end < s2_ini] <- NA
@@ -207,15 +210,15 @@ lapply(X = yrs, FUN = function(yr){
   mxSpei <- terra::rapp(x = Spei, first = s2_ini, last = s2_end, fun = fmin); gc(T)
   mxSpei <- -1 * mxSpei
   names(mxSpei) <- paste0('spei-6_',yr)
-  outfile <- paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_intermediate/two_s2_y1_spei-6_',yr,'.tif')
+  outfile <- paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_intermediate_',res,'km/two_s2_y1_spei-6_',yr,'.tif')
   dir.create(dirname(outfile),F,T)
   terra::writeRaster(x = mxSpei, filename = outfile, overwrite = T); gc(T)
   return('Done.\n')
 })
 
 # >>> Processing of Two-years growing season
-s2_ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s2_ini_10km_croplands.tif'))
-s2_end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s2_end_10km_croplands.tif'))
+s2_ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s2_ini_',res,'km_croplands.tif'))
+s2_end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s2_end_',res,'km_croplands.tif'))
 s2_dff <- s2_end - s2_ini
 # Selecting the pixels with Two-years growing season
 s2_dff[s2_end > s2_ini] <- NA
@@ -235,7 +238,7 @@ lapply(X = yrs, FUN = function(yr){
     mxSpei <- terra::rapp(x = Spei, first = s2_ini, last = s2_end+12, fun = fmin)
     mxSpei <- -1 * mxSpei
     names(mxSpei) <- paste0('spei-6_',yr)
-    outfile <- paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_intermediate/two_s2_y2_spei-6_',yr,'.tif')
+    outfile <- paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_intermediate_',res,'km/two_s2_y2_spei-6_',yr,'.tif')
     dir.create(dirname(outfile),F,T)
     terra::writeRaster(x = mxSpei, filename = outfile, overwrite = T); gc(T)
     return('Done.\n')
@@ -249,10 +252,23 @@ lapply(X = yrs, FUN = function(yr){
 # Maximum SPEI within growing season
 yrs <- 1980:2022
 lapply(X = yrs, FUN = function(yr){
-  fls <- list.files(pattern = paste0('two_s2_y[0-9]_spei-6_',yr,'.tif'), path = paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_intermediate'), full.names = T)
+  fls <- list.files(pattern = paste0('two_s2_y[0-9]_spei-6_',yr,'.tif'), path = paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_intermediate_',res,'km'), full.names = T)
   mxSpei <- lapply(fls, terra::rast)
   mxSpei <- terra::merge(x = mxSpei[[1]], y = mxSpei[[2]])
-  outfile <- paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_10km/two_s2_spei-6_',yr,'.tif')
+  outfile <- paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_',res,'km/two_s2_spei-6_',yr,'.tif')
   dir.create(dirname(outfile),F,T)
   terra::writeRaster(x = mxSpei, filename = outfile, overwrite = T)
 })
+
+# # Creating raster stack files
+# index  <- 'spei-6'
+# gs     <- 'two'
+# season <- 2
+# res    <- 25
+# pth    <- paste0(root,'/agroclimExtremes/agex_indices/agex_',index,'/agex_',index,'_',res,'km')
+# 
+# fls <- list.files(path = pth,
+#                   pattern = paste0(gs,'_s',season,'_',index,'_*.*.tif$'),
+#                   full.names = T)
+# r <- terra::rast(fls)
+# terra::writeRaster(x = r, filename = paste0(pth,'/',gs,'_s',season,'_',index,'_25km.tif'))
