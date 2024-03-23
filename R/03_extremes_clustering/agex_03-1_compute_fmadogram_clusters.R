@@ -18,22 +18,14 @@ root   <- '//CATALOGUE/WFP_ClimateRiskPr1'
 yrs    <- 1980:2022
 index  <- 'spei-6'
 gs     <- 'two'
-season <- 2
+season <- 1
 
 ## List and load files
 fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_indices/agex_',index,'/agex_',index,'_25km'), pattern = paste0(gs,'_s',season,'_',index,'_'), full.names = T)
 # Leave it open to compute for 10 km resolution
 # fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_indices/agex_',index,'/agex_',index,'_10km'), pattern = paste0(gs,'_s',season,'_',index,'_'), full.names = T)
-idx <- terra::rast(fls)
-names(idx) <- paste0('Y',yrs)
+idx_roi <- terra::rast(fls)
 
-# Mask by resampled growing season id
-ngs <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_nseasons_25km.tif'))
-if(gs == 'one'){ngs[ngs == 2] <- NA} else {ngs[ngs == 1] <- NA; ngs[!is.na(ngs)] <- 1}
-
-## Region of interest
-## Crop by region of interest
-idx_roi <- terra::mask(x = idx, mask = ngs)
 # # Country level
 # roi <- geodata::gadm(country = 'AUS', level = 0, path = tempdir(), version = 'latest')
 # # Continental level
@@ -70,11 +62,11 @@ transformations <- function(x){
 }
 
 idx_roi_fnl <- terra::app(x = idx_roi, fun = function(i, ff) ff(i), cores = 20, ff = transformations)
-names(idx_roi_fnl) <- paste0('Y',yrs); gc(T)
+names(idx_roi_fnl) <- names(idx_roi); gc(T)
 
 ## Transform raster into a data.frame of stationary processes
 idx_roi_ntrd <- terra::as.data.frame(x = idx_roi_fnl, xy = T, cell = T, na.rm = T)
-x <- t(idx_roi_ntrd[,4:ncol(idx_roi_ntrd)])
+x <- t(idx_roi_ntrd[,4:ncol(idx_roi_ntrd)]); gc(T)
 
 ## Compute F-madogram distance
 get_fmado_dist <- function(x){
