@@ -6,7 +6,7 @@
 ## ------------------------------------------ ##
 
 ## R options and packages loading
-suppressMessages(pacman::p_load(cluster,parallel))
+suppressMessages(pacman::p_load(cluster,future,furrr))
 
 # Sample a number of pixels
 set.seed(1235)
@@ -19,11 +19,13 @@ fmado_smp_dist <- get_fmado_dist(x_smp); gc(T)   # F-madogram distances
 fmado_smp_dist <- cap_fmado_dist(fmado_smp_dist) # Truncated F-madogram distances
 gc(T)
 
-sil_width <- parallel::mclapply(mc.cores = 100, X = 2:400, FUN = function(k){
+future::plan(cluster, workers = 30, gc = T)
+sil_width <- furrr::future_map(.x = 2:200, .f = function(k){
   model <- cluster::pam(x = fmado_smp_dist, k = k)
   results <- data.frame(k = k, avg_silhouette = model$silinfo$avg.width)
   return(results)
 }) |> dplyr::bind_rows()
+future:::ClusterRegistry('stop'); gc(T)
 
 # # Plot the relationship between k and avg_silhouette
 # ggplot(sil_width, aes(x = k, y = avg_silhouette)) +
