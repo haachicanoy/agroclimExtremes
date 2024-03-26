@@ -1,5 +1,5 @@
 # ------------------------------------------ #
-# Description of extreme weather signatures
+# Description of extreme weather clusters
 # By: Harold Achicanoy
 # WUR & ABC
 # Dec. 2023
@@ -11,63 +11,86 @@ suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pa
 suppressMessages(pacman::p_load(terra,geodata,NbClust,entropy,scales,dplyr,
                                 ggplot2,RColorBrewer,landscapemetrics))
 
+list.files2 <- Vectorize(FUN = list.files, vectorize.args = 'path')
+grep2 <- Vectorize(FUN = grep, vectorize.args = 'pattern')
+get_trend <- function(x){
+  if(!all(is.na(x))){
+    x <- na.omit(x) |> as.numeric()
+    y <- trend::sens.slope(x)$estimates |> as.numeric()
+  } else {
+    y <- NA
+  }
+  return(y)
+}
+get_p95_trend <- function(x){
+  if(!all(is.na(x))){
+    x <- as.numeric(na.omit(x))
+    dfm <- data.frame(time = 1:length(x), ts = x)
+    qrf <- quantreg::rq(formula = ts ~ time, tau = .95, data = dfm)
+    y <- as.numeric(qrf$coefficients[2])
+  } else {
+    y <- NA
+  }
+  return(y)
+}
+
 ## Key arguments
 root   <- '//CATALOGUE/WFP_ClimateRiskPr1'
 index  <- 'spei-6'
 gs     <- 'one'
 season <- 1
 
-# Load extreme weather signatures
+# Load extreme weather clusters
 fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_results/clusters'), pattern = paste0('agex_global_',index,'_',gs,'_s',season,'_fmadogram_*.*.tif$'), full.names = T)
 agex_sgn <- terra::rast(fls)
-names(agex_sgn) <- 'extreme_signature'
+names(agex_sgn) <- 'extreme_cluster'
 crds_sgn <- terra::as.data.frame(x = agex_sgn, xy = T, cell = T, na.rm = T) # Coordinates
 
-# Clean weather signatures from random miss-classification issues
-vls <- terra::values(agex_sgn, na.rm = T) |> as.numeric() |> unique() |> sort()
-agex_sgn_cln <- lapply(vls, FUN = function(i){
-  agex_sgn_cln <- agex_sgn
-  agex_sgn_cln[agex_sgn_cln != i] <- NA
-  agex_sgn_cln[!is.na(agex_sgn_cln)] <- 1
-  agex_sgn_cln <- terra::focal(x = agex_sgn_cln, w = 3, fun = 'mean')
-  agex_sgn_cln[!is.na(agex_sgn_cln)] <- i
-  return(agex_sgn_cln)
-}) |> terra::sprc()
-agex_sgn_cln <- terra::merge(agex_sgn_cln)
-terra::writeRaster(x = agex_sgn_cln, filename = paste0(root,'/agroclimExtremes/agex_results/clusters/agex_global_',index,'_',gs,'_s',season,'_fmadogram_k192_clean.tif'))
+# # Clean extreme weather clusters from random miss-classification issues
+# vls <- terra::values(agex_sgn, na.rm = T) |> as.numeric() |> unique() |> sort()
+# agex_sgn_cln <- lapply(vls, FUN = function(i){
+#   agex_sgn_cln <- agex_sgn
+#   agex_sgn_cln[agex_sgn_cln != i] <- NA
+#   agex_sgn_cln[!is.na(agex_sgn_cln)] <- 1
+#   agex_sgn_cln <- terra::focal(x = agex_sgn_cln, w = 3, fun = 'mean')
+#   agex_sgn_cln[!is.na(agex_sgn_cln)] <- i
+#   return(agex_sgn_cln)
+# }) |> terra::sprc()
+# agex_sgn_cln <- terra::merge(agex_sgn_cln)
+# # terra::writeRaster(x = agex_sgn_cln, filename = paste0(root,'/agroclimExtremes/agex_results/clusters/agex_global_',index,'_',gs,'_s',season,'_fmadogram_k192_clean.tif'))
 
-crds_sgn_cln <- terra::as.data.frame(x = agex_sgn_cln, xy = T, cell = T, na.rm = T) # Coordinates
-names(crds_sgn_cln)[ncol(crds_sgn_cln)] <- 'extreme_signature'
+# crds_sgn_cln <- terra::as.data.frame(x = agex_sgn_cln, xy = T, cell = T, na.rm = T) # Coordinates
+# names(crds_sgn_cln)[ncol(crds_sgn_cln)] <- 'extreme_cluster'
 
 # Load global shapefile
 wrl <- rnaturalearth::ne_countries(scale = 'large', returnclass = 'sv')
 wrl <- wrl[,c('adm0_iso','name_en','continent','subregion')]
 
 # Identify pixels within countries
-crds_cty_cln <- terra::intersect(x = wrl, terra::vect(crds_sgn_cln, c('x','y'), crs = 'EPSG:4326')) |> base::as.data.frame()
-crds_cty_cln <- unique(crds_cty_cln[,c('adm0_iso','continent','subregion','extreme_signature')])
-crds_cty_cln <- dplyr::arrange(.data = crds_cty_cln, extreme_signature) |> base::as.data.frame()
+crds_cty <- terra::intersect(x = wrl, terra::vect(crds_sgn, c('x','y'), crs = 'EPSG:4326')) |> base::as.data.frame()
+crds_cty <- unique(crds_cty[,c('adm0_iso','continent','subregion','extreme_cluster')])
+crds_cty <- dplyr::arrange(.data = crds_cty, extreme_cluster) |> base::as.data.frame()
 
 # Identify collaboration opportunities among countries
-vls <- sort(unique(crds_cty_cln$extreme_signature))
+vls <- sort(unique(crds_cty$extreme_cluster))
 collaborations <- lapply(vls, function(i){
-  smm <- data.frame(extreme_signature = i,
-                    countries_count = length(crds_cty_cln[crds_cty_cln$extreme_signature == i,'adm0_iso']),
-                    countries = paste0(crds_cty_cln[crds_cty_cln$extreme_signature == i,'adm0_iso'], collapse = ','),
-                    continents = paste0(unique(crds_cty_cln[crds_cty_cln$extreme_signature == i,'continent']), collapse = ','),
-                    regions = paste0(unique(crds_cty_cln[crds_cty_cln$extreme_signature == i,'subregion']), collapse = ','))
+  smm <- data.frame(extreme_cluster = i,
+                    countries_count = length(crds_cty[crds_cty$extreme_cluster == i,'adm0_iso']),
+                    countries = paste0(crds_cty[crds_cty$extreme_cluster == i,'adm0_iso'], collapse = ','),
+                    continents = paste0(unique(crds_cty[crds_cty$extreme_cluster == i,'continent']), collapse = ',')# ,
+                    # regions = paste0(unique(crds_cty[crds_cty$extreme_cluster == i,'subregion']), collapse = ',')
+  )
   return(smm)
 }) |> dplyr::bind_rows()
+# collaborations <- collaborations[collaborations$extreme_cluster != 3,]
 
-collaborations <- collaborations[collaborations$extreme_signature != 3,]
-
-# Missing signatures
-base::setdiff(1:length(unique(as.numeric(terra::values(agex_sgn, na.rm = T)))), collaborations$extreme_signature)
-
-collaborations <- rbind(collaborations,
-                        data.frame(extreme_signature=155, countries_count=1, countries='IDN', continents='Asia', regions='South-Eastern Asia'))
-collaborations <- dplyr::arrange(.data = collaborations, -countries_count) |> base::as.data.frame()
-utils::write.csv(x = collaborations, file = paste0(root,'/agroclimExtremes/agex_results/collaborations_',index,'_',gs,'_s',season,'.csv'), row.names = F)
+# # Missing signatures
+# base::setdiff(1:length(unique(as.numeric(terra::values(agex_sgn, na.rm = T)))), collaborations$extreme_cluster)
+# 
+# collaborations <- rbind(collaborations,
+#                         data.frame(extreme_signature=155, countries_count=1, countries='IDN', continents='Asia', regions='South-Eastern Asia'))
+# collaborations <- dplyr::arrange(.data = collaborations, -countries_count) |> base::as.data.frame()
+# utils::write.csv(x = collaborations, file = paste0(root,'/agroclimExtremes/agex_results/collaborations_',index,'_',gs,'_s',season,'.csv'), row.names = F)
 
 # Cluster quality measures
 # They are computed to get rid of anomalous signatures
@@ -76,29 +99,26 @@ utils::write.csv(x = collaborations, file = paste0(root,'/agroclimExtremes/agex_
 # 100 if patches of class i become more aggregated
 agex_chs <- landscapemetrics::lsm_c_cohesion(landscape = agex_sgn) |> base::as.data.frame()
 agex_chs <- agex_chs[,c('class','value')]
-names(agex_chs) <- c('extreme_signature','sgn_cohesion')
+names(agex_chs) <- c('extreme_cluster','cls_cohesion')
 # Contiguity index mean: equals the mean of the contiguity index on class level for all patches
 # 0 maximally non-contiguous
 # 1 maximally contiguous
 agex_ctg <- landscapemetrics::lsm_c_contig_mn(landscape = agex_sgn) |> base::as.data.frame()
 agex_ctg <- agex_ctg[,c('class','value')]
-names(agex_ctg) <- c('extreme_signature','sgn_contiguity')
+names(agex_ctg) <- c('extreme_cluster','cls_contiguity')
 # Aggregation index
 # 0 maximally disaggregated
 # 100 maximally aggregated
 agex_agr <- landscapemetrics::lsm_c_ai(landscape = agex_sgn) |> base::as.data.frame()
 agex_agr <- agex_agr[,c('class','value')]
-names(agex_agr) <- c('extreme_signature','sgn_aggregation')
+names(agex_agr) <- c('extreme_cluster','cls_aggregation')
 
-qlt_mtrcs <- dplyr::left_join(x = agex_chs, y = agex_ctg, by = 'extreme_signature')
-qlt_mtrcs <- dplyr::left_join(x = qlt_mtrcs, y = agex_agr, by = 'extreme_signature')
+qlt_mtrcs <- dplyr::left_join(x = agex_chs, y = agex_ctg, by = 'extreme_cluster')
+qlt_mtrcs <- dplyr::left_join(x = qlt_mtrcs, y = agex_agr, by = 'extreme_cluster')
 rm(agex_chs, agex_ctg, agex_agr)
 
 agex_qly_pca <- stats::prcomp(x = qlt_mtrcs[,-1], retx = T, center = T, scale. = T)
 qlt_mtrcs$rank <- rank(agex_qly_pca$x[,1])
-
-# Load global shapefile
-wrl <- geodata::world(resolution = 1, level = 0, path = tempdir())
 
 # Compute diversity of crop types
 # High entropy means high variation of food/non-food classes
@@ -114,43 +134,61 @@ crp_ntp_25km <- terra::resample(x = crp_ntp, y = agex_sgn, method = 'bilinear')
 vop <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_spam2010V2r0_global_V_agg_VP_CROP_A.tif'))
 names(vop) <- 'value_of_production'
 vop_25km <- terra::resample(x = vop, y = agex_sgn, method = 'bilinear')
+vop_25km <- terra::mask(x = vop_25km, mask = agex_sgn)
 
-# tst <- terra::zonal(x = c(crp_ntp_25km, vop_25km), z = agex_sgn, fun = 'mean', na.rm = T)
-# plot(tst$crop_types_diversity, tst$value_of_production, pch = 20)
-# 
-# tst |>
-#   ggplot2::ggplot(aes(x = crop_types_diversity, y = value_of_production)) +
-#   ggplot2::geom_point() +
-#   ggplot2::geom_smooth(se = F)
+# Compute diversity of livestock
+lvs_dir <- 'D:/OneDrive - CGIAR/African_Crisis_Observatory/data/_global/livestock'
+anmls   <- list.dirs(path = lvs_dir, full.names = F, recursive = F)
+anmls   <- anmls[-grep('horses',anmls)]
+lvstc_fls <- list.files2(path = paste0(lvs_dir,'/',anmls), pattern = '_Da.tif$', full.names = T); rm(lvs_dir, anmls)
+names(lvstc_fls) <- NULL
+lvstc_cnt <- terra::rast(lvstc_fls)
+
+# Computing Livestock Units
+# LU: Livestock Unit
+# LU = Buffaloes * 1 + Cattle * 1 + Chickens * ((0.007 + 0.014)/2) +
+#      Ducks * 0.01 + Goats * 0.1 +Pigs * ((0.5+0.027)/2) + Sheep * 0.1
+# Source: https://ec.europa.eu/eurostat/statistics-explained/index.php?title=Glossary:Livestock_unit_(LSU)
+lsu <- lvstc_cnt[[1]] + lvstc_cnt[[2]] + lvstc_cnt[[3]]*((0.007 + 0.014)/2) + lvstc_cnt[[4]]*0.01 + lvstc_cnt[[5]]*0.1 + lvstc_cnt[[6]]*((0.5+0.027)/2) + lvstc_cnt[[7]]*0.1
+rm(lvstc_fls, lvstc_cnt)
+names(lsu) <- 'livestock_units'
+lsu_25km <- terra::resample(x = lsu, y = agex_sgn, method = 'bilinear')
+lsu_25km <- terra::mask(x = lsu_25km, mask = agex_sgn)
+
+# Population density
+pop <- geodata::population(year = 2020, res = 10, path = tempdir())
+pop_25km <- terra::resample(x = pop, y = agex_sgn, method = 'bilinear')
+pop_25km <- terra::mask(x = pop_25km, mask = agex_sgn)
 
 # Index severity
 idx <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_',index,'/agex_',index,'_25km/',gs,'_s',season,'_',index,'_25km.tif'))
-idx_avg <- mean(idx)
-idx_max <- max(idx)
-idx_mdn <- median(idx)
-get_trend <- function(x){
-  if(!all(is.na(x))){
-    x <- na.omit(x) |> as.numeric()
-    y <- trend::sens.slope(x)$estimates |> as.numeric()
-  } else {
-    y <- NA
-  }
-  return(y)
-}
+idx_avg <- mean(idx); names(idx_avg) <- 'SPEI-6_mean'
+idx_mdn <- median(idx); names(idx_mdn) <- 'SPEI-6_median'
+idx_max <- max(idx); names(idx_max) <- 'SPEI-6_max'
 idx_slp <- terra::app(x = idx, fun = function(i, ff) ff(i), cores = 20, ff = get_trend)
-plot(idx_slp)
+names(idx_slp) <- 'SPEI-6_slope'
+idx_s95 <- terra::app(x = idx, fun = function(i, ff) ff(i), cores = 20, ff = get_p95_trend)
+names(idx_s95) <- 'SPEI-6_slope_95th'
 
-get_p95_trend <- function(x){
-  if(!all(is.na(x))){
-    x <- as.numeric(na.omit(x))
-    dfm <- data.frame(time = 1:length(x), ts = x)
-    qrf <- quantreg::rq(formula = ts ~ time, tau = .95, data = dfm)
-    y <- as.numeric(qrf$coefficients[2])
-  } else {
-    y <- NA
-  }
-  return(y)
-}
+rst_mtrcs <- terra::zonal(x = c(pop_25km, vop_25km, crp_ntp_25km, lsu_25km,
+                                idx_avg, idx_mdn, idx_max, idx_slp, idx_s95),
+                          z = agex_sgn, fun = 'mean', na.rm = T)
+rst_mtrcs[,-1] <- round(rst_mtrcs[,-1], 3)
+
+dfm <- dplyr::left_join(x = collaborations, y = rst_mtrcs, by = 'extreme_cluster')
+dfm <- dplyr::left_join(x = dfm, y = qlt_mtrcs, by = 'extreme_cluster')
+
+agex_sgn_poly <- terra::as.polygons(x = agex_sgn)
+agex_sgn_poly <- terra::merge(x = agex_sgn_poly, y = dfm)
+
+terra::writeVector(x = agex_sgn_poly, filename = paste0(root,'/agroclimExtremes/agex_results/clusters/vct_agex_global_',index,'_',gs,'_s',season,'_fmadogram_k',nrow(dfm),'.gpkg'))
+
+
+
+
+
+
+
 
 tst <- terra::zonal(x = c(idx_slp, crp_ntp_25km), z = agex_sgn, fun = 'mean', na.rm = T)
 names(tst)[-1] <- c('Response_speed','Food_diversity')
@@ -225,9 +263,7 @@ tst$vop_colors[tst$vop_tert == 'High'] <- grDevices::colorRampPalette(RColorBrew
 
 tst <- tst |> dplyr::arrange(extreme_signature) |> base::as.data.frame()
 
-# Population density
-pop <- geodata::population(year = 2020, res = 10, path = tempdir())
-pop_25km <- terra::resample(x = pop, y = agex_sgn, method = 'sum')
+
 
 tst <- terra::zonal(x = c(crp_ntp_25km, vop_25km, idx_avg, idx_max, idx_mdn, pop_25km), z = agex_sgn, fun = 'mean', na.rm = T)
 tst[,2:ncol(tst)] <- round(tst[,2:ncol(tst)], 2)
@@ -289,22 +325,3 @@ lapply(1:length(unique(crds_sgn$extreme_signature)), function(i){
   }
   
 })
-
-data.frame(Extreme_signature = i, Countries = paste0(countries_list, collapse = ','))
-
-
-
-mtrcs <- dplyr::left_join(x = agex_chs, y = agex_ctg, by = 'extreme_signature')
-mtrcs <- dplyr::left_join(x = mtrcs, y = agex_agr, by = 'extreme_signature')
-rm(agex_agr, agex_chs, agex_ctg)
-
-mtrcs[,-1] <- round(mtrcs[,-1], 2)
-
-names(tst)[4:6] <- c('SPEI-6_mean','SPEI-6_max','SPEI-6_median')
-
-tst <- dplyr::left_join(x = tst, y = mtrcs, by = 'extreme_signature')
-
-agex_sgn_poly <- terra::as.polygons(x = agex_sgn)
-agex_sgn_poly <- terra::merge(x = agex_sgn_poly, y = tst)
-
-terra::writeVector(agex_sgn_poly,'D:/agex_features.gpkg')
