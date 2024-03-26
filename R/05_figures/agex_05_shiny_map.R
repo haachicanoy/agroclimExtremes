@@ -1,5 +1,5 @@
 ## ------------------------------------------ ##
-## Interactive map extreme signatures one season
+## Interactive map extreme clusters one season
 ## By: Harold Achicanoy
 ## WUR & ABC
 ## Mar. 2024
@@ -58,7 +58,7 @@ server <- function(input, output, session) {
                             '<b>','Cluster cohesion: ','</b>',cls_cohesion,'<br>',
                             '<b>','Cluster contiguity:  ','</b>',cls_contiguity,'<br>',
                             '<b>','Cluster aggregation:  ','</b>',cls_aggregation,'<br>',
-                            '<b>','Cluster rank:  ','</b>',rank,'<br>'),
+                            '<b>','Quality rank:  ','</b>',quality_rank,'<br>'),
         highlightOptions = hl_opts)
   })
   
