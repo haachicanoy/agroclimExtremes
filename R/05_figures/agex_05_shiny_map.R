@@ -32,22 +32,33 @@ server <- function(input, output, session) {
       addResetMapButton() |>
       addSearchOSM() |>
       addPolygons(
-        layerId   = ~ extreme_signature,
-        group     = 'signatures',
+        layerId   = ~ extreme_cluster,
+        group     = 'cluster',
         data      = agex_sgn,
         color     = col_pltt,
         opacity   = 0.8,
         fill      = T,
         weight    = 2,
-        label     = ~ extreme_signature,
-        popup     = ~ paste("<div class='leaflet-popup-scrolled' style='max-width:250px;max-height:250px'",
+        label     = ~ extreme_cluster,
+        popup     = ~ paste("<div class='leaflet-popup-scrolled' style='max-width:250px;max-height:350px'",
                             '<br>',
-                            '<b>', 'Extreme signature: ', '</b>', extreme_signature, "<br>",
-                            '<b>', 'Crops diversity:  ', '</b>', crop_types_diversity, "<br>",
-                            '<b>', 'Value of production:  ', '</b>', value_of_production, "<br>",
-                            '<b>', 'Population density:  ', '</b>', population_density, "<br>",
-                            '<b>', 'Signature cohesion: ', '</b>', sgn_cohesion, "<br>",
-                            '<b>', 'Signature contiguity:  ', '</b>', sgn_contiguity, "<br>"),
+                            '<b>','Extreme cluster: ','</b>',extreme_cluster,'<br>',
+                            '<b>','Countries count:  ','</b>',countries_count,'<br>',
+                            '<b>','Countries ISO3:  ','</b>',countries,'<br>',
+                            '<b>','Continents:  ','</b>',continents,'<br>',
+                            '<b>','Population density:  ','</b>',population_density,'<br>',
+                            '<b>','Value of production:  ','</b>',value_of_production,'<br>',
+                            '<b>','Crop types diversity:  ','</b>',crop_types_diversity,'<br>',
+                            '<b>','Livestock units:  ','</b>',livestock_units,'<br>',
+                            '<b>','SPEI-6 mean:  ','</b>',`SPEI-6_mean`,'<br>',
+                            '<b>','SPEI-6 median:  ','</b>',`SPEI-6_median`,'<br>',
+                            '<b>','SPEI-6 max:  ','</b>',`SPEI-6_max`,'<br>',
+                            '<b>','SPEI-6 general trend:  ','</b>',`SPEI-6_slope`,'<br>',
+                            '<b>','SPEI-6 95th pr trend:  ','</b>',`SPEI-6_slope_95th`,'<br>',
+                            '<b>','Cluster cohesion: ','</b>',cls_cohesion,'<br>',
+                            '<b>','Cluster contiguity:  ','</b>',cls_contiguity,'<br>',
+                            '<b>','Cluster aggregation:  ','</b>',cls_aggregation,'<br>',
+                            '<b>','Cluster rank:  ','</b>',rank,'<br>'),
         highlightOptions = hl_opts)
   })
   
@@ -59,12 +70,12 @@ server <- function(input, output, session) {
     if(is.null(old_selected) || new_selected$.nonce != old_selected$.nonce){
       shiny::validate( shiny::need(new_selected$group!='selection', message=F) )
       rv$selected <- new_selected
-      i <- which(agex_sgn$extreme_signature==new_selected$id) 
+      i <- which(agex_sgn$extreme_cluster==new_selected$id) 
       agex_sgn_filtered <- agex_sgn[i,]
       leaflet::leafletProxy('mymap') |>
         leaflet::clearGroup('selection') |>
         addPolygons(
-          layerId     = ~ extreme_signature,
+          layerId     = ~ extreme_cluster,
           group       = 'selection',
           data        = agex_sgn_filtered,
           fillColor   = ~'cyan',

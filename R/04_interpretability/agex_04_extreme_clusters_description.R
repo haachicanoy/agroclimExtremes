@@ -115,10 +115,11 @@ names(agex_agr) <- c('extreme_cluster','cls_aggregation')
 
 qlt_mtrcs <- dplyr::left_join(x = agex_chs, y = agex_ctg, by = 'extreme_cluster')
 qlt_mtrcs <- dplyr::left_join(x = qlt_mtrcs, y = agex_agr, by = 'extreme_cluster')
+qlt_mtrcs[,-1] <- round(qlt_mtrcs[,-1], 3)
 rm(agex_chs, agex_ctg, agex_agr)
 
 agex_qly_pca <- stats::prcomp(x = qlt_mtrcs[,-1], retx = T, center = T, scale. = T)
-qlt_mtrcs$rank <- rank(agex_qly_pca$x[,1])
+qlt_mtrcs$quality_rank <- rank(-1*agex_qly_pca$x[,1])
 
 # Compute diversity of crop types
 # High entropy means high variation of food/non-food classes
@@ -181,7 +182,7 @@ dfm <- dplyr::left_join(x = dfm, y = qlt_mtrcs, by = 'extreme_cluster')
 agex_sgn_poly <- terra::as.polygons(x = agex_sgn)
 agex_sgn_poly <- terra::merge(x = agex_sgn_poly, y = dfm)
 
-terra::writeVector(x = agex_sgn_poly, filename = paste0(root,'/agroclimExtremes/agex_results/clusters/vct_agex_global_',index,'_',gs,'_s',season,'_fmadogram_k',nrow(dfm),'.gpkg'))
+terra::writeVector(x = agex_sgn_poly, filename = paste0(root,'/agroclimExtremes/agex_results/clusters/vct_agex_global_',index,'_',gs,'_s',season,'_fmadogram_k',nrow(dfm),'.gpkg'), overwrite = T)
 
 
 
