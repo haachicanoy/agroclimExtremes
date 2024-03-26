@@ -18,7 +18,7 @@ root   <- '//CATALOGUE/WFP_ClimateRiskPr1'
 yrs    <- 1980:2022
 index  <- 'spei-6'
 gs     <- 'two'
-season <- 1
+season <- 2
 
 ## List and load files
 fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_indices/agex_',index,'/agex_',index,'_25km'), pattern = paste0(gs,'_s',season,'_',index,'_'), full.names = T)
