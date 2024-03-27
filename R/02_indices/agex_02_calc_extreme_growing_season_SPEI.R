@@ -271,4 +271,4 @@ lapply(X = yrs, FUN = function(yr){
 #                   pattern = paste0(gs,'_s',season,'_',index,'_*.*.tif$'),
 #                   full.names = T)
 # r <- terra::rast(fls)
-# terra::writeRaster(x = r, filename = paste0(pth,'/',gs,'_s',season,'_',index,'_25km.tif'))
+# terra::writeRaster(x = r, filename = paste0(pth,'/',gs,'_s',season,'_',index,'_25km.tif'), overwrite = T)

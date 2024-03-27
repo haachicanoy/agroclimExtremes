@@ -19,6 +19,7 @@ dir.create(out_path, F, T)
 
 # Template rasters
 tmp_25km <- terra::rast('https://github.com/haachicanoy/agroclimExtremes/raw/main/data/tmp_era5_25km.tif')
+cropland <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_croplands_foods_mapspam_25km.tif'))
 
 fls <- list.files(path = inp_path, pattern = '.tif$', full.names = T)
 nms <- basename(fls)
@@ -26,5 +27,6 @@ nms <- basename(fls)
 lapply(1:length(fls), function(i){
   r <- terra::rast(fls[i])
   r <- terra::resample(x = r, y = tmp_25km, method = 'near', threads = T)
-  terra::writeRaster(x = r, filename = paste0(out_path,'/',nms[i]))
+  r <- terra::mask(x = r, mask = cropland)
+  terra::writeRaster(x = r, filename = paste0(out_path,'/',nms[i]), overwrite = T)
 })
