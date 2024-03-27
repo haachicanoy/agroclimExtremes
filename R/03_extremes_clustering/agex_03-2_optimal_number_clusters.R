@@ -10,7 +10,8 @@ suppressMessages(pacman::p_load(cluster,future,furrr))
 
 # Sample a number of pixels
 set.seed(1245)
-smp <- sample(x = idx_roi_ntrd$cell, size = 0.02 * dim(idx_roi_ntrd)[1], replace = F)
+prc <- ifelse(gs == 'one', 0.01, 0.1)
+smp <- sample(x = idx_roi_ntrd$cell, size = prc * dim(idx_roi_ntrd)[1], replace = F)
 # Sampled locations
 x_smp <- t(idx_roi_ntrd[idx_roi_ntrd$cell %in% smp,4:ncol(idx_roi_ntrd)])
 
@@ -33,4 +34,4 @@ future:::ClusterRegistry('stop'); gc(T)
 #   scale_x_continuous(breaks = 2:200)
 
 optimal_k <- sil_width$k[which.max(sil_width$avg_silhouette)]
-rm(fmado_smp_dist, x_smp, smp, sil_width)
+rm(fmado_smp_dist, x_smp, smp, sil_width, prc)
