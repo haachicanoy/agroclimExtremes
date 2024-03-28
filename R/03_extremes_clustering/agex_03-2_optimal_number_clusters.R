@@ -10,7 +10,7 @@ suppressMessages(pacman::p_load(cluster,future,furrr))
 
 # Sample a number of pixels
 set.seed(1245)
-prc <- ifelse(gs == 'one', 0.01, 0.1)
+prc <- ifelse(gs == 'one', 0.1, 0.1)
 smp <- sample(x = idx_roi_ntrd$cell, size = prc * dim(idx_roi_ntrd)[1], replace = F)
 # Sampled locations
 x_smp <- t(idx_roi_ntrd[idx_roi_ntrd$cell %in% smp,4:ncol(idx_roi_ntrd)])
@@ -21,7 +21,7 @@ fmado_smp_dist <- cap_fmado_dist(fmado_smp_dist) # Truncated F-madogram distance
 gc(T)
 
 future::plan(cluster, workers = 40, gc = T)
-sil_width <- furrr::future_map(.x = 2:200, .f = function(k){
+sil_width <- furrr::future_map(.x = 200:400, .f = function(k){
   model <- cluster::pam(x = fmado_smp_dist, k = k)
   results <- data.frame(k = k, avg_silhouette = model$silinfo$avg.width)
   return(results)
