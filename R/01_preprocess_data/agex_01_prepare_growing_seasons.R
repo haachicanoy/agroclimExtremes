@@ -127,7 +127,8 @@ if(!file.exists(paste0(out,'/agex_nseasons_25km_corrected.tif'))){
 if(!file.exists(paste0(aux,'/agex_one_s1_ini_raw_25km.tif'))){
   s1_ini <- terra::rast(paste0(aux,'/phenos1_v03.tif'))
   s1_ini[s1_ini > 250] <- NA # Remove missing data
-  s1_ini_25km <- terra::resample(x = s1_ini, y = tmp_25km, method = 'near', threads = T)
+  s1_ini_25km <- terra::resample(x = s1_ini, y = tmp_25km, method = 'cubicspline', threads = T)
+  s1_ini_25km <- round(s1_ini_25km)
   s1_ini_25km[n_seasons == 2] <- NA
   terra::writeRaster(x = s1_ini_25km, filename = paste0(aux,'/agex_one_s1_ini_raw_25km.tif'), overwrite = T)
   rm(s1_ini); gc(T)
@@ -145,7 +146,8 @@ rm(s1_ini_25km); gc(T)
 if(!file.exists(paste0(aux,'/agex_one_s1_end_raw_25km.tif'))){
   s1_end <- terra::rast(paste0(aux,'/phenoe1_v03.tif'))
   s1_end[s1_end > 250] <- NA
-  s1_end_25km <- terra::resample(x = s1_end, y = tmp_25km, method = 'near', threads = T)
+  s1_end_25km <- terra::resample(x = s1_end, y = tmp_25km, method = 'cubicspline', threads = T)
+  s1_end_25km <- round(s1_end_25km)
   s1_end_25km[n_seasons == 2] <- NA
   terra::writeRaster(x = s1_end_25km, filename = paste0(aux,'/agex_one_s1_end_raw_25km.tif'), overwrite = T)
   rm(s1_end); gc(T)
@@ -166,7 +168,8 @@ rm(s1_end_25km); gc(T)
 if(!file.exists(paste0(aux,'/agex_two_s1_ini_raw_25km.tif'))){
   s1_ini <- terra::rast(paste0(aux,'/phenos1_v03.tif'))
   s1_ini[s1_ini > 250] <- NA # Remove missing data
-  s1_ini_25km <- terra::resample(x = s1_ini, y = tmp_25km, method = 'near', threads = T)
+  s1_ini_25km <- terra::resample(x = s1_ini, y = tmp_25km, method = 'cubicspline', threads = T)
+  s1_ini_25km <- round(s1_ini_25km)
   s1_ini_25km[n_seasons == 1] <- NA
   terra::writeRaster(x = s1_ini_25km, filename = paste0(aux,'/agex_two_s1_ini_raw_25km.tif'), overwrite = T)
   rm(s1_ini); gc(T)
@@ -184,7 +187,8 @@ rm(s1_ini_25km); gc(T)
 if(!file.exists(paste0(aux,'/agex_two_s1_end_raw_25km.tif'))){
   s1_end <- terra::rast(paste0(aux,'/phenoe1_v03.tif'))
   s1_end[s1_end > 250] <- NA
-  s1_end_25km <- terra::resample(x = s1_end, y = tmp_25km, method = 'near', threads = T)
+  s1_end_25km <- terra::resample(x = s1_end, y = tmp_25km, method = 'cubicspline', threads = T)
+  s1_end_25km <- round(s1_end_25km)
   s1_end_25km[n_seasons == 1] <- NA
   terra::writeRaster(x = s1_end_25km, filename = paste0(aux,'/agex_two_s1_end_raw_25km.tif'), overwrite = T)
   rm(s1_end); gc(T)
@@ -205,7 +209,8 @@ rm(s1_end_25km); gc(T)
 if(!file.exists(paste0(aux,'/agex_two_s2_ini_raw_25km.tif'))){
   s2_ini <- terra::rast(paste0(aux,'/phenos2_v03.tif'))
   s2_ini[s2_ini > 250] <- NA # Remove missing data
-  s2_ini_25km <- terra::resample(x = s2_ini, y = tmp_25km, method = 'near', threads = T)
+  s2_ini_25km <- terra::resample(x = s2_ini, y = tmp_25km, method = 'cubicspline', threads = T)
+  s2_ini_25km <- round(s2_ini_25km)
   s2_ini_25km[n_seasons == 1] <- NA
   terra::writeRaster(x = s2_ini_25km, filename = paste0(aux,'/agex_two_s2_ini_raw_25km.tif'), overwrite = T)
   rm(s2_ini); gc(T)
@@ -223,7 +228,8 @@ rm(s2_ini_25km); gc(T)
 if(!file.exists(paste0(aux,'/agex_two_s2_end_raw_25km.tif'))){
   s2_end <- terra::rast(paste0(aux,'/phenoe2_v03.tif'))
   s2_end[s2_end > 250] <- NA
-  s2_end_25km <- terra::resample(x = s2_end, y = tmp_25km, method = 'near', threads = T)
+  s2_end_25km <- terra::resample(x = s2_end, y = tmp_25km, method = 'cubicspline', threads = T)
+  s2_end_25km <- round(s2_end_25km)
   s2_end_25km[n_seasons == 1] <- NA
   terra::writeRaster(x = s2_end_25km, filename = paste0(aux,'/agex_two_s2_end_raw_25km.tif'), overwrite = T)
   rm(s2_end); gc(T)
@@ -245,25 +251,25 @@ rm(s2_end_25km); gc(T)
 s1_ini_25km <- terra::rast(paste0(out,'/agex_one_s1_ini_25km.tif'))
 croplnds    <- terra::rast(paste0(out,'/agex_croplands_foods_mapspam_25km.tif'))
 s1_ini_25km_msk <- terra::mask(x = s1_ini_25km, mask = croplnds)
-terra::writeRaster(x = s1_ini_25km_msk, filename = paste0(out,'/agex_one_s1_ini_25km_croplands.tif'))
+terra::writeRaster(x = s1_ini_25km_msk, filename = paste0(out,'/agex_one_s1_ini_25km_croplands.tif'), overwrite = T)
 s1_end_25km <- terra::rast(paste0(out,'/agex_one_s1_end_25km.tif'))
 s1_end_25km_msk <- terra::mask(x = s1_end_25km, mask = croplnds)
-terra::writeRaster(x = s1_end_25km_msk, filename = paste0(out,'/agex_one_s1_end_25km_croplands.tif'))
+terra::writeRaster(x = s1_end_25km_msk, filename = paste0(out,'/agex_one_s1_end_25km_croplands.tif'), overwrite = T)
 rm(s1_ini_25km, s1_ini_25km_msk, s1_end_25km, s1_end_25km_msk); gc(T)
 
 # Two seasons - Season 1
 s1_ini_25km <- terra::rast(paste0(out,'/agex_two_s1_ini_25km.tif'))
 s1_ini_25km_msk <- terra::mask(x = s1_ini_25km, mask = croplnds)
-terra::writeRaster(x = s1_ini_25km_msk, filename = paste0(out,'/agex_two_s1_ini_25km_croplands.tif'))
+terra::writeRaster(x = s1_ini_25km_msk, filename = paste0(out,'/agex_two_s1_ini_25km_croplands.tif'), overwrite = T)
 s1_end_25km <- terra::rast(paste0(out,'/agex_two_s1_end_25km.tif'))
 s1_end_25km_msk <- terra::mask(x = s1_end_25km, mask = croplnds)
-terra::writeRaster(x = s1_end_25km_msk, filename = paste0(out,'/agex_two_s1_end_25km_croplands.tif'))
+terra::writeRaster(x = s1_end_25km_msk, filename = paste0(out,'/agex_two_s1_end_25km_croplands.tif'), overwrite = T)
 rm(s1_ini_25km, s1_ini_25km_msk, s1_end_25km, s1_end_25km_msk); gc(T)
 # Two seasons - Season 2
 s2_ini_25km <- terra::rast(paste0(out,'/agex_two_s2_ini_25km.tif'))
 s2_ini_25km_msk <- terra::mask(x = s2_ini_25km, mask = croplnds)
-terra::writeRaster(x = s2_ini_25km_msk, filename = paste0(out,'/agex_two_s2_ini_25km_croplands.tif'))
+terra::writeRaster(x = s2_ini_25km_msk, filename = paste0(out,'/agex_two_s2_ini_25km_croplands.tif'), overwrite = T)
 s2_end_25km <- terra::rast(paste0(out,'/agex_two_s2_end_25km.tif'))
 s2_end_25km_msk <- terra::mask(x = s2_end_25km, mask = croplnds)
-terra::writeRaster(x = s2_end_25km_msk, filename = paste0(out,'/agex_two_s2_end_25km_croplands.tif'))
+terra::writeRaster(x = s2_end_25km_msk, filename = paste0(out,'/agex_two_s2_end_25km_croplands.tif'), overwrite = T)
 rm(s2_ini_25km, s2_ini_25km_msk, s2_end_25km, s2_end_25km_msk); gc(T)

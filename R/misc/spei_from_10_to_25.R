@@ -26,7 +26,7 @@ nms <- basename(fls)
 
 lapply(1:length(fls), function(i){
   r <- terra::rast(fls[i])
-  r <- terra::resample(x = r, y = tmp_25km, method = 'near', threads = T)
+  r <- terra::resample(x = r, y = tmp_25km, method = 'max', threads = T)
   r <- terra::mask(x = r, mask = cropland)
   terra::writeRaster(x = r, filename = paste0(out_path,'/',nms[i]), overwrite = T)
 })
