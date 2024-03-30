@@ -9,17 +9,16 @@
 options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
 suppressMessages(pacman::p_load(terra,geodata,NbClust,entropy,scales,dplyr,
-                                ggplot2,RColorBrewer,landscapemetrics))
+                                ggplot2,RColorBrewer,landscapemetrics,
+                                exactextractr))
 
 list.files2 <- Vectorize(FUN = list.files, vectorize.args = 'path')
 grep2 <- Vectorize(FUN = grep, vectorize.args = 'pattern')
 get_trend <- function(x){
   if(!all(is.na(x))){
-    x <- na.omit(x) |> as.numeric()
-    y <- trend::sens.slope(x)$estimates |> as.numeric()
-  } else {
-    y <- NA
-  }
+    x <- as.numeric(na.omit(x))
+    y <- as.numeric(trend::sens.slope(x)$estimates)
+  } else { y <- NA }
   return(y)
 }
 get_p95_trend <- function(x){
@@ -28,9 +27,7 @@ get_p95_trend <- function(x){
     dfm <- data.frame(time = 1:length(x), ts = x)
     qrf <- quantreg::rq(formula = ts ~ time, tau = .95, data = dfm)
     y <- as.numeric(qrf$coefficients[2])
-  } else {
-    y <- NA
-  }
+  } else { y <- NA }
   return(y)
 }
 
@@ -46,18 +43,18 @@ agex_sgn <- terra::rast(fls)
 names(agex_sgn) <- 'extreme_cluster'
 crds_sgn <- terra::as.data.frame(x = agex_sgn, xy = T, cell = T, na.rm = T) # Coordinates
 
-# # Clean extreme weather clusters from random miss-classification issues
-# vls <- terra::values(agex_sgn, na.rm = T) |> as.numeric() |> unique() |> sort()
-# agex_sgn_cln <- lapply(vls, FUN = function(i){
-#   agex_sgn_cln <- agex_sgn
-#   agex_sgn_cln[agex_sgn_cln != i] <- NA
-#   agex_sgn_cln[!is.na(agex_sgn_cln)] <- 1
-#   agex_sgn_cln <- terra::focal(x = agex_sgn_cln, w = 3, fun = 'mean')
-#   agex_sgn_cln[!is.na(agex_sgn_cln)] <- i
-#   return(agex_sgn_cln)
-# }) |> terra::sprc()
-# agex_sgn_cln <- terra::merge(agex_sgn_cln)
-# # terra::writeRaster(x = agex_sgn_cln, filename = paste0(root,'/agroclimExtremes/agex_results/clusters/agex_global_',index,'_',gs,'_s',season,'_fmadogram_k192_clean.tif'))
+# Clean extreme weather clusters from random miss-classification issues
+vls <- terra::values(agex_sgn, na.rm = T) |> as.numeric() |> unique() |> sort()
+agex_sgn_cln <- lapply(vls, FUN = function(i){
+  agex_sgn_cln <- agex_sgn
+  agex_sgn_cln[agex_sgn_cln != i] <- NA
+  agex_sgn_cln[!is.na(agex_sgn_cln)] <- 1
+  agex_sgn_cln <- terra::focal(x = agex_sgn_cln, w = 3, fun = 'mean')
+  agex_sgn_cln[!is.na(agex_sgn_cln)] <- i
+  return(agex_sgn_cln)
+}) |> terra::sprc()
+agex_sgn_cln <- terra::merge(agex_sgn_cln)
+terra::writeRaster(x = agex_sgn_cln, filename = paste0(root,'/agroclimExtremes/agex_results/clusters/agex_global_',index,'_',gs,'_s',season,'_clean.tif'))
 
 # crds_sgn_cln <- terra::as.data.frame(x = agex_sgn_cln, xy = T, cell = T, na.rm = T) # Coordinates
 # names(crds_sgn_cln)[ncol(crds_sgn_cln)] <- 'extreme_cluster'
@@ -69,7 +66,7 @@ wrl <- wrl[,c('adm0_iso','name_en','continent','subregion')]
 # Identify pixels within countries
 crds_cty <- terra::intersect(x = wrl, terra::vect(crds_sgn, c('x','y'), crs = 'EPSG:4326')) |> base::as.data.frame()
 crds_cty <- unique(crds_cty[,c('adm0_iso','continent','subregion','extreme_cluster')])
-crds_cty <- dplyr::arrange(.data = crds_cty, extreme_cluster) |> base::as.data.frame()
+crds_cty <- base::as.data.frame(dplyr::arrange(.data = crds_cty, extreme_cluster))
 
 # Identify collaboration opportunities among countries
 vls <- sort(unique(crds_cty$extreme_cluster))
@@ -82,7 +79,6 @@ collaborations <- lapply(vls, function(i){
   )
   return(smm)
 }) |> dplyr::bind_rows()
-# collaborations <- collaborations[collaborations$extreme_cluster != 3,]
 
 # # Missing signatures
 # base::setdiff(1:length(unique(as.numeric(terra::values(agex_sgn, na.rm = T)))), collaborations$extreme_cluster)
@@ -129,12 +125,12 @@ crp_typ <- terra::rast(crp_fls)
 crp_ntp <- terra::app(x = crp_typ, fun = function(i, ff) ff(i), cores = 20, ff = entropy::entropy)
 names(crp_ntp) <- 'crop_types_diversity'
 plot(crp_ntp)
-crp_ntp_25km <- terra::resample(x = crp_ntp, y = agex_sgn, method = 'bilinear')
+crp_ntp_25km <- terra::resample(x = crp_ntp, y = agex_sgn, method = 'cubicspline', threads = T)
 
 # Value of production
 vop <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_spam2010V2r0_global_V_agg_VP_CROP_A.tif'))
 names(vop) <- 'value_of_production'
-vop_25km <- terra::resample(x = vop, y = agex_sgn, method = 'bilinear')
+vop_25km <- terra::resample(x = vop, y = agex_sgn, method = 'cubicspline', threads = T)
 vop_25km <- terra::mask(x = vop_25km, mask = agex_sgn)
 
 # Compute diversity of livestock
@@ -153,12 +149,12 @@ lvstc_cnt <- terra::rast(lvstc_fls)
 lsu <- lvstc_cnt[[1]] + lvstc_cnt[[2]] + lvstc_cnt[[3]]*((0.007 + 0.014)/2) + lvstc_cnt[[4]]*0.01 + lvstc_cnt[[5]]*0.1 + lvstc_cnt[[6]]*((0.5+0.027)/2) + lvstc_cnt[[7]]*0.1
 rm(lvstc_fls, lvstc_cnt)
 names(lsu) <- 'livestock_units'
-lsu_25km <- terra::resample(x = lsu, y = agex_sgn, method = 'bilinear')
+lsu_25km <- terra::resample(x = lsu, y = agex_sgn, method = 'cubicspline', threads = T)
 lsu_25km <- terra::mask(x = lsu_25km, mask = agex_sgn)
 
 # Population density
 pop <- geodata::population(year = 2020, res = 10, path = tempdir())
-pop_25km <- terra::resample(x = pop, y = agex_sgn, method = 'bilinear')
+pop_25km <- terra::resample(x = pop, y = agex_sgn, method = 'cubicspline', threads = T)
 pop_25km <- terra::mask(x = pop_25km, mask = agex_sgn)
 
 # Index severity
@@ -174,6 +170,7 @@ names(idx_s95) <- 'SPEI-6_slope_95th'
 rst_mtrcs <- terra::zonal(x = c(pop_25km, vop_25km, crp_ntp_25km, lsu_25km,
                                 idx_avg, idx_mdn, idx_max, idx_slp, idx_s95),
                           z = agex_sgn, fun = 'mean', na.rm = T)
+# rst_mtrcs <- exactextractr::exact_extract(x = )
 rst_mtrcs[,-1] <- round(rst_mtrcs[,-1], 3)
 
 dfm <- dplyr::left_join(x = collaborations, y = rst_mtrcs, by = 'extreme_cluster')
