@@ -54,7 +54,7 @@ server <- function(input, output, session) {
                             '<b>','SPEI-6 median:  ','</b>',`SPEI-6_median`,'<br>',
                             '<b>','SPEI-6 max:  ','</b>',`SPEI-6_max`,'<br>',
                             '<b>','SPEI-6 general trend:  ','</b>',`SPEI-6_slope`,'<br>',
-                            '<b>','SPEI-6 95th pr trend:  ','</b>',`SPEI-6_slope_95th`,'<br>',
+                            '<b>','SPEI-6 90th pr trend:  ','</b>',`SPEI-6_slope_90th`,'<br>',
                             '<b>','Cluster cohesion: ','</b>',cls_cohesion,'<br>',
                             '<b>','Cluster contiguity:  ','</b>',cls_contiguity,'<br>',
                             '<b>','Cluster aggregation:  ','</b>',cls_aggregation,'<br>',
