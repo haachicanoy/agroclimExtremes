@@ -51,8 +51,12 @@ crds_sgn <- terra::as.data.frame(x = agex_sgn, xy = T, cell = T, na.rm = T) # Co
 wrl <- rnaturalearth::ne_countries(scale = 'large', returnclass = 'sv')
 wrl <- wrl[,c('adm0_iso','name_en','continent','subregion')]
 
-# First cleaning phase: Clean clusters from random miss-classification issues
+## CLEANING PROCESS
 if(!file.exists(gsub('_k[0-9][0-9][0-9].tif$','_clean.tif',fls))){
+  
+  # -------------------------------------------------------------------------- #
+  # First cleaning phase: Clean clusters from random miss-classification issues
+  # -------------------------------------------------------------------------- #
   
   ## Extreme clusters to remove
   # clt_to_remove <- c(1,21,151)
@@ -90,65 +94,69 @@ if(!file.exists(gsub('_k[0-9][0-9][0-9].tif$','_clean.tif',fls))){
     
   }
   
+  # -------------------------------------------------------------------------- #
+  # Second cleaning phase: Split clusters that have clear structures (manually)
+  # -------------------------------------------------------------------------- #
+  
+  cln_stp <- data.frame(extreme_cluster = c(9,154,131,123,70), tentative_clusters = c(3,2,2,2,2))
+  cln_stp <- tibble::as.tibble(cln_stp)
+  cln_stp$extreme_values <- list(c(9,300,301),c(154,302),c(131,303),c(123,304),c(70,305))
+  for(i in 1:nrow(cln_stp)){
+    
+    # Filtering to extreme cluster of interest
+    aux <- agex_sgn_cln
+    aux[aux != cln_stp$extreme_cluster[i]] <- NA
+    # Get geographical coordinates
+    crds_aux <- terra::as.data.frame(x = aux, xy = T, cell = T, na.rm = T)
+    # Fix a random seed and execute k-means clustering
+    set.seed(1235)
+    km <- stats::kmeans(x = crds_aux[,c('x','y')], centers = cln_stp$tentative_clusters[i])
+    replace(x = km$cluster, list = c(cln_stp$extreme_cluster[i],300,301), values = 1:3)
+    # Cluster values
+    cls_values <- km$cluster
+    # Reference extreme cluster values
+    ref_values <- cln_stp$extreme_values[[i]]
+    # Original k-means values
+    kms_values <- unique(cls_values)
+    
+    upt_values <- c(ref_values, cls_values)[match(cls_values, c(kms_values, cls_values))]
+    
+    crds_aux$kmeans_cluster <- upt_values
+    agex_sgn_cln[crds_aux$cell] <- crds_aux$kmeans_cluster
+    
+  }
+  
+  # -------------------------------------------------------------------------- #
+  # Third cleaning phase: cluster 9 correction
+  # -------------------------------------------------------------------------- #
+  
+  aux <- agex_sgn_cln
+  aux[aux != 9] <- NA
+  
+  # Get cluster's coordinates
+  aux_dfm <- terra::as.data.frame(x = aux, xy = T, cell = T, na.rm = T)
+  
+  # Get outliers from coordinates
+  out_pre <- OutliersO3::O3prep(data = aux_dfm[,c('x','y')], method = c('HDo','BAC','adjOut','DDC','MCD')) # 'PCS'
+  out_res <- OutliersO3::O3plotM(out_pre)
+  
+  # Number of outliers per method
+  out_cns <- out_res$nOut
+  print(out_cns)
+  n_out <- getmode(out_cns)
+  
+  cat(paste0('Outliers identified: ',n_out,'\n\n'))
+  if(n_out > 0){
+    out_cnd <- out_res$outsTable$Method %in% names(which(out_res$nOut == n_out))
+    out_css <- unique(out_res$outsTable[out_cnd,'Case'])
+    agex_sgn_cln[aux_dfm[out_css,'cell']] <- NA
+  }
+  
   terra::writeRaster(x = agex_sgn_cln, filename = gsub('_k[0-9][0-9][0-9].tif$','_clean.tif',fls), overwrite = T)
   
 } else {
   agex_sgn_cln <- terra::rast(gsub('_k[0-9][0-9][0-9].tif$','_clean.tif',fls))
 }
-
-# Second cleaning phase: Split clusters that have clear structures (manually)
-cln_stp <- data.frame(extreme_cluster = c(9,154,131,123,70), tentative_clusters = c(3,2,2,2,2))
-cln_stp <- tibble::as.tibble(cln_stp)
-cln_stp$extreme_values <- list(c(9,300,301),c(154,302),c(131,303),c(123,304),c(70,305))
-for(i in 1:nrow(cln_stp)){
-  
-  # Filtering to extreme cluster of interest
-  aux <- agex_sgn_cln
-  aux[aux != cln_stp$extreme_cluster[i]] <- NA
-  # Get geographical coordinates
-  crds_aux <- terra::as.data.frame(x = aux, xy = T, cell = T, na.rm = T)
-  # Fix a random seed and execute k-means clustering
-  set.seed(1235)
-  km <- stats::kmeans(x = crds_aux[,c('x','y')], centers = cln_stp$tentative_clusters[i])
-  replace(x = km$cluster, list = c(cln_stp$extreme_cluster[i],300,301), values = 1:3)
-  # Cluster values
-  cls_values <- km$cluster
-  # Reference extreme cluster values
-  ref_values <- cln_stp$extreme_values[[i]]
-  # Original k-means values
-  kms_values <- unique(cls_values)
-  
-  upt_values <- c(ref_values, cls_values)[match(cls_values, c(kms_values, cls_values))]
-  
-  crds_aux$kmeans_cluster <- upt_values
-  agex_sgn_cln[crds_aux$cell] <- crds_aux$kmeans_cluster
-  
-}
-terra::writeRaster(x = agex_sgn_cln, filename = gsub('_k[0-9][0-9][0-9].tif$','_clean.tif',fls), overwrite = T)
-
-# Third cleaning phase: cluster 9 correction
-aux <- agex_sgn_cln
-aux[aux != 9] <- NA
-
-# Get cluster's coordinates
-aux_dfm <- terra::as.data.frame(x = aux, xy = T, cell = T, na.rm = T)
-
-# Get outliers from coordinates
-out_pre <- OutliersO3::O3prep(data = aux_dfm[,c('x','y')], method = c('HDo','BAC','adjOut','DDC','MCD')) # 'PCS'
-out_res <- OutliersO3::O3plotM(out_pre)
-
-# Number of outliers per method
-out_cns <- out_res$nOut
-print(out_cns)
-n_out <- getmode(out_cns)
-
-cat(paste0('Outliers identified: ',n_out,'\n\n'))
-if(n_out > 0){
-  out_cnd <- out_res$outsTable$Method %in% names(which(out_res$nOut == n_out))
-  out_css <- unique(out_res$outsTable[out_cnd,'Case'])
-  agex_sgn_cln[aux_dfm[out_css,'cell']] <- NA
-}
-terra::writeRaster(x = agex_sgn_cln, filename = gsub('_k[0-9][0-9][0-9].tif$','_clean.tif',fls), overwrite = T)
 
 crds_sgn_cln <- terra::as.data.frame(x = agex_sgn_cln, xy = T, cell = T, na.rm = T) # Coordinates
 
@@ -174,7 +182,7 @@ collaborations <- lapply(vls, function(i){
                     countries_count = length(unq_geos[unq_geos$extreme_cluster == i,'adm0_iso']),
                     isos = paste0(unq_geos[unq_geos$extreme_cluster == i,'adm0_iso'], collapse = ','),
                     countries = paste0(unq_geos[unq_geos$extreme_cluster == i,'name_en'], collapse = ','),
-                    continents = paste0(unique(unq_geos[unq_geos$extreme_cluster == i,'continent']), collapse = ',')# ,
+                    continents = paste0(unique(unq_geos[unq_geos$extreme_cluster == i,'continent']), collapse = ',') # ,
                     # regions = paste0(unique(unq_geos[unq_geos$extreme_cluster == i,'subregion']), collapse = ',')
   )
   return(smm)
@@ -268,7 +276,7 @@ rst_mtrcs[,-1] <- round(rst_mtrcs[,-1], 3)
 dfm <- dplyr::left_join(x = collaborations, y = rst_mtrcs, by = 'extreme_cluster')
 dfm <- dplyr::left_join(x = dfm, y = qlt_mtrcs, by = 'extreme_cluster')
 
-agex_sgn_poly <- terra::as.polygons(x = agex_sgn)
+agex_sgn_poly <- terra::as.polygons(x = agex_sgn_cln)
 agex_sgn_poly <- terra::merge(x = agex_sgn_poly, y = dfm)
 
 terra::writeVector(x = agex_sgn_poly, filename = paste0(root,'/agroclimExtremes/agex_results/clusters/vct_agex_global_',index,'_',gs,'_s',season,'_fmadogram_k',nrow(dfm),'.gpkg'), overwrite = T)
