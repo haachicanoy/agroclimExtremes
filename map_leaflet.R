@@ -2,7 +2,7 @@ options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
 pacman::p_load(shiny,terra,leaflet,htmlwidgets,leaflet.extras)
 
-agex_sgn <- terra::vect('https://raw.githubusercontent.com/haachicanoy/agroclimExtremes/main/data/agex_features.gpkg')
+agex_sgn <- terra::vect('https://raw.githubusercontent.com/haachicanoy/agroclimExtremes/main/data/agex_spei-6_one_s1_features.gpkg')
 agex_sgn <- sf::st_as_sf(agex_sgn)
 col_pltt <- MetBrewer::met.brewer(name = 'Signac', n = nrow(agex_sgn))
 set.seed(1235)
