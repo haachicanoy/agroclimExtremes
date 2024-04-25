@@ -8,13 +8,272 @@
 # R options and packages loading
 options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
-suppressMessages(pacman::p_load(terra,lubridate,tidyverse))
+suppressMessages(pacman::p_load(terra,MetBrewer,rnaturalearth,tidyverse,ggpubr,tseries,biscale,pals,cowplot))
+
+list.files2 <- Vectorize(FUN = list.files, vectorize.args = 'path')
+grep2 <- Vectorize(FUN = grep, vectorize.args = 'pattern')
+get_trend <- function(x){
+  if(!all(is.na(x))){
+    x <- as.numeric(na.omit(x))
+    y <- as.numeric(trend::sens.slope(x)$estimates)
+  } else { y <- NA }
+  return(y)
+}
+get_ext_trend <- function(x){
+  if(!all(is.na(x))){
+    x <- as.numeric(na.omit(x))
+    dfm <- data.frame(time = 1:length(x), ts = x)
+    qrf <- quantreg::rq(formula = ts ~ time, tau = .90, data = dfm)
+    y <- as.numeric(qrf$coefficients[2])
+  } else { y <- NA }
+  return(y)
+}
+getmode <- function(v){
+  uniqv <- unique(v)
+  uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+cv_fun <- function(x, na.rm = T){
+  sd(x, na.rm = na.rm)/mean(x, na.rm = na.rm) * 100
+}
 
 ## Key arguments
 root   <- '//CATALOGUE/WFP_ClimateRiskPr1'
 index  <- 'spei-6'
 gs     <- 'one'
 season <- 1
+
+### Extreme clusters
+agex_sgn <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/clusters/agex_global_',index,'_',gs,'_s',season,'_fmadogram_clean.tif'))
+cls <- data.frame(extreme_cluster = sort(unique(terra::values(agex_sgn))))
+cls$id <- cls$extreme_cluster
+cls <- cls[,c('id','extreme_cluster')]
+cls$extreme_cluster <- as.character(cls$extreme_cluster)
+levels(agex_sgn) <- cls
+
+### Load global shapefile
+wrl <- rnaturalearth::ne_countries(scale = 'large', returnclass = 'sv')
+wrl <- wrl[,c('adm0_iso','name_en','continent','subregion')]
+
+afr <- rnaturalearth::ne_countries(scale = 'large', continent = 'africa', returnclass = 'sv')
+eur <- rnaturalearth::ne_countries(scale = 'large', continent = 'europe', returnclass = 'sv')
+eur <- terra::crop(x = eur, y = terra::ext(c(-20,100,30,75))) # xmin, xmax = 150, ymin, ymax
+asi <- rnaturalearth::ne_countries(scale = 'large', continent = 'asia', returnclass = 'sv')
+oce <- rnaturalearth::ne_countries(scale = 'large', continent = 'oceania', returnclass = 'sv')
+oce <- terra::crop(x = oce, y = terra::ext(c(90,180,-54.75,20.55)))
+nam <- rnaturalearth::ne_countries(scale = 'large', continent = 'north america', returnclass = 'sv')
+nam <- terra::crop(x = nam, y = terra::ext(c(-140,-50,-0.39,60)))
+sam <- rnaturalearth::ne_countries(scale = 'large', continent = 'south america', returnclass = 'sv')
+
+# agex_sgn_afr <- terra::crop(x = agex_sgn, y = terra::ext(afr)); # agex_sgn_afr <- terra::mask(x = agex_sgn_afr, mask = afr)
+# agex_sgn_eur <- terra::crop(x = agex_sgn, y = terra::ext(eur)); # agex_sgn_eur <- terra::mask(x = agex_sgn_eur, mask = eur)
+# agex_sgn_asi <- terra::crop(x = agex_sgn, y = terra::ext(asi)); # agex_sgn_asi <- terra::mask(x = agex_sgn_asi, mask = asi)
+# agex_sgn_oce <- terra::crop(x = agex_sgn, y = terra::ext(oce)); # agex_sgn_oce <- terra::mask(x = agex_sgn_oce, mask = oce)
+# agex_sgn_nam <- terra::crop(x = agex_sgn, y = terra::ext(nam)); # agex_sgn_nam <- terra::mask(x = agex_sgn_nam, mask = nam)
+# agex_sgn_sam <- terra::crop(x = agex_sgn, y = terra::ext(sam)); # agex_sgn_sam <- terra::mask(x = agex_sgn_sam, mask = sam)
+
+# Color palette
+n_col <- length(unique(terra::values(agex_sgn,na.rm = T)))
+col_pltt <- MetBrewer::met.brewer(name = 'Signac', n = n_col)
+set.seed(1); col_pltt <- sample(x = col_pltt, size = n_col, replace = F); rm(n_col)
+
+## Figure 1
+# myTheme <- rasterVis::rasterTheme(region = col_pltt)
+# # Europe
+# rasterVis::levelplot(x            = agex_sgn_eur,
+#                      layers       = 'extreme_cluster',
+#                      par.settings = myTheme,
+#                      colorkey     = F,
+#                      maxpixels    = terra::ncell(agex_sgn))
+
+shp <- list(nam, sam, afr, eur, asi, oce); rm(nam, sam, afr, eur, asi, oce)
+ggm <- list()
+for(i in 1:length(shp)){
+  
+  # Coordinates
+  agex_sgn_dfm <- terra::as.data.frame(x = terra::crop(agex_sgn, terra::ext(shp[[i]])), xy = T, cell = T)
+  # Setting-up colors
+  stp <- data.frame(extreme_cluster = factor(sort(unique(terra::values(agex_sgn, na.rm = T)))), color = col_pltt)
+  agex_sgn_dfm <- dplyr::left_join(x = agex_sgn_dfm, y = stp, by = 'extreme_cluster')
+  agex_sgn_dfm$extreme_cluster <- as.factor(agex_sgn_dfm$extreme_cluster)
+  sub_stp <- unique(agex_sgn_dfm[,c('extreme_cluster','color')])
+  # Map
+  ggm[[i]] <- ggplot2::ggplot() +
+    ggplot2::geom_tile(data = agex_sgn_dfm, aes(x, y, fill = extreme_cluster)) +
+    ggplot2::geom_sf(data = sf::st_as_sf(shp[[i]]), fill = NA) +
+    ggplot2::coord_sf() +
+    ggplot2::theme_void() +
+    ggplot2::theme(legend.position = 'none', legend.key.width = unit(1.3, 'cm')) +
+    ggplot2::scale_fill_manual(values = sub_stp$color, breaks = sub_stp$extreme_cluster)
+  
+}
+
+fig1 <- ggpubr::ggarrange(ggm[[1]], ggm[[2]], ggm[[3]], ggm[[4]], ggm[[5]], ggm[[6]],
+                             labels = c('a)', 'b)', 'c)', 'd)', 'e)', 'f)'),
+                             ncol = 2, nrow = 3, font.label = list(size = 30, family = 'serif', face = 'plain'))
+ggplot2::ggsave(filename = paste0('D:/Figure1_paper1.png'), plot = fig1, device = 'png', width = 10, height = 12.5, units = 'in', dpi = 350)
+
+### Figure 2
+## Crop types diversity (agriculture exposure)
+crp_fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_raw_data'), pattern = '^agex_cropclass_', full.names = T)
+crp_fls <- crp_fls[-grep2(pattern = c('fibres','stimulant'), x = crp_fls)]
+crp_typ <- terra::rast(crp_fls)
+crp_ntp <- terra::app(x = crp_typ, fun = function(i, ff) ff(i), cores = 20, ff = entropy::entropy)
+names(crp_ntp) <- 'crop_types_diversity'
+plot(crp_ntp)
+crp_diversity <- terra::resample(x = crp_ntp, y = agex_sgn, method = 'cubicspline', threads = T)
+crp_diversity <- terra::mask(x = crp_diversity, mask = agex_sgn); rm(crp_ntp, crp_fls, crp_typ)
+
+terra::zonal(x = crp_ntp_25km, z = agex_sgn, fun = 'mean', na.rm = T)
+terra::zonal(x = crp_ntp_25km, z = agex_sgn, fun = 'median', na.rm = T)
+terra::zonal(x = crp_ntp_25km, z = agex_sgn, fun = 'cv_fun', na.rm = T)
+
+## Index characterization
+idx <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_',index,'/agex_',index,'_25km/',gs,'_s',season,'_',index,'_25km.tif'))
+# Intensity: number of years when SPEI-6 < -1.5 (severe drought)
+intensity <- terra::app(x = idx, fun = function(i, ff) ff(i), cores = 20, ff = function(x){sum(x > 1.5)})
+names(intensity) <- 'SPEI-6_intensity'
+# Central trend of the time series
+cnt_trend <- terra::app(x = idx, fun = function(i, ff) ff(i), cores = 20, ff = get_trend)
+names(cnt_trend) <- 'SPEI-6_central_trend'
+# Extreme trend: 90-th slope of the time series
+ext_trend <- terra::app(x = idx, fun = function(i, ff) ff(i), cores = 20, ff = get_ext_trend)
+names(ext_trend) <- 'SPEI-6_extreme_trend'
+
+ref <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/clusters/agex_global_',index,'_',gs,'_s',season,'_fmadogram_clean.tif'))
+sgn_intensity <- terra::zonal(x = intensity, z = ref, fun = 'median', na.rm = T, as.raster = T)
+plot(sgn_intensity)
+
+sgn_cnt_trend <- terra::zonal(x = cnt_trend, z = ref, fun = 'median', na.rm = T, as.raster = T)
+plot(sgn_cnt_trend)
+
+sgn_ext_trend <- terra::zonal(x = ext_trend, z = ref, fun = 'median', na.rm = T, as.raster = T)
+plot(sgn_ext_trend)
+
+sgn_crp_diversity <- terra::zonal(x = crp_diversity, z = ref, fun = 'median', na.rm = T, as.raster = T)
+
+dfm <- terra::as.data.frame(x = c(agex_sgn,
+                                  sgn_intensity, sgn_cnt_trend, sgn_ext_trend,
+                                  sgn_crp_diversity), xy = T, cell = T)
+
+# Produce bivariate maps
+dims <- 4
+dfm_crops_vs_intensity <- biscale::bi_class(.data = dfm, x = 'SPEI-6_extreme_trend', y = 'crop_types_diversity', style = 'quantile', dim = dims) |> base::as.data.frame()
+dfm_crops_vs_intensity <- dfm_crops_vs_intensity[,c('cell','x','y','extreme_cluster','SPEI-6_extreme_trend','crop_types_diversity','bi_class')]
+
+# map <- ggplot2::ggplot() +
+#   ggplot2::geom_tile(data = dfm_crops_vs_intensity, aes(x, y, fill = bi_class)) +
+#   ggplot2::geom_sf(data = sf::st_as_sf(wrl), fill = NA) +
+#   ggplot2::coord_sf() +
+#   ggplot2::theme_void() +
+#   ggplot2::theme(legend.position = 'none', legend.key.width = unit(1.3, 'cm')) +
+#   biscale::bi_scale_fill(pal = 'GrPink2', dim = dims)
+
+colours <- data.frame(bi_class = sort(unique(dfm_crops_vs_intensity$bi_class)))
+colours$category <- 1:nrow(colours)
+
+dfm_crops_vs_intensity <- dplyr::left_join(x = dfm_crops_vs_intensity, y = colours, by = 'bi_class')
+
+aux <- agex_sgn
+terra::values(aux) <- NA
+aux[dfm_crops_vs_intensity$cell] <- dfm_crops_vs_intensity$category
+names(aux) <- 'category'
+
+# legend <- bi_legend(pal = 'GrPink2',
+#                     dim = dims,
+#                     xlab = 'Higher drought intensity',
+#                     ylab = 'Higher crop types diversity',
+#                     size = 10)
+# 
+# finalPlot <- cowplot::ggdraw() + cowplot::draw_plot(map, 0, 0, 1, 1) + cowplot::draw_plot(legend, -.03, 0.12, 0.3, 0.3)
+# finalPlot
+
+ggm <- list()
+for(i in 1:length(shp)){
+  
+  # Coordinates
+  aux_dfm <- terra::as.data.frame(x = terra::crop(aux, terra::ext(shp[[i]])), xy = T, cell = T)
+  aux_dfm <- dplyr::left_join(x = aux_dfm, y = colours, by = 'category')
+  # Map
+  ggm[[i]] <- ggplot2::ggplot() +
+    ggplot2::geom_tile(data = aux_dfm, aes(x, y, fill = bi_class)) +
+    ggplot2::geom_sf(data = sf::st_as_sf(shp[[i]]), fill = NA) +
+    ggplot2::coord_sf() +
+    ggplot2::theme_void() +
+    ggplot2::theme(legend.position = 'none', legend.key.width = unit(1.3, 'cm')) +
+    biscale::bi_scale_fill(pal = 'GrPink2', dim = dims)
+  
+}
+
+fig2 <- ggpubr::ggarrange(ggm[[1]], ggm[[2]], ggm[[3]], ggm[[4]], ggm[[5]], ggm[[6]],
+                          labels = c('a)', 'b)', 'c)', 'd)', 'e)', 'f)'),
+                          ncol = 2, nrow = 3, font.label = list(size = 30, family = 'serif', face = 'plain'))
+ggplot2::ggsave(filename = paste0('D:/Figure2_paper1.png'), plot = fig2, device = 'png', width = 10, height = 12.5, units = 'in', dpi = 350)
+
+### Figure 3
+# Compute diversity of livestock
+lvs_dir <- 'D:/OneDrive - CGIAR/African_Crisis_Observatory/data/_global/livestock'
+anmls   <- list.dirs(path = lvs_dir, full.names = F, recursive = F)
+anmls   <- anmls[-grep('horses',anmls)]
+lvstc_fls <- list.files2(path = paste0(lvs_dir,'/',anmls), pattern = '_Da.tif$', full.names = T); rm(lvs_dir, anmls)
+names(lvstc_fls) <- NULL
+lvstc_cnt <- terra::rast(lvstc_fls)
+
+# Computing Livestock Units
+# LU: Livestock Unit
+# LU = Buffaloes * 1 + Cattle * 1 + Chickens * ((0.007 + 0.014)/2) +
+#      Ducks * 0.01 + Goats * 0.1 +Pigs * ((0.5+0.027)/2) + Sheep * 0.1
+# Source: https://ec.europa.eu/eurostat/statistics-explained/index.php?title=Glossary:Livestock_unit_(LSU)
+lsu <- lvstc_cnt[[1]] + lvstc_cnt[[2]] + lvstc_cnt[[3]]*((0.007 + 0.014)/2) + lvstc_cnt[[4]]*0.01 + lvstc_cnt[[5]]*0.1 + lvstc_cnt[[6]]*((0.5+0.027)/2) + lvstc_cnt[[7]]*0.1
+rm(lvstc_fls, lvstc_cnt)
+names(lsu) <- 'livestock_units'
+lsu_25km <- terra::resample(x = lsu, y = agex_sgn, method = 'cubicspline', threads = T)
+lsu_25km <- terra::mask(x = lsu_25km, mask = agex_sgn); rm(lsu)
+
+sgn_lsu_diversity <- terra::zonal(x = lsu_25km, z = ref, fun = 'median', na.rm = T, as.raster = T)
+names(sgn_lsu_diversity) <- 'livestock_diversity'
+
+dfm <- terra::as.data.frame(x = c(agex_sgn,
+                                  sgn_intensity, sgn_cnt_trend, sgn_ext_trend,
+                                  sgn_lsu_diversity), xy = T, cell = T)
+
+# Produce bivariate maps
+dims <- 4
+dfm_livestock_vs_intensity <- biscale::bi_class(.data = dfm, x = 'SPEI-6_extreme_trend', y = 'livestock_diversity', style = 'quantile', dim = dims) |> base::as.data.frame()
+dfm_livestock_vs_intensity <- dfm_livestock_vs_intensity[,c('cell','x','y','extreme_cluster','SPEI-6_extreme_trend','livestock_diversity','bi_class')]
+
+colours <- data.frame(bi_class = sort(unique(dfm_livestock_vs_intensity$bi_class)))
+colours$category <- 1:nrow(colours)
+
+dfm_livestock_vs_intensity <- dplyr::left_join(x = dfm_livestock_vs_intensity, y = colours, by = 'bi_class')
+
+aux <- agex_sgn
+terra::values(aux) <- NA
+aux[dfm_livestock_vs_intensity$cell] <- dfm_livestock_vs_intensity$category
+names(aux) <- 'category'
+
+ggm <- list()
+for(i in 1:length(shp)){
+  
+  # Coordinates
+  aux_dfm <- terra::as.data.frame(x = terra::crop(aux, terra::ext(shp[[i]])), xy = T, cell = T)
+  aux_dfm <- dplyr::left_join(x = aux_dfm, y = colours, by = 'category')
+  # Map
+  ggm[[i]] <- ggplot2::ggplot() +
+    ggplot2::geom_tile(data = aux_dfm, aes(x, y, fill = bi_class)) +
+    ggplot2::geom_sf(data = sf::st_as_sf(shp[[i]]), fill = NA) +
+    ggplot2::coord_sf() +
+    ggplot2::theme_void() +
+    ggplot2::theme(legend.position = 'none', legend.key.width = unit(1.3, 'cm')) +
+    biscale::bi_scale_fill(pal = 'GrPink2', dim = dims)
+  
+}
+
+fig3 <- ggpubr::ggarrange(ggm[[1]], ggm[[2]], ggm[[3]], ggm[[4]], ggm[[5]], ggm[[6]],
+                          labels = c('a)', 'b)', 'c)', 'd)', 'e)', 'f)'),
+                          ncol = 2, nrow = 3, font.label = list(size = 30, family = 'serif', face = 'plain'))
+ggplot2::ggsave(filename = paste0('D:/Figure3_paper1.png'), plot = fig3, device = 'png', width = 10, height = 12.5, units = 'in', dpi = 350)
+
+
 
 # ## Graph of one index-year
 # wrl <- rnaturalearth::ne_countries(scale = 'large', returnclass = 'sv')
