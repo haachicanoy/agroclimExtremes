@@ -20,10 +20,10 @@ index  <- 'spei-6'
 gs     <- 'two'
 
 # Extreme clusters for places with one growing seasons
-agex_sgn <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/clusters/agex_global_spei-6_one_s1_fmadogram_clean.tif'))
+agex_sgn <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/agex_global_spei-6_one_s1_fmadogram_clean.tif'))
 # Extreme clusters for places with two growing seasons
-agex_sgn_s1 <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/clusters/agex_global_spei-6_two_s1_fmadogram_k225.tif'))
-agex_sgn_s2 <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/clusters/agex_global_spei-6_two_s2_fmadogram_k222.tif'))
+agex_sgn_s1 <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/agex_global_spei-6_two_s1_fmadogram_k225.tif'))
+agex_sgn_s2 <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/agex_global_spei-6_two_s2_fmadogram_k222.tif'))
 
 # Lower limit: minimum number of pixels per extreme cluster based on gs1
 lwr_lmt <- min(table(as.numeric(terra::values(agex_sgn, na.rm = T))))
@@ -46,4 +46,4 @@ agex_sgn_aux <- agex_sgn; rm(agex_sgn)
 terra::values(agex_sgn_aux) <- NA
 agex_sgn_aux[dfm$cell] <- dfm$extreme_cluster
 
-terra::writeRaster(x = agex_sgn_aux, paste0(root,'/agroclimExtremes/agex_results/clusters/agex_global_spei-6_two_fmadogram_clean.tif'))
+terra::writeRaster(x = agex_sgn_aux, paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/agex_global_spei-6_two_fmadogram_clean.tif'))

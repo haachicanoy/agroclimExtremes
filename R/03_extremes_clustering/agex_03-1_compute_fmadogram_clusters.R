@@ -2,7 +2,7 @@
 ## Compute F-madogram distances
 ## By: Harold Achicanoy
 ## WUR & ABC
-## Dec. 2023
+## May 2024
 ## ------------------------------------------ ##
 
 ## R options and packages loading
@@ -128,5 +128,5 @@ terra::values(tmp) <- NA
 fmado_r <- tmp; fmado_r[qry$cell] <- qry$fmado_cluster; plot(fmado_r)
 eucld_r <- tmp; eucld_r[qry$cell] <- qry$eucld_cluster; plot(eucld_r)
 
-terra::writeRaster(x = fmado_r, filename = paste0(root,'/agroclimExtremes/agex_results/clusters/agex_global_',index,'_',gs,'_s',season,'_fmadogram_k',optimal_k,'.tif'), overwrite = T)
-terra::writeRaster(x = eucld_r, filename = paste0(root,'/agroclimExtremes/agex_results/clusters/agex_global_',index,'_',gs,'_s',season,'_euclidean_k',optimal_k,'.tif'), overwrite = T)
+terra::writeRaster(x = fmado_r, filename = paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/agex_global_',index,'_',gs,'_s',season,'_fmadogram_k',optimal_k,'.tif'), overwrite = T)
+terra::writeRaster(x = eucld_r, filename = paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/agex_global_',index,'_',gs,'_s',season,'_euclidean_k',optimal_k,'.tif'), overwrite = T)

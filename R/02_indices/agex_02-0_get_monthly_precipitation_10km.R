@@ -1,5 +1,5 @@
 # ------------------------------------------ #
-# Monthly precipitation
+# Monthly precipitation at 10 km
 # By: Harold Achicanoy
 # WUR & ABC
 # Feb. 2024

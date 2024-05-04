@@ -1,5 +1,5 @@
 # ------------------------------------------ #
-# FAO-Penman-Monteith Evapotranspiration
+# FAO-Penman-Monteith Evapotranspiration at 10 km
 # By: Cesar Saavedra & Harold Achicanoy
 # ABC
 # Feb. 2024

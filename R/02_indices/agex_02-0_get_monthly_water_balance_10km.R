@@ -1,5 +1,5 @@
 # ------------------------------------------ #
-# Monthly water balance
+# Monthly water balance at 10 km
 # By: Harold Achicanoy
 # WUR & ABC
 # Feb. 2024

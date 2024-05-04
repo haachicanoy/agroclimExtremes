@@ -1,5 +1,5 @@
 # ------------------------------------------ #
-# SPEI
+# Calculate monthly SPEI-6 at 10 km
 # By: Harold Achicanoy & Cesar Saavedra
 # WUR & ABC
 # Feb. 2024
@@ -12,9 +12,6 @@ suppressMessages(pacman::p_load(terra,SPEI))
 
 # Root directory
 root <- '//CATALOGUE/WFP_ClimateRiskPr1'
-
-# # SPEI scale
-# scl <- 6
 
 # List water balance files
 blc_fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_raw_data/monthly_balance'), pattern = '.tif$', full.names = T)
