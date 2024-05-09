@@ -9,8 +9,13 @@
 options(warn = -1, scipen = 999)
 list.files2 <- Vectorize(FUN = list.files, vectorize.args = 'pattern')
 
+# Define directories
+root <- '//CATALOGUE/WFP_ClimateRiskPr1'           # Server
+inp_dir <- 'D:/Data/Maps'                          # Local
+out_dir <- 'D:/OneDrive - CGIAR/PhD/papers/paper1' # local
+
 # Load MapSPAM readme
-mapspam_info <- readLines('D:/Data/Maps/spam2010/ReadMe_v2r0_Global.txt')
+mapspam_info <- readLines(paste0(root,'/agroclimExtremes/agex_raw_data/croplands/spam2010/ReadMe_v2r0_Global.txt'))
 
 # Food crops
 crps <- strsplit(x = mapspam_info[105:132], split = '\t', fixed = T)
@@ -50,11 +55,6 @@ toupper(agr$`SPAM name`)
 # Template rasters
 tmp_10km <- terra::rast('https://github.com/haachicanoy/agroclimExtremes/raw/main/data/tmp_era5.tif')
 
-# Define directories
-root <- '//CATALOGUE/WFP_ClimateRiskPr1'           # Server
-inp_dir <- 'D:/Data/Maps'                          # Local
-out_dir <- 'D:/OneDrive - CGIAR/PhD/papers/paper1' # local
-
 ## Cropland areas from MapSPAM 2010
 crops_dir <- paste0(inp_dir,'/spam2010') # Directory
 
@@ -79,21 +79,3 @@ for(i in 1:length(grps)){
     }
   }
 }
-
-# Population
-pop <- list.files(path = paste0(root,'/1.Data/wpop/2020'), pattern = '.tif$', full.names = T)
-pop <- pop[file.size(pop) != 196]
-pop <- pop |> purrr::map(.f = terra::rast)
-# for(i in 2:length(pop)){
-#   aux <- terra::mosaic(pop[[1]], pop[[i]])
-# }
-# plot()
-# pop_10km <- terra::resample(x = pop, y = tmp_10km, method = 'sum')
-
-i <- 2
-aux <- pop[[1]]
-while(i < length(pop)){
-  aux <- terra::mosaic(aux, pop[[i]]); gc(T)
-  i <- i + 1
-  cat(paste0('Iteration ',i,'\n'))
-}; gc(T)

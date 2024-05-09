@@ -11,7 +11,7 @@ suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pa
 suppressMessages(pacman::p_load(terra,geodata,NbClust,entropy,scales,dplyr,
                                 ggplot2,RColorBrewer,landscapemetrics,
                                 exactextractr,hrbrthemes,trend,quantreg,
-                                OutliersO3))
+                                OutliersO3,MetBrewer,extrafont))
 
 ## Relevant functions
 list.files2 <- Vectorize(FUN = list.files, vectorize.args = 'path')
@@ -44,8 +44,17 @@ index  <- 'spei-6'
 ## Extreme weather clusters
 agex_sgn_cln <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
 names(agex_sgn_cln) <- 'extreme_cluster'
+# Extreme weather clusters by growing seasons
+agex_sgn_gs1 <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/agex_global_spei-6_one_s1_fmadogram_clean.tif'))
+agex_sgn_gs1[!is.na(agex_sgn_gs1)] <- 1
+agex_sgn_gs2 <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/agex_global_spei-6_two_fmadogram_clean.tif'))
+agex_sgn_gs2[!is.na(agex_sgn_gs2)] <- 2
+agex_sgn_gs <- terra::merge(agex_sgn_gs1, agex_sgn_gs2); rm(agex_sgn_gs1, agex_sgn_gs2)
+names(agex_sgn_gs) <- 'growing_seasons'
 # Extreme weather clusters coordinates
 crds_sgn_cln <- terra::as.data.frame(x = agex_sgn_cln, xy = T, cell = T, na.rm = T)
+aux <- terra::extract(x = agex_sgn_gs, y = crds_sgn_cln[,c('x','y')])
+crds_sgn_cln$growing_seasons <- aux$growing_seasons; rm(aux, agex_sgn_gs)
 
 ## Global shapefile
 wrl <- rnaturalearth::ne_countries(scale = 'large', returnclass = 'sv')
@@ -61,20 +70,21 @@ if(!file.exists(out)){
   
   # Pixels number per country
   crds_cnt <- crds_cty |>
-    dplyr::group_by(adm0_iso, extreme_cluster) |>
+    dplyr::group_by(adm0_iso, extreme_cluster, growing_seasons) |>
     dplyr::count() |>
     dplyr::arrange(extreme_cluster) |>
     dplyr::ungroup() |>
     base::as.data.frame()
   
   # Unique geographies
-  unq_geos <- unique(crds_cty[,c('adm0_iso','name_en','continent','subregion','extreme_cluster')])
+  unq_geos <- unique(crds_cty[,c('adm0_iso','name_en','continent','subregion','extreme_cluster','growing_seasons')])
   unq_geos <- base::as.data.frame(dplyr::arrange(.data = unq_geos, extreme_cluster))
   
   # Identify collaboration opportunities among countries
   vls <- sort(unique(unq_geos$extreme_cluster))
   collaborations <- lapply(vls, function(i){
     smm <- data.frame(extreme_cluster = i,
+                      growing_seasons = unique(unq_geos$growing_seasons[unq_geos$extreme_cluster == i]),
                       countries_count = length(unq_geos[unq_geos$extreme_cluster == i,'adm0_iso']),
                       isos = paste0(unq_geos[unq_geos$extreme_cluster == i,'adm0_iso'], collapse = ','),
                       countries = paste0(unq_geos[unq_geos$extreme_cluster == i,'name_en'], collapse = ','),
@@ -133,7 +143,7 @@ qlt_mtrcs$quality_rank <- rank(-1*agex_qly_pca$x[,1])
 # Metric: Shannon diversity index
 # Meaning: High entropy means high variation of food/non-food classes
 crp_fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_raw_data'), pattern = '^agex_cropclass_', full.names = T)
-crp_fls <- crp_fls[-grep2(pattern = c('fibres','stimulant'), x = crp_fls)] # Categories to exclude
+crp_fls <- crp_fls[-grep2(pattern = c('fibres','stimulant','rest_of_crops'), x = crp_fls)] # Categories to exclude
 crp_typ <- terra::rast(crp_fls)
 crp_ntp <- terra::app(x = crp_typ, fun = function(i, ff) ff(i), cores = 20, ff = entropy::entropy)
 names(crp_ntp) <- 'crop_classes_diversity'
@@ -144,16 +154,26 @@ crp_ntp_25km <- terra::mask(x = crp_ntp_25km, mask = agex_sgn_cln)
 ## Agricultural economic value
 # Metric: Value of production
 # Meaning: High value of production means high economic value from agriculture
-vop <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_spam2010V2r0_global_V_agg_VP_CROP_A.tif'))
-names(vop) <- 'value_of_production'
-vop_25km <- terra::resample(x = vop, y = agex_sgn_cln, method = 'cubicspline', threads = T)
-vop_25km <- terra::mask(x = vop_25km, mask = agex_sgn_cln)
+all_vop <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_spam2010V2r0_global_V_agg_VP_CROP_A.tif'))
+names(all_vop) <- 'total_vop'
+all_vop_25km <- terra::resample(x = all_vop, y = agex_sgn_cln, method = 'cubicspline', threads = T)
+all_vop_25km <- terra::mask(x = all_vop_25km, mask = agex_sgn_cln)
+
+food_vop <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_spam2010V2r0_global_V_agg_VP_FOOD_A.tif'))
+names(food_vop) <- 'food_vop'
+food_vop_25km <- terra::resample(x = food_vop, y = agex_sgn_cln, method = 'cubicspline', threads = T)
+food_vop_25km <- terra::mask(x = food_vop_25km, mask = agex_sgn_cln)
+
+nonf_vop <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_spam2010V2r0_global_V_agg_VP_NONF_A.tif'))
+names(nonf_vop) <- 'non-food_vop'
+nonf_vop_25km <- terra::resample(x = nonf_vop, y = agex_sgn_cln, method = 'cubicspline', threads = T)
+nonf_vop_25km <- terra::mask(x = nonf_vop_25km, mask = agex_sgn_cln)
 
 ## Livestock diversity
 # Metric: Livestock equivalent units
 # Meaning: grazing equivalent of one adult dairy cow producing 3 000 kg of milk
 # annually, without additional concentrated foodstuffs
-lvs_dir <- 'D:/OneDrive - CGIAR/African_Crisis_Observatory/data/_global/livestock'
+lvs_dir <- paste0(root,'/agroclimExtremes/agex_raw_data/livestock')
 anmls   <- list.dirs(path = lvs_dir, full.names = F, recursive = F)
 anmls   <- anmls[-grep('horses',anmls)]
 lvstc_fls <- list.files2(path = paste0(lvs_dir,'/',anmls), pattern = '_Da.tif$', full.names = T); rm(lvs_dir, anmls)
@@ -163,11 +183,13 @@ lvstc_cnt <- terra::rast(lvstc_fls)
 # Livestock Units
 # LU: Livestock Unit
 # LU = Buffaloes * 1 + Cattle * 1 + Chickens * ((0.007 + 0.014)/2) +
-#      Ducks * 0.01 + Goats * 0.1 +Pigs * ((0.5+0.027)/2) + Sheep * 0.1
+#      Ducks * 0.01 + Goats * 0.1 + Pigs * ((0.5+0.027)/2) + Sheep * 0.1
 # Source: https://ec.europa.eu/eurostat/statistics-explained/index.php?title=Glossary:Livestock_unit_(LSU)
-lsu <- lvstc_cnt[[1]] + lvstc_cnt[[2]] + lvstc_cnt[[3]]*((0.007 + 0.014)/2) + lvstc_cnt[[4]]*0.01 + lvstc_cnt[[5]]*0.1 + lvstc_cnt[[6]]*((0.5+0.027)/2) + lvstc_cnt[[7]]*0.1
+wghts <- c(1, 1, (0.007 + 0.014)/2, 0.01, 0.1, (0.5+0.027)/2, 0.1)
+lvstc_unt <- lvstc_cnt * wghts
+lsu <- sum(lvstc_unt)
 rm(lvstc_fls, lvstc_cnt)
-names(lsu) <- 'livestock_units'
+names(lsu) <- 'total_livestock_units'
 lsu_25km <- terra::resample(x = lsu, y = agex_sgn_cln, method = 'cubicspline', threads = T)
 lsu_25km <- terra::mask(x = lsu_25km, mask = agex_sgn_cln)
 
@@ -227,7 +249,7 @@ abline(v = quantile(x = dfm$livestock_units, probs = seq(0,1,1/4)), lty = 2, col
 agex_sgn_poly <- terra::as.polygons(x = agex_sgn_cln)
 agex_sgn_poly <- terra::merge(x = agex_sgn_poly, y = dfm)
 
-terra::writeVector(x = agex_sgn_poly, filename = paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/vct_agex_global_',index,'_fmadogram.gpkg'), overwrite = T)
+terra::writeVector(x = agex_sgn_poly, filename = paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/vct_agex_global_',index,'.gpkg'), overwrite = T)
 
 
 

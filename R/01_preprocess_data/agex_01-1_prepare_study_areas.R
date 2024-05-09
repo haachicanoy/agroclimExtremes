@@ -17,9 +17,9 @@ grep2 <- Vectorize(FUN = grep, vectorize.args = 'pattern')
 tmp_25km <- terra::rast('https://github.com/haachicanoy/agroclimExtremes/raw/main/data/tmp_era5_25km.tif')
 
 # Define directories
-root <- '//CATALOGUE/WFP_ClimateRiskPr1'           # Server
-inp_dir <- 'D:/Data/Maps'                          # Local
-out_dir <- 'D:/OneDrive - CGIAR/PhD/papers/paper1' # local
+root <- '//CATALOGUE/WFP_ClimateRiskPr1'
+inp_dir <- paste0(root,'/agroclimExtremes/agex_raw_data/croplands')
+# out_dir <- 'D:/OneDrive - CGIAR/PhD/papers/paper1' # local
 
 # # Cropland areas from CROPGRIDS
 # crops_dir <- paste0(inp_dir,'/cropgrids/NC_maps') # Directory
@@ -49,7 +49,7 @@ crops_lnd <- terra::rast(crops_fls) |> sum(na.rm = T)
 crops_lnd[crops_lnd <= 0] <- NA
 crops_lnd[!is.na(crops_lnd)] <- 1
 
-terra::writeRaster(x = crops_lnd, filename = paste0(out_dir,'/data/agex_croplands_foods_mapspam.tif'), overwrite = T)
+# terra::writeRaster(x = crops_lnd, filename = paste0(out_dir,'/data/agex_croplands_foods_mapspam.tif'), overwrite = T)
 
 # Resampling MapSPAM into AgERA5 template resolution
 crops_lnd_10km <- terra::resample(x = crops_lnd, y = tmp_10km, method = 'near')
