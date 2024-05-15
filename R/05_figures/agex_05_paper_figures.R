@@ -39,11 +39,12 @@ cv_fun <- function(x, na.rm = T){
 ## Key arguments
 root   <- '//CATALOGUE/WFP_ClimateRiskPr1'
 index  <- 'spei-6'
-gs     <- 'one'
-season <- 1
+# gs     <- 'one'
+# season <- 1
 
 ### Extreme clusters
-agex_sgn <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/clusters/agex_global_',index,'_',gs,'_s',season,'_fmadogram_clean.tif'))
+agex_sgn <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
+names(agex_sgn) <- 'extreme_cluster'
 cls <- data.frame(extreme_cluster = sort(unique(terra::values(agex_sgn))))
 cls$id <- cls$extreme_cluster
 cls <- cls[,c('id','extreme_cluster')]

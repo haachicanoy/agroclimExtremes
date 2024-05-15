@@ -103,7 +103,7 @@ if(!file.exists(out)){
 # Calculate coverage area in km^2
 agex_area <- terra::cellSize(x = agex_sgn_cln, unit = 'km') |> terra::mask(mask = agex_sgn_cln)
 area_dfm <- terra::zonal(x = agex_area, z = agex_sgn_cln, fun = 'sum') |> base::as.data.frame()
-collaborations <- dplyr::left_join(x = collaborations, y = area_dfm, by = 'extreme_cluster'); rm(area_dfm)
+collaborations <- dplyr::left_join(x = collaborations, y = area_dfm, by = 'extreme_cluster'); rm(area_dfm, agex_area)
 
 ## Cluster quality
 # They are computed to provide a quality control of the produced clusters
