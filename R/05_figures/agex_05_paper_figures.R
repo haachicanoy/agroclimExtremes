@@ -10,51 +10,53 @@ options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
 suppressMessages(pacman::p_load(terra,MetBrewer,rnaturalearth,tidyverse,ggpubr,tseries,biscale,pals,cowplot,gridExtra))
 
-list.files2 <- Vectorize(FUN = list.files, vectorize.args = 'path')
-grep2 <- Vectorize(FUN = grep, vectorize.args = 'pattern')
-get_trend <- function(x){
-  if(!all(is.na(x))){
-    x <- as.numeric(na.omit(x))
-    y <- as.numeric(trend::sens.slope(x)$estimates)
-  } else { y <- NA }
-  return(y)
-}
-get_ext_trend <- function(x){
-  if(!all(is.na(x))){
-    x <- as.numeric(na.omit(x))
-    dfm <- data.frame(time = 1:length(x), ts = x)
-    qrf <- quantreg::rq(formula = ts ~ time, tau = .90, data = dfm)
-    y <- as.numeric(qrf$coefficients[2])
-  } else { y <- NA }
-  return(y)
-}
-getmode <- function(v){
-  uniqv <- unique(v)
-  uniqv[which.max(tabulate(match(v, uniqv)))]
-}
-cv_fun <- function(x, na.rm = T){
-  sd(x, na.rm = na.rm)/mean(x, na.rm = na.rm) * 100
-}
+# list.files2 <- Vectorize(FUN = list.files, vectorize.args = 'path')
+# grep2 <- Vectorize(FUN = grep, vectorize.args = 'pattern')
+# get_trend <- function(x){
+#   if(!all(is.na(x))){
+#     x <- as.numeric(na.omit(x))
+#     y <- as.numeric(trend::sens.slope(x)$estimates)
+#   } else { y <- NA }
+#   return(y)
+# }
+# get_ext_trend <- function(x){
+#   if(!all(is.na(x))){
+#     x <- as.numeric(na.omit(x))
+#     dfm <- data.frame(time = 1:length(x), ts = x)
+#     qrf <- quantreg::rq(formula = ts ~ time, tau = .90, data = dfm)
+#     y <- as.numeric(qrf$coefficients[2])
+#   } else { y <- NA }
+#   return(y)
+# }
+# getmode <- function(v){
+#   uniqv <- unique(v)
+#   uniqv[which.max(tabulate(match(v, uniqv)))]
+# }
+# cv_fun <- function(x, na.rm = T){
+#   sd(x, na.rm = na.rm)/mean(x, na.rm = na.rm) * 100
+# }
 
 ## Key arguments
 root   <- '//CATALOGUE/WFP_ClimateRiskPr1'
 index  <- 'spei-6'
-# gs     <- 'one'
-# season <- 1
 
-### Extreme clusters (categorical)
+### Extreme drought clusters (categorical)
 agex_sgn <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
 names(agex_sgn) <- 'extreme_cluster'
 cls <- data.frame(extreme_cluster = sort(unique(terra::values(agex_sgn))))
 cls$id <- cls$extreme_cluster
 cls <- cls[,c('id','extreme_cluster')]
 cls$extreme_cluster <- as.character(cls$extreme_cluster)
-levels(agex_sgn) <- cls
+levels(agex_sgn) <- cls; rm(cls)
+
+### Extreme drought clusters metrics
+agex_sgn_metrics <- utils::read.csv(paste0(root,'/agroclimExtremes/agex_results/agex_all_metrics.csv'))
 
 ### Load global shapefile
 wrl <- rnaturalearth::ne_countries(scale = 'large', returnclass = 'sv')
 wrl <- wrl[,c('adm0_iso','name_en','continent','subregion')]
 
+## Shapefiles by continent. Some of them cropped
 afr <- rnaturalearth::ne_countries(scale = 'large', continent = 'africa', returnclass = 'sv')
 eur <- rnaturalearth::ne_countries(scale = 'large', continent = 'europe', returnclass = 'sv')
 eur <- terra::crop(x = eur, y = terra::ext(c(-20,100,30,75))) # xmin, xmax = 150, ymin, ymax
@@ -65,8 +67,10 @@ nam <- rnaturalearth::ne_countries(scale = 'large', continent = 'north america',
 nam <- terra::crop(x = nam, y = terra::ext(c(-140,-50,-0.39,60)))
 sam <- rnaturalearth::ne_countries(scale = 'large', continent = 'south america', returnclass = 'sv')
 
+# Put them all together
 shp <- list(nam, sam, afr, eur, asi, oce); rm(nam, sam, afr, eur, asi, oce)
 
+# # For masking the rasters
 # agex_sgn_afr <- terra::crop(x = agex_sgn, y = terra::ext(afr)); # agex_sgn_afr <- terra::mask(x = agex_sgn_afr, mask = afr)
 # agex_sgn_eur <- terra::crop(x = agex_sgn, y = terra::ext(eur)); # agex_sgn_eur <- terra::mask(x = agex_sgn_eur, mask = eur)
 # agex_sgn_asi <- terra::crop(x = agex_sgn, y = terra::ext(asi)); # agex_sgn_asi <- terra::mask(x = agex_sgn_asi, mask = asi)
@@ -74,12 +78,7 @@ shp <- list(nam, sam, afr, eur, asi, oce); rm(nam, sam, afr, eur, asi, oce)
 # agex_sgn_nam <- terra::crop(x = agex_sgn, y = terra::ext(nam)); # agex_sgn_nam <- terra::mask(x = agex_sgn_nam, mask = nam)
 # agex_sgn_sam <- terra::crop(x = agex_sgn, y = terra::ext(sam)); # agex_sgn_sam <- terra::mask(x = agex_sgn_sam, mask = sam)
 
-# Color palette
-n_col <- length(unique(terra::values(agex_sgn,na.rm = T)))
-col_pltt <- MetBrewer::met.brewer(name = 'Signac', n = n_col)
-set.seed(1); col_pltt <- sample(x = col_pltt, size = n_col, replace = F); rm(n_col)
-
-## Figure 1
+# To test
 # myTheme <- rasterVis::rasterTheme(region = col_pltt)
 # # Europe
 # rasterVis::levelplot(x            = agex_sgn_eur,
@@ -88,6 +87,14 @@ set.seed(1); col_pltt <- sample(x = col_pltt, size = n_col, replace = F); rm(n_c
 #                      colorkey     = F,
 #                      maxpixels    = terra::ncell(agex_sgn))
 
+## Figure 1
+## Extreme drought clusters per continent
+# Color palette definition
+n_col    <- length(unique(terra::values(agex_sgn,na.rm = T))) # Number of unique colors needed
+col_pltt <- MetBrewer::met.brewer(name = 'Signac', n = n_col) # Color palette
+set.seed(1); col_pltt <- sample(x = col_pltt, size = n_col, replace = F); rm(n_col) # Randomize colors assignment
+
+# Create a list of maps (per continent)
 ggm <- list()
 for(i in 1:length(shp)){
   
@@ -109,17 +116,21 @@ for(i in 1:length(shp)){
   
 }
 
+# Arrange them into one graph and add panel labels
 fig1 <- ggpubr::ggarrange(ggm[[1]], ggm[[2]], ggm[[3]], ggm[[4]], ggm[[5]], ggm[[6]],
                              labels = c('a)', 'b)', 'c)', 'd)', 'e)', 'f)'),
                              ncol = 2, nrow = 3, font.label = list(size = 30, family = 'serif', face = 'plain'))
-ggplot2::ggsave(filename = paste0('D:/Figure1_paper1.png'), plot = fig1, device = 'png', width = 10, height = 12.5, units = 'in', dpi = 350)
+fig1
+ggplot2::ggsave(filename = paste0('D:/Figure1_paper1.png'), plot = fig1, device = 'png', width = 10, height = 12.5, units = 'in', dpi = 350); rm(fig1)
 
 ## Figure 2
-plt <- MetBrewer::met.brewer('Ingres', n = 3)
+## Percentage of extreme drought clusters in one, two, or more countries
+## Collaboration potential
+col_pltt <- MetBrewer::met.brewer('Ingres', n = 3)
 extrafont::font_import()
 extrafont::loadfonts(device = 'win')
 extrafont::fonts()
-gg <- collaborations |>
+fig2 <- agex_sgn_metrics |>
   dplyr::group_by(countries_count, growing_seasons) |>
   dplyr::summarize(n()) |>
   dplyr::rename(Count = `n()`) |>
@@ -131,12 +142,12 @@ gg <- collaborations |>
   ggplot2::ggplot(aes(x = countries_count, y = Freq, fill = growing_seasons)) +
   ggplot2::geom_bar(stat = 'identity', position = position_dodge()) +
   ggplot2::scale_x_continuous(breaks = 1:13) +
-  ggplot2::scale_fill_manual(values = c(plt[1], plt[2])) +
+  ggplot2::scale_fill_manual(values = c(col_pltt[1], col_pltt[2])) +
   ggplot2::xlab('Number of countries') +
   ggplot2::ylab('Percentage of extreme drought clusters (%)') +
   ggplot2::labs(fill = 'Number of growing\nseasons') +
-  ggplot2::theme_bw() +
-  ggplot2::theme(text            = element_text(size = 17, colour = 'black', family = 'Times New Roman'),
+  ggplot2::theme_minimal() +
+  ggplot2::theme(text            = element_text(size = 17, colour = 'black', family = 'serif'),
                  axis.text.x     = element_text(size = 16, colour = 'black'),
                  axis.text.y     = element_text(size = 16, colour = 'black'),
                  axis.title      = element_text(size = 20, colour = 'black'),
@@ -148,13 +159,13 @@ gg <- collaborations |>
                  strip.text.y    = element_text(size = 17, colour = 'black'),
                  plot.caption    = element_text(size = 15, hjust = 0, colour = 'black'),
                  legend.position = 'bottom')
-gg
-ggplot2::ggsave(...)
+fig2
+ggplot2::ggsave(filename = paste0('D:/Figure2_paper1.png'), plot = fig2, device = 'png', width = 6, height = 6.1, units = 'in', dpi = 350); rm(fig2)
 
-### Figure 3
-## Crop types diversity (agriculture exposure)
+## Figure 3
+## Bivariate map of SPEI severity vs crop classes diversity (agriculture exposure)
+# Crop classes diversity
 crp_diversity <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/crop_classes_diversity.tif'))
-lvstck_units  <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/lsu_total.tif'))
 
 ## Index characterization
 # Extreme trend
@@ -303,6 +314,9 @@ ggplot2::ggsave(filename = paste0('D:/Figure2_paper1_EU_ts.png'), plot = ggts, d
 
 ### Figure 4
 # Compute diversity of livestock
+lvstck_units  <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/lsu_total.tif'))
+
+
 lvs_dir <- 'D:/OneDrive - CGIAR/African_Crisis_Observatory/data/_global/livestock'
 anmls   <- list.dirs(path = lvs_dir, full.names = F, recursive = F)
 anmls   <- anmls[-grep('horses',anmls)]
