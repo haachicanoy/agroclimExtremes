@@ -8,7 +8,12 @@
 # R options and packages loading
 options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
-suppressMessages(pacman::p_load(terra,MetBrewer,rnaturalearth,tidyverse,ggpubr,tseries,biscale,pals,cowplot,gridExtra))
+suppressMessages(pacman::p_load(terra,MetBrewer,rnaturalearth,tidyverse,ggpubr,tseries,biscale,pals,cowplot,gridExtra,grid))
+
+# Activate Windows fonts
+extrafont::font_import()
+extrafont::loadfonts(device = 'win')
+extrafont::fonts()
 
 # list.files2 <- Vectorize(FUN = list.files, vectorize.args = 'path')
 # grep2 <- Vectorize(FUN = grep, vectorize.args = 'pattern')
@@ -48,6 +53,10 @@ cls$id <- cls$extreme_cluster
 cls <- cls[,c('id','extreme_cluster')]
 cls$extreme_cluster <- as.character(cls$extreme_cluster)
 levels(agex_sgn) <- cls; rm(cls)
+
+### Extreme drought clusters (numerical)
+agex_sgn_num <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
+names(agex_sgn_num) <- 'extreme_cluster'
 
 ### Extreme drought clusters metrics
 agex_sgn_metrics <- utils::read.csv(paste0(root,'/agroclimExtremes/agex_results/agex_all_metrics.csv'))
@@ -116,20 +125,17 @@ for(i in 1:length(shp)){
   
 }
 
-# Arrange them into one graph and add panel labels
+# Arrange them into one graph and add panel labels -----
 fig1 <- ggpubr::ggarrange(ggm[[1]], ggm[[2]], ggm[[3]], ggm[[4]], ggm[[5]], ggm[[6]],
                              labels = c('a)', 'b)', 'c)', 'd)', 'e)', 'f)'),
                              ncol = 2, nrow = 3, font.label = list(size = 30, family = 'serif', face = 'plain'))
 fig1
 ggplot2::ggsave(filename = paste0('D:/Figure1_paper1.png'), plot = fig1, device = 'png', width = 10, height = 12.5, units = 'in', dpi = 350); rm(fig1)
 
-## Figure 2
+## Figure 2 ------------------------
 ## Percentage of extreme drought clusters in one, two, or more countries
-## Collaboration potential
+### Collaboration potential -----------------------
 col_pltt <- MetBrewer::met.brewer('Ingres', n = 3)
-extrafont::font_import()
-extrafont::loadfonts(device = 'win')
-extrafont::fonts()
 fig2 <- agex_sgn_metrics |>
   dplyr::group_by(countries_count, growing_seasons) |>
   dplyr::summarize(n()) |>
@@ -170,37 +176,24 @@ crp_diversity <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_vu
 ## Index characterization
 # Extreme trend
 idx_sxt <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/SPEI-6_extreme_trend.tif'))
-# Extreme years' count
-idx_cnt <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/SPEI-6_extreme_years_count.tif'))
+# # Extreme years' count
+# idx_cnt <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/SPEI-6_extreme_years_count.tif'))
 
-# Extreme clusters (numerical)
-ref <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
-names(ref) <- 'extreme_cluster'
+# Zonal statistics per extreme drought cluster (mean)
+agex_sgn_extreme_trend <- terra::zonal(x = idx_sxt, z = agex_sgn_num, fun = 'mean', na.rm = T, as.raster = T)
+agex_sgn_crp_diversity <- terra::zonal(x = crp_diversity, z = agex_sgn_num, fun = 'mean', na.rm = T, as.raster = T)
 
-agex_sgn_extreme_trend <- terra::zonal(x = idx_sxt, z = ref, fun = 'mean', na.rm = T, as.raster = T)
-agex_sgn_crp_diversity <- terra::zonal(x = crp_diversity, z = ref, fun = 'mean', na.rm = T, as.raster = T)
-agex_sgn_lvstck_units  <- terra::zonal(x = lvstck_units, z = ref, fun = 'mean', na.rm = T, as.raster = T)
-
-agex_sgn_severity_vs_crops  <- terra::as.data.frame(x = c(agex_sgn, agex_sgn_extreme_trend, agex_sgn_crp_diversity), xy = T, cell = T)
-agex_sgn_severity_vs_lvstck <- terra::as.data.frame(x = c(agex_sgn, agex_sgn_extreme_trend, agex_sgn_lvstck_units), xy = T, cell = T)
-
-dfm <- terra::zonal(x = c(idx_sxt, crp_diversity, lvstck_units), z = ref, fun = 'mean', na.rm = T)
+# Merge data.frames
+agex_sgn_severity_vs_crops <- terra::as.data.frame(x = c(agex_sgn, agex_sgn_extreme_trend, agex_sgn_crp_diversity), xy = T, cell = T)
+rm(agex_sgn_extreme_trend, agex_sgn_crp_diversity)
 
 # Produce bivariate maps
-severity_brks <- quantile(x = dfm$`SPEI-6_slope_95th`, probs = seq(0,1,1/4))
-diversity_brks <- quantile(x = dfm$crop_classes_diversity, probs = seq(0,1,1/4))
-agex_sgn_severity_vs_crops$`SPEI-6_slope_95th__class` <- cut(x = agex_sgn_severity_vs_crops$`SPEI-6_slope_95th`, breaks = severity_brks) |> as.numeric() |> as.character()
-agex_sgn_severity_vs_crops$crop_classes_diversity__class <- cut(x = agex_sgn_severity_vs_crops$crop_classes_diversity, breaks = diversity_brks) |> as.numeric() |> as.character()
-agex_sgn_severity_vs_crops$bi_class <- paste0(agex_sgn_severity_vs_crops$`SPEI-6_slope_95th__class`,'-',agex_sgn_severity_vs_crops$crop_classes_diversity__class)
+severity_brks <- quantile(x = agex_sgn_metrics$`SPEI.6_slope_95th`, probs = seq(0,1,1/4))
+diversity_brks <- quantile(x = agex_sgn_metrics$crop_classes_diversity, probs = seq(0,1,1/4))
+agex_sgn_severity_vs_crops$Severity_class <- cut(x = agex_sgn_severity_vs_crops$`SPEI-6_slope_95th`, breaks = severity_brks) |> as.numeric() |> as.character()
+agex_sgn_severity_vs_crops$Diversity_class <- cut(x = agex_sgn_severity_vs_crops$crop_classes_diversity, breaks = diversity_brks) |> as.numeric() |> as.character()
+agex_sgn_severity_vs_crops$bi_class <- paste0(agex_sgn_severity_vs_crops$Severity_class,'-',agex_sgn_severity_vs_crops$Diversity_class)
 agex_sgn_severity_vs_crops <- agex_sgn_severity_vs_crops[,c('cell','x','y','extreme_cluster','SPEI-6_slope_95th','crop_classes_diversity','bi_class')]
-
-# map <- ggplot2::ggplot() +
-#   ggplot2::geom_tile(data = dfm_crops_vs_intensity, aes(x, y, fill = bi_class)) +
-#   ggplot2::geom_sf(data = sf::st_as_sf(wrl), fill = NA) +
-#   ggplot2::coord_sf() +
-#   ggplot2::theme_void() +
-#   ggplot2::theme(legend.position = 'none', legend.key.width = unit(1.3, 'cm')) +
-#   biscale::bi_scale_fill(pal = 'GrPink2', dim = dims)
 
 colours <- data.frame(bi_class = sort(unique(agex_sgn_severity_vs_crops$bi_class)))
 colours$category <- 1:nrow(colours)
@@ -241,15 +234,6 @@ make_legend <- function(dims = 4,
   return(legend)
 }
 
-# legend <- bi_legend(pal = 'GrPink2',
-#                     dim = dims,
-#                     xlab = 'Higher drought intensity',
-#                     ylab = 'Higher crop types diversity',
-#                     size = 10)
-# 
-# finalPlot <- cowplot::ggdraw() + cowplot::draw_plot(map, 0, 0, 1, 1) + cowplot::draw_plot(legend, -.03, 0.12, 0.3, 0.3)
-# finalPlot
-
 ggm <- list()
 for(i in 1:length(shp)){
   
@@ -263,40 +247,36 @@ for(i in 1:length(shp)){
     ggplot2::coord_sf() +
     ggplot2::theme_void() +
     ggplot2::theme(legend.position = 'none', legend.key.width = unit(1.3, 'cm')) +
-    biscale::bi_scale_fill(pal = 'GrPink2', dim = dims)
+    biscale::bi_scale_fill(pal = 'GrPink2', dim = 4)
   
 }
 
-fig2 <- ggpubr::ggarrange(ggm[[1]], ggm[[2]], ggm[[3]], ggm[[4]], ggm[[5]], ggm[[6]],
-                          labels = c('a)', 'b)', 'c)', 'd)', 'e)', 'f)'),
-                          ncol = 2, nrow = 3, font.label = list(size = 30, family = 'serif', face = 'plain'))
+# fig3 <- ggpubr::ggarrange(ggm[[1]], ggm[[2]], ggm[[3]], ggm[[4]], ggm[[5]], ggm[[6]],
+#                           labels = c('a)', 'b)', 'c)', 'd)', 'e)', 'f)'),
+#                           ncol = 2, nrow = 3, font.label = list(size = 30, family = 'serif', face = 'plain'))
+# 
+# ggplot2::ggsave(filename = paste0('D:/Figure3_paper1.png'), plot = fig3, device = 'png', width = 10, height = 12.5, units = 'in', dpi = 350)
 
-ggplot2::ggsave(filename = paste0('D:/Figure2_paper1.png'), plot = fig2, device = 'png', width = 10, height = 12.5, units = 'in', dpi = 350)
-fig2_leg <- make_legend(dims = 4,
+fig3_leg <- make_legend(dims = 4,
                         xlabl = 'Drought severity',
                         ylabl = 'Crop classes diversity',
                         xbrks = c('Negative','Low','Medium','High'),
                         ybrks = c('Very low','Low','Medium','High'),
                         palette = 'GrPink2',
                         categories = colours)
-ggplot2::ggsave(filename = paste0('D:/Figure2_paper1_legend.png'), plot = fig2_leg, device = 'png', width = 5, height = 5, units = 'in', dpi = 350)
+# ggplot2::ggsave(filename = paste0('D:/Figure3_paper1_legend.png'), plot = fig3_leg, device = 'png', width = 5, height = 5, units = 'in', dpi = 350)
 
-# Extreme cluster 33. Netherlands
+# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+# Panel a) Cluster: 157 (USA)
+# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
 idx_ts <- terra::rast('//CATALOGUE/WFP_ClimateRiskPr1/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_25km/one_s1_spei-6_25km.tif')
-idx_ts <- -1 * idx_ts
-
-aux <- agex_sgn
-aux[aux != 33] <- NA
-idx_ts_msk <- terra::mask(x = idx_ts, mask = aux)
-idx_ts_msk <- terra::trim(x = idx_ts_msk)
-
+# Filter time series per cluster of interest
+aux <- agex_sgn; aux[aux != 157] <- NA
+idx_ts_msk <- terra::mask(x = idx_ts, mask = aux) |> terra::trim()
+# Time series plotting
 idx_ts_msk_dfm <- terra::as.data.frame(x = idx_ts_msk, xy = T, cell = F)
-plot(x = 1980:2022, y = as.numeric(idx_ts_msk_dfm[1,3:ncol(idx_ts_msk_dfm)]), ty = 'l', xlab = 'Years', ylab = 'SPEI-6', ylim = c(-3,2))
-for(i in 2:nrow(idx_ts_msk_dfm)){
-  lines(x = 1980:2022, y = as.numeric(idx_ts_msk_dfm[i,3:ncol(idx_ts_msk_dfm)]), col = 'red')
-}
-
-ggts <- idx_ts_msk_dfm |>
+gg_ts_NA <- idx_ts_msk_dfm |>
   tidyr::pivot_longer(cols = 3:ncol(idx_ts_msk_dfm), names_to = 'Years', values_to = 'SPEI-6') |>
   dplyr::mutate(Years = as.numeric(gsub('spei-6_', '', Years)),
                 ID = paste0(x, '-', y)) |>
@@ -309,13 +289,221 @@ ggts <- idx_ts_msk_dfm |>
                  axis.text.x     = element_text(size = 15, colour = 'black'),
                  axis.text.y     = element_text(size = 15, colour = 'black'),
                  axis.title      = element_text(size = 17, colour = 'black', face = 'bold', family = 'serif'))
-  # ggplot2::geom_smooth(alpha = 0.9, se = F)
-ggplot2::ggsave(filename = paste0('D:/Figure2_paper1_EU_ts.png'), plot = ggts, device = 'png', width = 6, height = 5, units = 'in', dpi = 350)
+
+# Add polygon extent to the corresponding map
+ext_vct1 <- as.vector(terra::ext(idx_ts_msk))
+ggm1 <- ggm[[1]] +
+  ggplot2::geom_rect(aes(xmin = ext_vct1[1],
+                         xmax = ext_vct1[2],
+                         ymin = ext_vct1[3],
+                         ymax = ext_vct1[4]),
+                     color = 'red', size = 1.5, fill = NA)
+
+# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+# Panel b) Cluster: 420 (Brazil, Paraguay) two seasons: S1
+# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+idx_ts <- terra::rast('//CATALOGUE/WFP_ClimateRiskPr1/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_25km/two_s1_spei-6_25km.tif')
+# Filter time series per cluster of interest
+aux <- agex_sgn; aux[aux != 420] <- NA
+idx_ts_msk <- terra::mask(x = idx_ts, mask = aux) |> terra::trim()
+# Time series plotting
+idx_ts_msk_dfm <- terra::as.data.frame(x = idx_ts_msk, xy = T, cell = F)
+gg_ts_SA <- idx_ts_msk_dfm |>
+  tidyr::pivot_longer(cols = 3:ncol(idx_ts_msk_dfm), names_to = 'Years', values_to = 'SPEI-6') |>
+  dplyr::mutate(Years = as.numeric(gsub('spei-6_', '', Years)),
+                ID = paste0(x, '-', y)) |>
+  base::as.data.frame() |>
+  ggplot2::ggplot(aes(x = Years, y = `SPEI-6`, group = ID)) +
+  ggplot2::geom_line(alpha = 0.1) +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(legend.position = 'none',
+                 axis.text       = element_text(family = 'serif'),
+                 axis.text.x     = element_text(size = 15, colour = 'black'),
+                 axis.text.y     = element_text(size = 15, colour = 'black'),
+                 axis.title      = element_text(size = 17, colour = 'black', face = 'bold', family = 'serif'))
+
+# Add polygon extent to the corresponding map
+ext_vct2 <- as.vector(terra::ext(idx_ts_msk))
+ggm2 <- ggm[[2]] +
+  ggplot2::geom_rect(aes(xmin = ext_vct2[1],
+                         xmax = ext_vct2[2],
+                         ymin = ext_vct2[3],
+                         ymax = ext_vct2[4]),
+                     color = 'red', size = 1.5, fill = NA)
+
+# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+# Panel c) Cluster: 270 (Ivory Coast, Mali, Guinea)
+# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+idx_ts <- terra::rast('//CATALOGUE/WFP_ClimateRiskPr1/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_25km/one_s1_spei-6_25km.tif')
+# Filter time series per cluster of interest
+aux <- agex_sgn; aux[aux != 270] <- NA
+idx_ts_msk <- terra::mask(x = idx_ts, mask = aux) |> terra::trim()
+# Time series plotting
+idx_ts_msk_dfm <- terra::as.data.frame(x = idx_ts_msk, xy = T, cell = F)
+gg_ts_AF <- idx_ts_msk_dfm |>
+  tidyr::pivot_longer(cols = 3:ncol(idx_ts_msk_dfm), names_to = 'Years', values_to = 'SPEI-6') |>
+  dplyr::mutate(Years = as.numeric(gsub('spei-6_', '', Years)),
+                ID = paste0(x, '-', y)) |>
+  base::as.data.frame() |>
+  ggplot2::ggplot(aes(x = Years, y = `SPEI-6`, group = ID)) +
+  ggplot2::geom_line(alpha = 0.1) +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(legend.position = 'none',
+                 axis.text       = element_text(family = 'serif'),
+                 axis.text.x     = element_text(size = 15, colour = 'black'),
+                 axis.text.y     = element_text(size = 15, colour = 'black'),
+                 axis.title      = element_text(size = 17, colour = 'black', face = 'bold', family = 'serif'))
+
+# Add polygon extent to the corresponding map
+ext_vct3 <- as.vector(terra::ext(idx_ts_msk))
+ggm3 <- ggm[[3]] +
+  ggplot2::geom_rect(aes(xmin = ext_vct3[1],
+                         xmax = ext_vct3[2],
+                         ymin = ext_vct3[3],
+                         ymax = ext_vct3[4]),
+                     color = 'red', size = 1.5, fill = NA)
+
+# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+# Panel d) Extreme Drought Cluster: 33 (Netherlands, others)
+# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+idx_ts <- terra::rast('//CATALOGUE/WFP_ClimateRiskPr1/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_25km/one_s1_spei-6_25km.tif')
+# Filter time series per cluster of interest
+aux <- agex_sgn; aux[aux != 33] <- NA
+idx_ts_msk <- terra::mask(x = idx_ts, mask = aux) |> terra::trim()
+# Time series plotting
+idx_ts_msk_dfm <- terra::as.data.frame(x = idx_ts_msk, xy = T, cell = F)
+gg_ts_EU <- idx_ts_msk_dfm |>
+  tidyr::pivot_longer(cols = 3:ncol(idx_ts_msk_dfm), names_to = 'Years', values_to = 'SPEI-6') |>
+  dplyr::mutate(Years = as.numeric(gsub('spei-6_', '', Years)),
+                ID = paste0(x, '-', y)) |>
+  base::as.data.frame() |>
+  ggplot2::ggplot(aes(x = Years, y = `SPEI-6`, group = ID)) +
+  ggplot2::geom_line(alpha = 0.1) +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(legend.position = 'none',
+                 axis.text       = element_text(family = 'serif'),
+                 axis.text.x     = element_text(size = 15, colour = 'black'),
+                 axis.text.y     = element_text(size = 15, colour = 'black'),
+                 axis.title      = element_text(size = 17, colour = 'black', face = 'bold', family = 'serif'))
+
+# Add polygon extent to the corresponding map
+ext_vct4 <- as.vector(terra::ext(idx_ts_msk))
+ggm4 <- ggm[[4]] +
+  ggplot2::geom_rect(aes(xmin = ext_vct4[1],
+                         xmax = ext_vct4[2],
+                         ymin = ext_vct4[3],
+                         ymax = ext_vct4[4]),
+                     color = 'red', size = 1.5, fill = NA)
+
+# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+# Panel e) Extreme Drought Cluster: 201 (India)
+# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+idx_ts <- terra::rast('//CATALOGUE/WFP_ClimateRiskPr1/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_25km/two_s1_spei-6_25km.tif')
+# Filter time series per cluster of interest
+aux <- agex_sgn; aux[aux != 201] <- NA
+idx_ts_msk <- terra::mask(x = idx_ts, mask = aux) |> terra::trim()
+# Time series plotting
+idx_ts_msk_dfm <- terra::as.data.frame(x = idx_ts_msk, xy = T, cell = F)
+gg_ts_AS <- idx_ts_msk_dfm |>
+  tidyr::pivot_longer(cols = 3:ncol(idx_ts_msk_dfm), names_to = 'Years', values_to = 'SPEI-6') |>
+  dplyr::mutate(Years = as.numeric(gsub('spei-6_', '', Years)),
+                ID = paste0(x, '-', y)) |>
+  base::as.data.frame() |>
+  ggplot2::ggplot(aes(x = Years, y = `SPEI-6`, group = ID)) +
+  ggplot2::geom_line(alpha = 0.1) +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(legend.position = 'none',
+                 axis.text       = element_text(family = 'serif'),
+                 axis.text.x     = element_text(size = 15, colour = 'black'),
+                 axis.text.y     = element_text(size = 15, colour = 'black'),
+                 axis.title      = element_text(size = 17, colour = 'black', face = 'bold', family = 'serif'))
+
+# Add polygon extent to the corresponding map
+ext_vct5 <- as.vector(terra::ext(idx_ts_msk))
+ggm5 <- ggm[[5]] +
+  ggplot2::geom_rect(aes(xmin = ext_vct5[1],
+                         xmax = ext_vct5[2],
+                         ymin = ext_vct5[3],
+                         ymax = ext_vct5[4]),
+                     color = 'red', size = 1.5, fill = NA)
+
+# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+# Panel f) Extreme Drought Cluster: 442 (Australia)
+# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+idx_ts <- terra::rast('//CATALOGUE/WFP_ClimateRiskPr1/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_25km/one_s1_spei-6_25km.tif')
+# Filter time series per cluster of interest
+aux <- agex_sgn; aux[aux != 442] <- NA
+idx_ts_msk <- terra::mask(x = idx_ts, mask = aux) |> terra::trim()
+# Time series plotting
+idx_ts_msk_dfm <- terra::as.data.frame(x = idx_ts_msk, xy = T, cell = F)
+gg_ts_OC <- idx_ts_msk_dfm |>
+  tidyr::pivot_longer(cols = 3:ncol(idx_ts_msk_dfm), names_to = 'Years', values_to = 'SPEI-6') |>
+  dplyr::mutate(Years = as.numeric(gsub('spei-6_', '', Years)),
+                ID = paste0(x, '-', y)) |>
+  base::as.data.frame() |>
+  ggplot2::ggplot(aes(x = Years, y = `SPEI-6`, group = ID)) +
+  ggplot2::geom_line(alpha = 0.1) +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(legend.position = 'none',
+                 axis.text       = element_text(family = 'serif'),
+                 axis.text.x     = element_text(size = 15, colour = 'black'),
+                 axis.text.y     = element_text(size = 15, colour = 'black'),
+                 axis.title      = element_text(size = 17, colour = 'black', face = 'bold', family = 'serif'))
+
+# Add polygon extent to the corresponding map
+ext_vct6 <- as.vector(terra::ext(idx_ts_msk))
+ggm6 <- ggm[[6]] +
+  ggplot2::geom_rect(aes(xmin = ext_vct6[1],
+                         xmax = ext_vct6[2],
+                         ymin = ext_vct6[3],
+                         ymax = ext_vct6[4]),
+                     color = 'red', size = 1.5, fill = NA)
+
+# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+# Full figure
+# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+# ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+layout <- matrix(c(1:12,NA,13,13,NA), nrow = 4, ncol = 4, byrow = TRUE) # layout <- matrix(c(NA,1:2,NA,NA,3:4,5,NA,6:7,NA,NA,8,8,NA), nrow = 4, ncol = 4, byrow = TRUE)
+
+fg_01 <- ggpubr::annotate_figure(gg_ts_NA, top = text_grob(label = 'a) Time series', face = 'plain', size = 15, family = 'serif'))
+fg_02 <- ggpubr::annotate_figure(ggm1, top = text_grob(label = 'a)', face = 'plain', size = 20, family = 'serif'))
+fg_03 <- ggpubr::annotate_figure(ggm2, top = text_grob(label = 'b)', face = 'plain', size = 20, family = 'serif'))
+fg_04 <- ggpubr::annotate_figure(gg_ts_SA, top = text_grob(label = 'b) Time series', face = 'plain', size = 15, family = 'serif'))
+
+fg_05 <- ggpubr::annotate_figure(gg_ts_AF, top = text_grob(label = 'c) Time series', face = 'plain', size = 15, family = 'serif'))
+fg_06 <- ggpubr::annotate_figure(ggm3, top = text_grob(label = 'c)', face = 'plain', size = 20, family = 'serif'))
+fg_07 <- ggpubr::annotate_figure(ggm4, top = text_grob(label = 'd)', face = 'plain', size = 20, family = 'serif'))
+fg_08 <- ggpubr::annotate_figure(gg_ts_EU, top = text_grob(label = 'd) Time series', face = 'plain', size = 15, family = 'serif'))
+
+fg_09 <- ggpubr::annotate_figure(gg_ts_AS, top = text_grob(label = 'e) Time series', face = 'plain', size = 15, family = 'serif'))
+fg_10 <- ggpubr::annotate_figure(ggm5, top = text_grob(label = 'e)', face = 'plain', size = 20, family = 'serif'))
+fg_11 <- ggpubr::annotate_figure(ggm6, top = text_grob(label = 'f)', face = 'plain', size = 20, family = 'serif'))
+fg_12 <- ggpubr::annotate_figure(gg_ts_OC, top = text_grob(label = 'f) Time series', face = 'plain', size = 15, family = 'serif'))
+
+fg_13 <- ggpubr::annotate_figure(fig3_leg, top = NULL)
+
+all <- gridExtra::grid.arrange(fg_01, fg_02, fg_03, fg_04,
+                               fg_05, fg_06, fg_07, fg_08,
+                               fg_09, fg_10, fg_11, fg_12,
+                               fg_13,
+                               layout_matrix = layout)
+ggplot2::ggsave(filename = paste0('D:/Figure3_paper1_test.png'), plot = all, device = 'png', width = 12, height = 10, units = 'in', dpi = 350)
 
 ### Figure 4
 # Compute diversity of livestock
 lvstck_units  <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/lsu_total.tif'))
+agex_sgn_lvstck_units  <- terra::zonal(x = lvstck_units, z = agex_sgn_num, fun = 'mean', na.rm = T, as.raster = T)
+agex_sgn_severity_vs_lvstck <- terra::as.data.frame(x = c(agex_sgn, agex_sgn_extreme_trend, agex_sgn_lvstck_units), xy = T, cell = T)
 
+# Produce bivariate maps
+diversity_brks <- quantile(x = agex_sgn_metrics$total_livestock_units, probs = seq(0,1,1/4))
 
 lvs_dir <- 'D:/OneDrive - CGIAR/African_Crisis_Observatory/data/_global/livestock'
 anmls   <- list.dirs(path = lvs_dir, full.names = F, recursive = F)
