@@ -114,7 +114,44 @@ fig1 <- ggpubr::ggarrange(ggm[[1]], ggm[[2]], ggm[[3]], ggm[[4]], ggm[[5]], ggm[
                              ncol = 2, nrow = 3, font.label = list(size = 30, family = 'serif', face = 'plain'))
 ggplot2::ggsave(filename = paste0('D:/Figure1_paper1.png'), plot = fig1, device = 'png', width = 10, height = 12.5, units = 'in', dpi = 350)
 
-### Figure 2
+## Figure 2
+plt <- MetBrewer::met.brewer('Ingres', n = 3)
+extrafont::font_import()
+extrafont::loadfonts(device = 'win')
+extrafont::fonts()
+gg <- collaborations |>
+  dplyr::group_by(countries_count, growing_seasons) |>
+  dplyr::summarize(n()) |>
+  dplyr::rename(Count = `n()`) |>
+  dplyr::ungroup() |>
+  dplyr::group_by(growing_seasons) |>
+  dplyr::mutate(Freq = Count/sum(Count) * 100) |>
+  dplyr::ungroup() |>
+  dplyr::mutate(growing_seasons = factor(growing_seasons)) |>
+  ggplot2::ggplot(aes(x = countries_count, y = Freq, fill = growing_seasons)) +
+  ggplot2::geom_bar(stat = 'identity', position = position_dodge()) +
+  ggplot2::scale_x_continuous(breaks = 1:13) +
+  ggplot2::scale_fill_manual(values = c(plt[1], plt[2])) +
+  ggplot2::xlab('Number of countries') +
+  ggplot2::ylab('Percentage of extreme drought clusters (%)') +
+  ggplot2::labs(fill = 'Number of growing\nseasons') +
+  ggplot2::theme_bw() +
+  ggplot2::theme(text            = element_text(size = 17, colour = 'black', family = 'Times New Roman'),
+                 axis.text.x     = element_text(size = 16, colour = 'black'),
+                 axis.text.y     = element_text(size = 16, colour = 'black'),
+                 axis.title      = element_text(size = 20, colour = 'black'),
+                 legend.text     = element_text(size = 13, colour = 'black'),
+                 legend.title    = element_text(size = 15, colour = 'black'),
+                 plot.title      = element_text(size = 25, colour = 'black'),
+                 plot.subtitle   = element_text(size = 17, colour = 'black'),
+                 strip.text.x    = element_text(size = 17, colour = 'black'),
+                 strip.text.y    = element_text(size = 17, colour = 'black'),
+                 plot.caption    = element_text(size = 15, hjust = 0, colour = 'black'),
+                 legend.position = 'bottom')
+gg
+ggplot2::ggsave(...)
+
+### Figure 3
 ## Crop types diversity (agriculture exposure)
 crp_diversity <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/crop_classes_diversity.tif'))
 lvstck_units  <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/lsu_total.tif'))
@@ -264,7 +301,7 @@ ggts <- idx_ts_msk_dfm |>
   # ggplot2::geom_smooth(alpha = 0.9, se = F)
 ggplot2::ggsave(filename = paste0('D:/Figure2_paper1_EU_ts.png'), plot = ggts, device = 'png', width = 6, height = 5, units = 'in', dpi = 350)
 
-### Figure 3
+### Figure 4
 # Compute diversity of livestock
 lvs_dir <- 'D:/OneDrive - CGIAR/African_Crisis_Observatory/data/_global/livestock'
 anmls   <- list.dirs(path = lvs_dir, full.names = F, recursive = F)
