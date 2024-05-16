@@ -111,33 +111,40 @@ collaborations <- dplyr::left_join(x = collaborations, y = area_dfm, by = 'extre
 # Meaning:
 # - 0 if patches of class become more isolated
 # - 100 if patches of class i become more aggregated
-agex_chs <- landscapemetrics::lsm_c_cohesion(landscape = agex_sgn_cln) |> base::as.data.frame()
-agex_chs <- agex_chs[,c('class','value')]
-names(agex_chs) <- c('extreme_cluster','cls_cohesion')
-# Metric: Contiguity index mean
-# Meaning: equals the mean of the contiguity index on class level for all patches
-# - 0 maximally non-contiguous
-# - 1 maximally contiguous
-agex_ctg <- landscapemetrics::lsm_c_contig_mn(landscape = agex_sgn_cln) |> base::as.data.frame()
-agex_ctg <- agex_ctg[,c('class','value')]
-names(agex_ctg) <- c('extreme_cluster','cls_contiguity')
-# Metric: Aggregation index
-# Meaning:
-# - 0 maximally disaggregated
-# - 100 maximally aggregated
-agex_agr <- landscapemetrics::lsm_c_ai(landscape = agex_sgn_cln) |> base::as.data.frame()
-agex_agr <- agex_agr[,c('class','value')]
-names(agex_agr) <- c('extreme_cluster','cls_aggregation')
-
-# Merge quality metrics in one table
-qlt_mtrcs <- dplyr::left_join(x = agex_chs, y = agex_ctg, by = 'extreme_cluster')
-qlt_mtrcs <- dplyr::left_join(x = qlt_mtrcs, y = agex_agr, by = 'extreme_cluster')
-qlt_mtrcs[,-1] <- round(qlt_mtrcs[,-1], 3)
-rm(agex_chs, agex_ctg, agex_agr)
-
-# Run a PCA to produce a quality score per cluster
-agex_qly_pca <- stats::prcomp(x = qlt_mtrcs[,-1], retx = T, center = T, scale. = T)
-qlt_mtrcs$quality_rank <- rank(-1*agex_qly_pca$x[,1])
+outfile <- paste0(root,'/agroclimExtremes/agex_results/agex_quality_metrics.csv')
+if(!file.exists(outfile)){
+  dir.create(path = dirname(outfile), F, T)
+  agex_chs <- landscapemetrics::lsm_c_cohesion(landscape = agex_sgn_cln) |> base::as.data.frame()
+  agex_chs <- agex_chs[,c('class','value')]
+  names(agex_chs) <- c('extreme_cluster','cls_cohesion')
+  # Metric: Contiguity index mean
+  # Meaning: equals the mean of the contiguity index on class level for all patches
+  # - 0 maximally non-contiguous
+  # - 1 maximally contiguous
+  agex_ctg <- landscapemetrics::lsm_c_contig_mn(landscape = agex_sgn_cln) |> base::as.data.frame()
+  agex_ctg <- agex_ctg[,c('class','value')]
+  names(agex_ctg) <- c('extreme_cluster','cls_contiguity')
+  # Metric: Aggregation index
+  # Meaning:
+  # - 0 maximally disaggregated
+  # - 100 maximally aggregated
+  agex_agr <- landscapemetrics::lsm_c_ai(landscape = agex_sgn_cln) |> base::as.data.frame()
+  agex_agr <- agex_agr[,c('class','value')]
+  names(agex_agr) <- c('extreme_cluster','cls_aggregation')
+  
+  # Merge quality metrics in one table
+  qlt_mtrcs <- dplyr::left_join(x = agex_chs, y = agex_ctg, by = 'extreme_cluster')
+  qlt_mtrcs <- dplyr::left_join(x = qlt_mtrcs, y = agex_agr, by = 'extreme_cluster')
+  qlt_mtrcs[,-1] <- round(qlt_mtrcs[,-1], 3)
+  rm(agex_chs, agex_ctg, agex_agr)
+  
+  # Run a PCA to produce a quality score per cluster
+  agex_qly_pca <- stats::prcomp(x = qlt_mtrcs[,-1], retx = T, center = T, scale. = T)
+  qlt_mtrcs$quality_rank <- rank(-1*agex_qly_pca$x[,1])
+  utils::write.csv(x = qlt_mtrcs, outfile, row.names = F)
+} else {
+  qlt_mtrcs <- utils::read.csv(outfile)
+}; rm(outfile)
 
 ## Crop classes diversity
 # Metric: Shannon diversity index
@@ -327,7 +334,7 @@ agex_sgn_poly <- terra::as.polygons(x = agex_sgn_cln)
 agex_sgn_poly <- terra::merge(x = agex_sgn_poly, y = dfm)
 
 terra::writeVector(x = agex_sgn_poly, filename = paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/vct_agex_global_',index,'.gpkg'), overwrite = T)
-
+utils::write.csv(x = dfm, paste0(root,'/agroclimExtremes/agex_results/agex_all_metrics.csv'), row.names = F)
 
 
 
