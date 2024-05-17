@@ -157,10 +157,6 @@ fig2 <- agex_sgn_metrics |>
 ggplot2::ggsave(filename = paste0('D:/Figure2_paper1.png'), plot = fig2, device = 'png', width = 7, height = 6.1, units = 'in', dpi = 350); rm(fig2,col_pltt)
 
 ### Figure 4
-# Compute diversity of livestock
-lvstck_units  <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/lsu_total.tif'))
-agex_sgn_lvstck_units  <- terra::zonal(x = lvstck_units, z = agex_sgn_num, fun = 'mean', na.rm = T, as.raster = T)
-agex_sgn_severity_vs_lvstck <- terra::as.data.frame(x = c(agex_sgn, agex_sgn_extreme_trend, agex_sgn_lvstck_units), xy = T, cell = T)
 
 # Produce bivariate maps
 diversity_brks <- quantile(x = agex_sgn_metrics$total_livestock_units, probs = seq(0,1,1/4))
