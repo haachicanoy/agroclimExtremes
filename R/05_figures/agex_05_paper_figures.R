@@ -5,7 +5,7 @@
 ## May 2024
 ## ------------------------------------------ ##
 
-# R options and packages loading
+## R options and packages loading ----
 options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
 suppressMessages(pacman::p_load(terra,MetBrewer,rnaturalearth,tidyverse,ggpubr,tseries,biscale,pals,cowplot,gridExtra,grid))
@@ -15,37 +15,12 @@ extrafont::font_import()
 extrafont::loadfonts(device = 'win')
 extrafont::fonts()
 
-# list.files2 <- Vectorize(FUN = list.files, vectorize.args = 'path')
-# grep2 <- Vectorize(FUN = grep, vectorize.args = 'pattern')
-# get_trend <- function(x){
-#   if(!all(is.na(x))){
-#     x <- as.numeric(na.omit(x))
-#     y <- as.numeric(trend::sens.slope(x)$estimates)
-#   } else { y <- NA }
-#   return(y)
-# }
-# get_ext_trend <- function(x){
-#   if(!all(is.na(x))){
-#     x <- as.numeric(na.omit(x))
-#     dfm <- data.frame(time = 1:length(x), ts = x)
-#     qrf <- quantreg::rq(formula = ts ~ time, tau = .90, data = dfm)
-#     y <- as.numeric(qrf$coefficients[2])
-#   } else { y <- NA }
-#   return(y)
-# }
-# getmode <- function(v){
-#   uniqv <- unique(v)
-#   uniqv[which.max(tabulate(match(v, uniqv)))]
-# }
-# cv_fun <- function(x, na.rm = T){
-#   sd(x, na.rm = na.rm)/mean(x, na.rm = na.rm) * 100
-# }
-
-## Key arguments
+## Setup arguments ----
 root   <- '//CATALOGUE/WFP_ClimateRiskPr1'
 index  <- 'spei-6'
 
-### Extreme drought clusters (categorical)
+## Extreme drought clusters ----
+# Categorical
 agex_sgn <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
 names(agex_sgn) <- 'extreme_cluster'
 cls <- data.frame(extreme_cluster = sort(unique(terra::values(agex_sgn))))
@@ -54,18 +29,18 @@ cls <- cls[,c('id','extreme_cluster')]
 cls$extreme_cluster <- as.character(cls$extreme_cluster)
 levels(agex_sgn) <- cls; rm(cls)
 
-### Extreme drought clusters (numerical)
+# Numerical
 agex_sgn_num <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
 names(agex_sgn_num) <- 'extreme_cluster'
 
-### Extreme drought clusters metrics
+# Metrics
 agex_sgn_metrics <- utils::read.csv(paste0(root,'/agroclimExtremes/agex_results/agex_all_metrics.csv'))
 
-### Load global shapefile
+## Shapefiles ----
 wrl <- rnaturalearth::ne_countries(scale = 'large', returnclass = 'sv')
 wrl <- wrl[,c('adm0_iso','name_en','continent','subregion')]
 
-## Shapefiles by continent. Some of them cropped
+# Continent shapefiles. Some of them cropped
 afr <- rnaturalearth::ne_countries(scale = 'large', continent = 'africa', returnclass = 'sv')
 eur <- rnaturalearth::ne_countries(scale = 'large', continent = 'europe', returnclass = 'sv')
 eur <- terra::crop(x = eur, y = terra::ext(c(-20,100,30,75))) # xmin, xmax = 150, ymin, ymax
@@ -96,12 +71,12 @@ shp <- list(nam, sam, afr, eur, asi, oce); rm(nam, sam, afr, eur, asi, oce)
 #                      colorkey     = F,
 #                      maxpixels    = terra::ncell(agex_sgn))
 
-## Figure 1
-## Extreme drought clusters per continent
+## Figure 1 ----
+# Extreme drought clusters per continent
 # Color palette definition
 n_col    <- length(unique(terra::values(agex_sgn,na.rm = T))) # Number of unique colors needed
 col_pltt <- MetBrewer::met.brewer(name = 'Signac', n = n_col) # Color palette
-set.seed(1); col_pltt <- sample(x = col_pltt, size = n_col, replace = F); rm(n_col) # Randomize colors assignment
+set.seed(1235); col_pltt <- sample(x = col_pltt, size = n_col, replace = F); rm(n_col) # Randomize colors assignment
 
 # Create a list of maps (per continent)
 ggm <- list()
@@ -123,13 +98,27 @@ for(i in 1:length(shp)){
     ggplot2::theme(legend.position = 'none', legend.key.width = unit(1.3, 'cm')) +
     ggplot2::scale_fill_manual(values = sub_stp$color, breaks = sub_stp$extreme_cluster)
   
-}
+}; rm(i,stp,sub_stp,n_col,col_pltt)
 
-# Arrange them into one graph and add panel labels -----
-fig1 <- ggpubr::ggarrange(ggm[[1]], ggm[[2]], ggm[[3]], ggm[[4]], ggm[[5]], ggm[[6]],
-                             labels = c('a)', 'b)', 'c)', 'd)', 'e)', 'f)'),
-                             ncol = 2, nrow = 3, font.label = list(size = 30, family = 'serif', face = 'plain'))
-fig1
+# Organize maps into one graph adding panel labels (alternative 1)
+# fig1 <- ggpubr::ggarrange(ggm[[1]], ggm[[2]], ggm[[3]], ggm[[4]], ggm[[5]], ggm[[6]],
+#                              labels = c('a)', 'b)', 'c)', 'd)', 'e)', 'f)'),
+#                              ncol = 2, nrow = 3, font.label = list(size = 30, family = 'serif', face = 'plain')); fig1
+
+# Organize maps into one graph adding panel labels (alternative 2)
+fg_01 <- ggpubr::annotate_figure(ggm[[1]], top = text_grob(label = 'a) North America', face = 'plain', size = 20, family = 'serif'))
+fg_02 <- ggpubr::annotate_figure(ggm[[2]], top = text_grob(label = 'b) South America', face = 'plain', size = 20, family = 'serif'))
+fg_03 <- ggpubr::annotate_figure(ggm[[3]], top = text_grob(label = 'c) Africa', face = 'plain', size = 20, family = 'serif'))
+fg_04 <- ggpubr::annotate_figure(ggm[[4]], top = text_grob(label = 'd) Europe', face = 'plain', size = 20, family = 'serif'))
+fg_05 <- ggpubr::annotate_figure(ggm[[5]], top = text_grob(label = 'e) Asia', face = 'plain', size = 20, family = 'serif'))
+fg_06 <- ggpubr::annotate_figure(ggm[[6]], top = text_grob(label = 'f) Oceania', face = 'plain', size = 20, family = 'serif'))
+
+layout <- matrix(1:6, nrow = 3, ncol = 2, byrow = T)
+
+fig1 <- gridExtra::grid.arrange(fg_01, fg_02,
+                                fg_03, fg_04,
+                                fg_05, fg_06,
+                                layout_matrix = layout); rm(ggm,fg_01,fg_02,fg_03,fg_04,fg_05,fg_06,layout)
 ggplot2::ggsave(filename = paste0('D:/Figure1_paper1.png'), plot = fig1, device = 'png', width = 10, height = 12.5, units = 'in', dpi = 350); rm(fig1)
 
 ## Figure 2 ------------------------
@@ -166,7 +155,7 @@ fig2 <- agex_sgn_metrics |>
                  plot.caption    = element_text(size = 15, hjust = 0, colour = 'black'),
                  legend.position = 'bottom')
 fig2
-ggplot2::ggsave(filename = paste0('D:/Figure2_paper1.png'), plot = fig2, device = 'png', width = 6, height = 6.1, units = 'in', dpi = 350); rm(fig2)
+ggplot2::ggsave(filename = paste0('D:/Figure2_paper1.png'), plot = fig2, device = 'png', width = 7, height = 6.1, units = 'in', dpi = 350); rm(fig2)
 
 ## Figure 3
 ## Bivariate map of SPEI severity vs crop classes diversity (agriculture exposure)
