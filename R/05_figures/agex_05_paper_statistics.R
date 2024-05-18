@@ -60,3 +60,36 @@ cat('Two-GS. Extreme drought clusters in one country (%):',
 cat('Two-GS. Extreme drought clusters in two or more countries (%):',
     100 - round(table(agex_sgn_metrics$countries_count[agex_sgn_metrics$growing_seasons == 2])[[1]]/sum(table(agex_sgn_metrics$countries_count[agex_sgn_metrics$growing_seasons == 2])) * 100, 2),
     '\n')
+
+## Top countries with more than clusters due to their size ----
+sort(table(agex_sgn_metrics$countries[agex_sgn_metrics$countries_count == 1]), decreasing = T)[1:5]
+
+## Transcontinental clusters ----
+# Absolute frequency
+trscntn_cnt <- strsplit(x = agex_sgn_metrics$continents, split = ',') |>
+  purrr::map(length) |>
+  base::unlist() |>
+  table()
+# Relative frequency
+trscntn_prc <- trscntn/nrow(agex_sgn_metrics) * 100
+round(sum(trscntn_prc[-1]), 1)
+
+## Continental clusters distribution ----
+trscntn_id <- strsplit(x = agex_sgn_metrics$continents, split = ',') |>
+  purrr::map(length) |>
+  base::unlist()
+round(sort(table(agex_sgn_metrics$continents[trscntn_id == 1]), decreasing = T)/nrow(agex_sgn_metrics) * 100, 1)
+
+## Potential cooperation per continent ----
+agex_sgn_metrics |>
+  dplyr::filter(trscntn_id == 1) |>
+  dplyr::group_by(continents) |>
+  dplyr::summarize(number_of_clusters = dplyr::n(),
+                   collaboration = sum(countries_count > 1)) |>
+  dplyr::ungroup() |>
+  dplyr::mutate(freq = round(collaboration/number_of_clusters * 100, 1)) |>
+  dplyr::arrange(-freq) |>
+  base::as.data.frame()
+
+length(agex_sgn_metrics$countries_count[agex_sgn_metrics$continents == 'Africa'])
+sum(agex_sgn_metrics$countries_count[agex_sgn_metrics$continents == 'Africa'] > 1)
