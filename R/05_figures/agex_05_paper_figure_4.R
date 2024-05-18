@@ -431,7 +431,7 @@ fg_12 <- ggpubr::annotate_figure(gg_ts_OC,
                                    size   = 13,
                                    family = 'serif'
                                  ))
-fg_13 <- ggpubr::annotate_figure(fig3_leg, top = NULL)
+fg_13 <- ggpubr::annotate_figure(fig4_leg, top = NULL)
 
 fig4 <- gridExtra::grid.arrange(fg_01, fg_02, fg_03, fg_04,
                                 fg_05, fg_06, fg_07, fg_08,
