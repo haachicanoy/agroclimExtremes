@@ -11,7 +11,13 @@ suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pa
 suppressMessages(pacman::p_load(terra, geodata, Kendall, tidyverse, psych,
                                 FactoMineR, factoextra, modifiedmk, NbClust,
                                 rnaturalearth, RColorBrewer, MetBrewer,
-                                fastcluster, eurostat, giscoR,parallelDist))
+                                fastcluster, eurostat, giscoR,parallelDist,
+                                OutliersO3))
+
+getmode <- function(v) {
+  uniqv <- unique(v)
+  uniqv[which.max(tabulate(match(v, uniqv)))]
+}
 
 ## Key arguments
 root   <- '//CATALOGUE/WFP_ClimateRiskPr1'
@@ -46,4 +52,49 @@ agex_sgn_aux <- agex_sgn; rm(agex_sgn)
 terra::values(agex_sgn_aux) <- NA
 agex_sgn_aux[dfm$cell] <- dfm$extreme_cluster
 
-terra::writeRaster(x = agex_sgn_aux, paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/agex_global_spei-6_two_fmadogram_clean.tif'))
+outfile <- paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/agex_global_spei-6_two_fmadogram_clean.tif')
+
+## CLEANING PROCESS
+if(!file.exists(outfile)){
+  
+  # -------------------------------------------------------------------------- #
+  # First cleaning phase: Clean clusters from random miss-classification issues
+  # -------------------------------------------------------------------------- #
+  
+  ## Extreme clusters to remove
+  
+  # Cleaning
+  agex_sgn_cln <- agex_sgn_aux
+  n_clusters   <- length(unique(as.numeric(terra::values(agex_sgn_aux, na.rm = T))))
+  for(cl in 1:n_clusters){
+    
+    cat(paste0('Processing CLUSTER: ',cl,'\n'))
+    aux <- agex_sgn_aux
+    aux[aux != cl] <- NA
+    
+    # Get cluster's coordinates
+    aux_dfm <- terra::as.data.frame(x = aux, xy = T, cell = T, na.rm = T)
+    
+    # Get outliers from coordinates
+    out_pre <- OutliersO3::O3prep(data = aux_dfm[,c('x','y')], method = c('HDo','BAC','adjOut','DDC','MCD')) # 'PCS'
+    out_res <- OutliersO3::O3plotM(out_pre)
+    
+    # Number of outliers per method
+    out_cns <- out_res$nOut
+    print(out_cns)
+    n_out <- getmode(out_cns)
+    
+    cat(paste0('Outliers identified: ',n_out,'\n\n'))
+    if(n_out > 0){
+      out_cnd <- out_res$outsTable$Method %in% names(which(out_res$nOut == n_out))
+      out_css <- unique(out_res$outsTable[out_cnd,'Case'])
+      agex_sgn_cln[aux_dfm[out_css,'cell']] <- NA
+    }
+    
+  }
+  
+  terra::writeRaster(x = agex_sgn_cln, outfile, overwrite = T)
+  
+} else {
+  agex_sgn_cln <- terra::rast(outfile)
+}
