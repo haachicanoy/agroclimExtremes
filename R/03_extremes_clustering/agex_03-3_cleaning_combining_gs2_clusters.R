@@ -76,19 +76,23 @@ if(!file.exists(outfile)){
     aux_dfm <- terra::as.data.frame(x = aux, xy = T, cell = T, na.rm = T)
     
     # Get outliers from coordinates
+    set.seed(1235)
     out_pre <- OutliersO3::O3prep(data = aux_dfm[,c('x','y')], method = c('HDo','BAC','adjOut','DDC','MCD')) # 'PCS'
-    out_res <- OutliersO3::O3plotM(out_pre)
-    
-    # Number of outliers per method
-    out_cns <- out_res$nOut
-    print(out_cns)
-    n_out <- getmode(out_cns)
-    
-    cat(paste0('Outliers identified: ',n_out,'\n\n'))
-    if(n_out > 0){
-      out_cnd <- out_res$outsTable$Method %in% names(which(out_res$nOut == n_out))
-      out_css <- unique(out_res$outsTable[out_cnd,'Case'])
-      agex_sgn_cln[aux_dfm[out_css,'cell']] <- NA
+    out_msg <- capture.output(try(OutliersO3::O3plotM(out_pre), silent = T))
+    if(length(out_msg) > 1){
+      out_res <- OutliersO3::O3plotM(out_pre)
+      
+      # Number of outliers per method
+      out_cns <- out_res$nOut
+      print(out_cns)
+      n_out <- getmode(out_cns)
+      
+      cat(paste0('Outliers identified: ',n_out,'\n\n'))
+      if(n_out > 0){
+        out_cnd <- out_res$outsTable$Method %in% names(which(out_res$nOut == n_out))
+        out_css <- unique(out_res$outsTable[out_cnd,'Case'])
+        agex_sgn_cln[aux_dfm[out_css,'cell']] <- NA
+      }
     }
     
   }
