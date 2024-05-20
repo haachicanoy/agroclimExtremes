@@ -160,7 +160,7 @@ if(!file.exists(outfile)){
   plot(crp_ntp)
   crp_ntp_25km <- terra::resample(x = crp_ntp, y = agex_sgn_cln, method = 'cubicspline', threads = T)
   crp_ntp_25km <- terra::mask(x = crp_ntp_25km, mask = agex_sgn_cln)
-  terra::writeRaster(x = crp_ntp_25km, filename = outfile)
+  terra::writeRaster(x = crp_ntp_25km, filename = outfile, overwrite = T)
 } else {
   crp_ntp_25km <- terra::rast(outfile)
 }; rm(outfile)
@@ -175,7 +175,7 @@ if(!file.exists(outfile)){
   names(all_vop) <- 'total_vop'
   all_vop_25km <- terra::resample(x = all_vop, y = agex_sgn_cln, method = 'cubicspline', threads = T)
   all_vop_25km <- terra::mask(x = all_vop_25km, mask = agex_sgn_cln)
-  terra::writeRaster(x = all_vop_25km, filename = outfile)
+  terra::writeRaster(x = all_vop_25km, filename = outfile, overwrite = T)
 } else {
   all_vop_25km <- terra::rast(outfile)
 }; rm(outfile)
@@ -187,7 +187,7 @@ if(!file.exists(outfile)){
   names(food_vop) <- 'food_vop'
   food_vop_25km <- terra::resample(x = food_vop, y = agex_sgn_cln, method = 'cubicspline', threads = T)
   food_vop_25km <- terra::mask(x = food_vop_25km, mask = agex_sgn_cln)
-  terra::writeRaster(x = food_vop_25km, filename = outfile)
+  terra::writeRaster(x = food_vop_25km, filename = outfile, overwrite = T)
 } else {
   food_vop_25km <- terra::rast(outfile)
 }; rm(outfile)
@@ -199,7 +199,7 @@ if(!file.exists(outfile)){
   names(nonf_vop) <- 'non-food_vop'
   nonf_vop_25km <- terra::resample(x = nonf_vop, y = agex_sgn_cln, method = 'cubicspline', threads = T)
   nonf_vop_25km <- terra::mask(x = nonf_vop_25km, mask = agex_sgn_cln)
-  terra::writeRaster(x = nonf_vop_25km, filename = outfile)
+  terra::writeRaster(x = nonf_vop_25km, filename = outfile, overwrite = T)
 } else {
   nonf_vop_25km <- terra::rast(outfile)
 }; rm(outfile)
@@ -226,7 +226,7 @@ if(!file.exists(outfile)){
   wghts <- c(1, 1, (0.007 + 0.014)/2, 0.01, 0.1, (0.5+0.027)/2, 0.1)
   lvstc_unt <- lvstc_cnt * wghts
   names(lvstc_unt) <- c('Buffaloes','Cattle','Chickens','Ducks','Goats','Pigs','Sheep')
-  terra::writeRaster(lvstc_unt, filename = outfile)
+  terra::writeRaster(lvstc_unt, filename = outfile, overwrite = T)
 } else {
   lvstc_unt <- terra::rast(outfile)
 }; rm(outfile)
@@ -239,7 +239,7 @@ if(!file.exists(outfile)){
   names(lsu) <- 'total_livestock_units'
   lsu_25km <- terra::resample(x = lsu, y = agex_sgn_cln, method = 'cubicspline', threads = T)
   lsu_25km <- terra::mask(x = lsu_25km, mask = agex_sgn_cln)
-  terra::writeRaster(x = lsu_25km, filename = outfile)
+  terra::writeRaster(x = lsu_25km, filename = outfile, overwrite = T)
 } else {
   lsu_25km <- terra::rast(outfile)
 }; rm(outfile)
@@ -253,7 +253,7 @@ if(!file.exists(outfile)){
   pop <- geodata::population(year = 2020, res = 10, path = tempdir())
   pop_25km <- terra::resample(x = pop, y = agex_sgn_cln, method = 'cubicspline', threads = T)
   pop_25km <- terra::mask(x = pop_25km, mask = agex_sgn_cln)
-  terra::writeRaster(x = pop_25km, filename = outfile)
+  terra::writeRaster(x = pop_25km, filename = outfile, overwrite = T)
 } else {
   pop_25km <- terra::rast(outfile)
 }; rm(outfile)
@@ -287,7 +287,7 @@ if(!file.exists(outfile)){
   idx_two_sxt <- mean(c(idx_two_s1_sxt, idx_two_s2_sxt))
   # Merge results from one and two growing-season places
   idx_sxt <- terra::merge(idx_one_s1_sxt, idx_two_sxt)
-  terra::writeRaster(x = idx_sxt, filename = outfile)
+  terra::writeRaster(x = idx_sxt, filename = outfile, overwrite = T)
 } else {
   idx_sxt <- terra::rast(outfile)
 }; rm(outfile)
@@ -306,7 +306,7 @@ if(!file.exists(outfile)){
   idx_two_cnt <- round(mean(c(idx_two_s1_cnt, idx_two_s2_cnt)))
   # Merge results from one and two growing-season places
   idx_cnt <- terra::merge(idx_one_s1_cnt, idx_two_cnt)
-  terra::writeRaster(x = idx_cnt, filename = outfile)
+  terra::writeRaster(x = idx_cnt, filename = outfile, overwrite = T)
 } else {
   idx_cnt <- terra::rast(outfile)
 }; rm(outfile)

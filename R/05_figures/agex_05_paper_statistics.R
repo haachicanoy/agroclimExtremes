@@ -93,3 +93,7 @@ agex_sgn_metrics |>
 
 length(agex_sgn_metrics$countries_count[agex_sgn_metrics$continents == 'Africa'])
 sum(agex_sgn_metrics$countries_count[agex_sgn_metrics$continents == 'Africa'] > 1)
+
+## Cooperation case studies per continent ----
+table(agex_sgn_metrics$countries_count[grep(pattern = '[aA]frica', agex_sgn_metrics$continents)])/104
+table(agex_sgn_metrics$countries_count[grep(pattern = '[eE]urope', agex_sgn_metrics$continents)])/76
