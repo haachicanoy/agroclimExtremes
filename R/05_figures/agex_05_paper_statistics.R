@@ -97,3 +97,7 @@ sum(agex_sgn_metrics$countries_count[agex_sgn_metrics$continents == 'Africa'] > 
 ## Cooperation case studies per continent ----
 table(agex_sgn_metrics$countries_count[grep(pattern = '[aA]frica', agex_sgn_metrics$continents)])/104
 table(agex_sgn_metrics$countries_count[grep(pattern = '[eE]urope', agex_sgn_metrics$continents)])/76
+table(agex_sgn_metrics$countries_count[grep(pattern = '[sS]outh [aA]merica', agex_sgn_metrics$continents)])/77
+table(agex_sgn_metrics$countries_count[grep(pattern = '[nN]orth [aA]merica', agex_sgn_metrics$continents)])/64
+table(agex_sgn_metrics$countries_count[grep(pattern = '[aA]sia', agex_sgn_metrics$continents)])/158
+table(agex_sgn_metrics$countries_count[grep(pattern = '[oO]ceania', agex_sgn_metrics$continents)])/15
