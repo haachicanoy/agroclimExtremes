@@ -119,7 +119,7 @@ fig1 <- gridExtra::grid.arrange(fg_01, fg_02,
                                 fg_03, fg_04,
                                 fg_05, fg_06,
                                 layout_matrix = layout); rm(ggm,fg_01,fg_02,fg_03,fg_04,fg_05,fg_06,layout)
-ggplot2::ggsave(filename = paste0('D:/Figure1_paper1.png'), plot = fig1, device = 'png', width = 10, height = 12.5, units = 'in', dpi = 350); rm(fig1)
+ggplot2::ggsave(filename = paste0(root,'/agroclimExtremes/agex_results/agex_figures/Figure1_paper1.png'), plot = fig1, device = 'png', width = 10, height = 12.5, units = 'in', dpi = 350); rm(fig1)
 
 ## Figure 2 ----
 # Percentage of extreme drought clusters in one, two, or more countries (Collaboration potential)
@@ -154,4 +154,4 @@ fig2 <- agex_sgn_metrics |>
                  strip.text.y    = element_text(size = 17, colour = 'black'),
                  plot.caption    = element_text(size = 15, hjust = 0, colour = 'black'),
                  legend.position = 'bottom')
-ggplot2::ggsave(filename = paste0('D:/Figure2_paper1.png'), plot = fig2, device = 'png', width = 7, height = 6.1, units = 'in', dpi = 350); rm(fig2,col_pltt)
+ggplot2::ggsave(filename = paste0(root,'/agroclimExtremes/agex_results/agex_figures/Figure2_paper1.png'), plot = fig2, device = 'png', width = 7, height = 6.1, units = 'in', dpi = 350); rm(fig2,col_pltt)
