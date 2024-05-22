@@ -85,14 +85,17 @@ shp <- list(nam, sam, afr, eur, asi, oce); rm(nam, sam, afr, eur, asi, oce)
 # Bivariate map of SPEI severity vs livestock equivalent units (livestock exposure)
 
 # Livestock equivalent units
-lvstck_units  <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/lsu_total.tif'))
+lvstck_units  <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/lsu_total_25km.tif'))
 
 # Index characterization: extreme trend
 idx_sxt <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/SPEI-6_extreme_trend.tif'))
 
 # Zonal statistics per extreme drought cluster (mean)
 agex_sgn_extreme_trend <- terra::zonal(x = idx_sxt, z = agex_sgn_num, fun = 'mean', na.rm = T, as.raster = T)
+metrics1 <- terra::zonal(x = idx_sxt, z = agex_sgn_num, fun = 'mean', na.rm = T)
 agex_sgn_lvstck_units <- terra::zonal(x = lvstck_units, z = agex_sgn_num, fun = 'mean', na.rm = T, as.raster = T)
+metrics2 <- terra::zonal(x = lvstck_units, z = agex_sgn_num, fun = 'mean', na.rm = T)
+metrics <- dplyr::left_join(x = metrics1, y = metrics2, by = 'extreme_cluster'); rm(metrics1, metrics2)
 
 # Merge data.frames
 agex_sgn_severity_vs_lvstck <- terra::as.data.frame(x = c(agex_sgn, agex_sgn_extreme_trend, agex_sgn_lvstck_units), xy = T, cell = T)
@@ -100,8 +103,8 @@ rm(agex_sgn_extreme_trend, agex_sgn_lvstck_units)
 
 # Produce bivariate maps
 # Define severity and diversity quantiles
-severity_brks <- quantile(x = agex_sgn_metrics$`SPEI.6_slope_95th`, probs = seq(0,1,1/4))
-diversity_brks <- quantile(x = agex_sgn_metrics$total_livestock_units, probs = seq(0,1,1/4))
+severity_brks <- quantile(x = metrics$`SPEI-6_slope_95th`, probs = seq(0,1,1/4))
+diversity_brks <- quantile(x = metrics$total_livestock_units, probs = seq(0,1,1/4))
 # Create categories
 agex_sgn_severity_vs_lvstck$Severity_class <- cut(x = agex_sgn_severity_vs_lvstck$`SPEI-6_slope_95th`, breaks = severity_brks) |> as.numeric() |> as.character()
 agex_sgn_severity_vs_lvstck$Diversity_class <- cut(x = agex_sgn_severity_vs_lvstck$total_livestock_units, breaks = diversity_brks) |> as.numeric() |> as.character()
@@ -139,7 +142,7 @@ for(i in 1:length(shp)){
 
 ### Legend ----
 fig4_leg <- make_maps_legend(dims = 4,
-                             xlabl = 'Drought severity',
+                             xlabl = 'Extreme drought\nintensification',
                              ylabl = 'Livestock units',
                              xbrks = c('Negative','Low','Medium','High'),
                              ybrks = c('Very low','Low','Medium','High'),
@@ -349,7 +352,7 @@ layout <- matrix(c(1:12,NA,13,13,NA), nrow = 4, ncol = 4, byrow = TRUE)
 
 fg_01 <- ggpubr::annotate_figure(gg_ts_NA,
                                  top = text_grob(
-                                   label  = 'a) Transnational cluster.\nDrought over one-GS',
+                                   label  = 'a) Transnational.\nOne-GS',
                                    face   = 'plain',
                                    size   = 13,
                                    family = 'serif'
@@ -370,14 +373,14 @@ fg_03 <- ggpubr::annotate_figure(ggm_SA,
                                  ))
 fg_04 <- ggpubr::annotate_figure(gg_ts_SA,
                                  top = text_grob(
-                                   label  = 'b) Transnational cluster.\nDrought over two-GS',
+                                   label  = 'b) Transnational.\nTwo-GS',
                                    face   = 'plain',
                                    size   = 13,
                                    family = 'serif'
                                  ))
 fg_05 <- ggpubr::annotate_figure(gg_ts_AF,
                                  top = text_grob(
-                                   label  = 'c) Transnational cluster.\nDrought over one-GS',
+                                   label  = 'c) Transnational.\nOne-GS',
                                    face   = 'plain',
                                    size   = 13,
                                    family = 'serif'
@@ -398,14 +401,14 @@ fg_07 <- ggpubr::annotate_figure(ggm_EU,
                                  ))
 fg_08 <- ggpubr::annotate_figure(gg_ts_EU,
                                  top = text_grob(
-                                   label  = 'd) Transnational cluster.\nDrought over one-GS',
+                                   label  = 'd) Transnational.\nOne-GS',
                                    face   = 'plain',
                                    size   = 13,
                                    family = 'serif'
                                  ))
 fg_09 <- ggpubr::annotate_figure(gg_ts_AS,
                                  top = text_grob(
-                                   label  = 'e) National cluster.\nDrought over one-GS',
+                                   label  = 'e) National.\nOne-GS',
                                    face   = 'plain',
                                    size   = 13,
                                    family = 'serif'
@@ -426,7 +429,7 @@ fg_11 <- ggpubr::annotate_figure(ggm_OC,
                                  ))
 fg_12 <- ggpubr::annotate_figure(gg_ts_OC,
                                  top = text_grob(
-                                   label  = 'f) National cluster.\nDrought over one-GS',
+                                   label  = 'f) National.\nOne-GS',
                                    face   = 'plain',
                                    size   = 13,
                                    family = 'serif'
@@ -438,7 +441,7 @@ fig4 <- gridExtra::grid.arrange(fg_01, fg_02, fg_03, fg_04,
                                 fg_09, fg_10, fg_11, fg_12,
                                 fg_13,
                                 layout_matrix = layout)
-ggplot2::ggsave(filename = paste0('D:/Figure4_paper1.png'), plot = fig4, device = 'png', width = 12, height = 10, units = 'in', dpi = 350)
+ggplot2::ggsave(filename = paste0(root,'/agroclimExtremes/agex_results/agex_figures/Figure4_paper1.png'), plot = fig4, device = 'png', width = 12, height = 10, units = 'in', dpi = 350)
 rm(ggm,
    ggm_NA,ggm_SA,ggm_AF,ggm_EU,ggm_AS,ggm_OC,
    gg_ts_NA,gg_ts_SA,gg_ts_AF,gg_ts_EU,gg_ts_AS,gg_ts_OC,

@@ -157,10 +157,10 @@ if(!file.exists(outfile)){
   crp_typ <- terra::rast(crp_fls)
   crp_ntp <- terra::app(x = crp_typ, fun = function(i, ff) ff(i), cores = 20, ff = entropy::entropy)
   names(crp_ntp) <- 'crop_classes_diversity'
-  # plot(crp_ntp)
-  # crp_ntp_25km <- terra::resample(x = crp_ntp, y = agex_sgn_cln, method = 'cubicspline', threads = T)
-  # crp_ntp_25km <- terra::mask(x = crp_ntp_25km, mask = agex_sgn_cln)
   terra::writeRaster(x = crp_ntp, filename = outfile, overwrite = T)
+  crp_ntp_25km <- terra::resample(x = crp_ntp, y = agex_sgn_cln, method = 'cubicspline', threads = T)
+  crp_ntp_25km <- terra::mask(x = crp_ntp_25km, mask = agex_sgn_cln)
+  terra::writeRaster(x = crp_ntp_25km, filename = paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/crop_classes_diversity_25km.tif'), overwrite = T)
 } else {
   crp_ntp <- terra::rast(outfile)
 }; rm(outfile)
@@ -223,9 +223,10 @@ if(!file.exists(outfile)){
   lsu <- sum(lvstc_unt)
   rm(lvstc_fls, lvstc_cnt)
   names(lsu) <- 'total_livestock_units'
-  # lsu_25km <- terra::resample(x = lsu, y = agex_sgn_cln, method = 'cubicspline', threads = T)
-  # lsu_25km <- terra::mask(x = lsu_25km, mask = agex_sgn_cln)
   terra::writeRaster(x = lsu, filename = outfile, overwrite = T)
+  lsu_25km <- terra::resample(x = lsu, y = agex_sgn_cln, method = 'cubicspline', threads = T)
+  lsu_25km <- terra::mask(x = lsu_25km, mask = agex_sgn_cln)
+  terra::writeRaster(x = lsu_25km, filename = paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/lsu_total_25km.tif'), overwrite = T)
 } else {
   lsu <- terra::rast(outfile)
 }; rm(outfile)

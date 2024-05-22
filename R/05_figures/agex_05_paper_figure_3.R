@@ -85,14 +85,17 @@ shp <- list(nam, sam, afr, eur, asi, oce); rm(nam, sam, afr, eur, asi, oce)
 # Bivariate map of SPEI severity vs crop classes diversity (agriculture exposure)
 
 # Crop classes diversity
-crp_diversity <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/crop_classes_diversity.tif'))
+crp_diversity <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/crop_classes_diversity_25km.tif'))
 
 # Index characterization: extreme trend
 idx_sxt <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/SPEI-6_extreme_trend.tif'))
 
 # Zonal statistics per extreme drought cluster (mean)
 agex_sgn_extreme_trend <- terra::zonal(x = idx_sxt, z = agex_sgn_num, fun = 'mean', na.rm = T, as.raster = T)
+metrics1 <- terra::zonal(x = idx_sxt, z = agex_sgn_num, fun = 'mean', na.rm = T)
 agex_sgn_crp_diversity <- terra::zonal(x = crp_diversity, z = agex_sgn_num, fun = 'mean', na.rm = T, as.raster = T)
+metrics2 <- terra::zonal(x = crp_diversity, z = agex_sgn_num, fun = 'mean', na.rm = T)
+metrics <- dplyr::left_join(x = metrics1, y = metrics2, by = 'extreme_cluster'); rm(metrics1, metrics2)
 
 # Merge data.frames
 agex_sgn_severity_vs_crops <- terra::as.data.frame(x = c(agex_sgn, agex_sgn_extreme_trend, agex_sgn_crp_diversity), xy = T, cell = T)
@@ -100,8 +103,8 @@ rm(agex_sgn_extreme_trend, agex_sgn_crp_diversity)
 
 # Produce bivariate maps
 # Define severity and diversity quantiles
-severity_brks <- quantile(x = agex_sgn_metrics$`SPEI.6_slope_95th`, probs = seq(0,1,1/4))
-diversity_brks <- quantile(x = agex_sgn_metrics$crop_classes_diversity, probs = seq(0,1,1/4))
+severity_brks <- quantile(x = metrics$`SPEI-6_slope_95th`, probs = seq(0,1,1/4))
+diversity_brks <- quantile(x = metrics$crop_classes_diversity, probs = seq(0,1,1/4))
 # Create categories
 agex_sgn_severity_vs_crops$Severity_class <- cut(x = agex_sgn_severity_vs_crops$`SPEI-6_slope_95th`, breaks = severity_brks) |> as.numeric() |> as.character()
 agex_sgn_severity_vs_crops$Diversity_class <- cut(x = agex_sgn_severity_vs_crops$crop_classes_diversity, breaks = diversity_brks) |> as.numeric() |> as.character()
@@ -345,11 +348,14 @@ ggm_OC <- ggm[[6]] +
                      color = 'red', size = 1.5, fill = NA)
 
 ## Full figure ----
-layout <- matrix(c(1:12,NA,13,13,NA), nrow = 4, ncol = 4, byrow = TRUE)
+layout <- matrix(c(1:12,NA,13,13,NA), nrow = 4, ncol = 4, byrow = T)
+
+sts <- agex_sgn_metrics[agex_sgn_metrics$extreme_cluster %in% c(157,420,270,33,201,442),]
+sts[,c('harvested_area_total','harvested_area_min','harvested_area_max')]
 
 fg_01 <- ggpubr::annotate_figure(gg_ts_NA,
                                  top = text_grob(
-                                   label  = 'a) Transnational cluster.\nDrought over one-GS',
+                                   label  = 'a) Transnational. One-GS',
                                    face   = 'plain',
                                    size   = 13,
                                    family = 'serif'
@@ -370,14 +376,14 @@ fg_03 <- ggpubr::annotate_figure(ggm_SA,
                                  ))
 fg_04 <- ggpubr::annotate_figure(gg_ts_SA,
                                  top = text_grob(
-                                   label  = 'b) Transnational cluster.\nDrought over two-GS',
+                                   label  = 'b) Transnational. Two-GS',
                                    face   = 'plain',
                                    size   = 13,
                                    family = 'serif'
                                  ))
 fg_05 <- ggpubr::annotate_figure(gg_ts_AF,
                                  top = text_grob(
-                                   label  = 'c) Transnational cluster.\nDrought over one-GS',
+                                   label  = 'c) Transnational. One-GS',
                                    face   = 'plain',
                                    size   = 13,
                                    family = 'serif'
@@ -398,14 +404,14 @@ fg_07 <- ggpubr::annotate_figure(ggm_EU,
                                  ))
 fg_08 <- ggpubr::annotate_figure(gg_ts_EU,
                                  top = text_grob(
-                                   label  = 'd) Transnational cluster.\nDrought over one-GS',
+                                   label  = 'd) Transnational. One-GS',
                                    face   = 'plain',
                                    size   = 13,
                                    family = 'serif'
                                  ))
 fg_09 <- ggpubr::annotate_figure(gg_ts_AS,
                                  top = text_grob(
-                                   label  = 'e) National cluster.\nDrought over two-GS',
+                                   label  = 'e) Transnational. Two-GS',
                                    face   = 'plain',
                                    size   = 13,
                                    family = 'serif'
@@ -426,7 +432,7 @@ fg_11 <- ggpubr::annotate_figure(ggm_OC,
                                  ))
 fg_12 <- ggpubr::annotate_figure(gg_ts_OC,
                                  top = text_grob(
-                                   label  = 'f) National cluster.\nDrought over one-GS',
+                                   label  = 'f) National. One-GS',
                                    face   = 'plain',
                                    size   = 13,
                                    family = 'serif'
@@ -438,7 +444,7 @@ fig3 <- gridExtra::grid.arrange(fg_01, fg_02, fg_03, fg_04,
                                 fg_09, fg_10, fg_11, fg_12,
                                 fg_13,
                                 layout_matrix = layout)
-ggplot2::ggsave(filename = paste0('D:/Figure3_paper1.png'), plot = fig3, device = 'png', width = 12, height = 10, units = 'in', dpi = 350)
+ggplot2::ggsave(filename = paste0(root,'/agroclimExtremes/agex_results/agex_figures/Figure3_paper1.png'), plot = fig3, device = 'png', width = 12, height = 10, units = 'in', dpi = 350)
 rm(ggm,
    ggm_NA,ggm_SA,ggm_AF,ggm_EU,ggm_AS,ggm_OC,
    gg_ts_NA,gg_ts_SA,gg_ts_AF,gg_ts_EU,gg_ts_AS,gg_ts_OC,
