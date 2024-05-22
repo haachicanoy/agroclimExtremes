@@ -177,6 +177,7 @@ if(!file.exists(outfile)){
   crops_fls <- crops_fls[grep2(pattern = toupper(foods), x = crops_fls)]
   hrvstd_area <- terra::rast(crops_fls) |> sum(na.rm = T)
   hrvstd_area <- hrvstd_area * 0.01 # in km^2
+  names(hrvstd_area) <- 'harvested_area_total'
   terra::writeRaster(x = hrvstd_area, filename = outfile, overwrite = T)
 } else {
   hrvstd_area <- terra::rast(outfile)
@@ -255,13 +256,14 @@ idx_two_s2 <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_',ind
 
 # SPEI-6 average
 outfile <- paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/SPEI-6_average.tif')
-if(!file.exists()){
+if(!file.exists(outfile)){
   dir.create(path = dirname(outfile), F, T)
   idx_one_s1_avg <- mean(idx_one_s1)
   idx_two_s1_avg <- mean(idx_two_s1)
   idx_two_s2_avg <- mean(idx_two_s2)
   idx_two_avg <- mean(c(idx_two_s1_avg,idx_two_s2_avg)); rm(idx_two_s1_avg, idx_two_s2_avg)
   idx_avg <- terra::merge(idx_one_s1_avg, idx_two_avg)
+  names(idx_avg) <- 'SPEI-6_average'
   terra::writeRaster(x = idx_avg, filename = outfile, overwrite = T)
 } else {
   idx_avg <- terra::rast(outfile)
@@ -277,6 +279,7 @@ if(!file.exists(outfile)){
   idx_two_range <- c(mean(idx_two_s1_range[[1]],idx_two_s2_range[[1]]),
                      mean(idx_two_s1_range[[2]],idx_two_s2_range[[2]])); rm(idx_two_s1_range, idx_two_s2_range)
   idx_range <- terra::merge(idx_one_s1_range, idx_two_range); rm(idx_one_s1_range, idx_two_range)
+  names(idx_range) <- c('SPEI-6_min', 'SPEI-6_max')
   terra::writeRaster(x = idx_range, filename = outfile, overwrite = T)
 } else {
   idx_range <- terra::rast(outfile)
@@ -332,6 +335,7 @@ agex_sgn_poly <- terra::as.polygons(x = agex_sgn_cln)
 rst_mtrcs <- cbind(
   terra::zonal(x = pop, z = agex_sgn_poly, fun = 'mean', na.rm = T),
   terra::zonal(x = c(total_vop, food_vop, nonf_vop), z = agex_sgn_poly, fun = 'sum', na.rm = T),
+  terra::zonal(x = hrvstd_area, z = agex_sgn_poly, fun = 'sum', na.rm = T),
   terra::zonal(x = crp_ntp, z = agex_sgn_poly, fun = 'mean', na.rm = T),
   terra::zonal(x = lsu, z = agex_sgn_poly, fun = 'sum', na.rm = T),
   terra::zonal(x = c(idx_avg, idx_range, idx_sxt), z = agex_sgn_poly, fun = 'mean', na.rm = T)
