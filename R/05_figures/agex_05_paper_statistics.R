@@ -71,7 +71,7 @@ trscntn_cnt <- strsplit(x = agex_sgn_metrics$continents, split = ',') |>
   base::unlist() |>
   table()
 # Relative frequency
-trscntn_prc <- trscntn/nrow(agex_sgn_metrics) * 100
+trscntn_prc <- trscntn_cnt/nrow(agex_sgn_metrics) * 100
 round(sum(trscntn_prc[-1]), 1)
 
 ## Continental clusters distribution ----
@@ -91,13 +91,10 @@ agex_sgn_metrics |>
   dplyr::arrange(-freq) |>
   base::as.data.frame()
 
-length(agex_sgn_metrics$countries_count[agex_sgn_metrics$continents == 'Africa'])
-sum(agex_sgn_metrics$countries_count[agex_sgn_metrics$continents == 'Africa'] > 1)
-
 ## Cooperation case studies per continent ----
-table(agex_sgn_metrics$countries_count[grep(pattern = '[aA]frica', agex_sgn_metrics$continents)])/104
-table(agex_sgn_metrics$countries_count[grep(pattern = '[eE]urope', agex_sgn_metrics$continents)])/76
-table(agex_sgn_metrics$countries_count[grep(pattern = '[sS]outh [aA]merica', agex_sgn_metrics$continents)])/77
-table(agex_sgn_metrics$countries_count[grep(pattern = '[nN]orth [aA]merica', agex_sgn_metrics$continents)])/64
-table(agex_sgn_metrics$countries_count[grep(pattern = '[aA]sia', agex_sgn_metrics$continents)])/158
+table(agex_sgn_metrics$countries_count[grep(pattern = '[aA]frica', agex_sgn_metrics$continents)])/101 * 100
+table(agex_sgn_metrics$countries_count[grep(pattern = '[eE]urope', agex_sgn_metrics$continents)])/76 * 100
+table(agex_sgn_metrics$countries_count[grep(pattern = '[sS]outh [aA]merica', agex_sgn_metrics$continents)])/77 * 100
+table(agex_sgn_metrics$countries_count[grep(pattern = '[nN]orth [aA]merica', agex_sgn_metrics$continents)])/64 * 100
+table(agex_sgn_metrics$countries_count[grep(pattern = '[aA]sia', agex_sgn_metrics$continents)])/158 * 100
 table(agex_sgn_metrics$countries_count[grep(pattern = '[oO]ceania', agex_sgn_metrics$continents)])/15

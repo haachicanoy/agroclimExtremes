@@ -157,52 +157,20 @@ if(!file.exists(outfile)){
   crp_typ <- terra::rast(crp_fls)
   crp_ntp <- terra::app(x = crp_typ, fun = function(i, ff) ff(i), cores = 20, ff = entropy::entropy)
   names(crp_ntp) <- 'crop_classes_diversity'
-  plot(crp_ntp)
-  crp_ntp_25km <- terra::resample(x = crp_ntp, y = agex_sgn_cln, method = 'cubicspline', threads = T)
-  crp_ntp_25km <- terra::mask(x = crp_ntp_25km, mask = agex_sgn_cln)
-  terra::writeRaster(x = crp_ntp_25km, filename = outfile, overwrite = T)
+  # plot(crp_ntp)
+  # crp_ntp_25km <- terra::resample(x = crp_ntp, y = agex_sgn_cln, method = 'cubicspline', threads = T)
+  # crp_ntp_25km <- terra::mask(x = crp_ntp_25km, mask = agex_sgn_cln)
+  terra::writeRaster(x = crp_ntp, filename = outfile, overwrite = T)
 } else {
-  crp_ntp_25km <- terra::rast(outfile)
+  crp_ntp <- terra::rast(outfile)
 }; rm(outfile)
 
 ## Agricultural economic value
 # Metric: Value of production
 # Meaning: High value of production means high economic value from agriculture
-outfile <- paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/total_vop.tif')
-if(!file.exists(outfile)){
-  dir.create(path = dirname(outfile), F, T)
-  all_vop <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_spam2010V2r0_global_V_agg_VP_CROP_A.tif'))
-  names(all_vop) <- 'total_vop'
-  all_vop_25km <- terra::resample(x = all_vop, y = agex_sgn_cln, method = 'cubicspline', threads = T)
-  all_vop_25km <- terra::mask(x = all_vop_25km, mask = agex_sgn_cln)
-  terra::writeRaster(x = all_vop_25km, filename = outfile, overwrite = T)
-} else {
-  all_vop_25km <- terra::rast(outfile)
-}; rm(outfile)
-
-outfile <- paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/food_vop.tif')
-if(!file.exists(outfile)){
-  dir.create(path = dirname(outfile), F, T)
-  food_vop <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_spam2010V2r0_global_V_agg_VP_FOOD_A.tif'))
-  names(food_vop) <- 'food_vop'
-  food_vop_25km <- terra::resample(x = food_vop, y = agex_sgn_cln, method = 'cubicspline', threads = T)
-  food_vop_25km <- terra::mask(x = food_vop_25km, mask = agex_sgn_cln)
-  terra::writeRaster(x = food_vop_25km, filename = outfile, overwrite = T)
-} else {
-  food_vop_25km <- terra::rast(outfile)
-}; rm(outfile)
-
-outfile <- paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/nonfood_vop.tif')
-if(!file.exists(outfile)){
-  dir.create(path = dirname(outfile), F, T)
-  nonf_vop <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_spam2010V2r0_global_V_agg_VP_NONF_A.tif'))
-  names(nonf_vop) <- 'non-food_vop'
-  nonf_vop_25km <- terra::resample(x = nonf_vop, y = agex_sgn_cln, method = 'cubicspline', threads = T)
-  nonf_vop_25km <- terra::mask(x = nonf_vop_25km, mask = agex_sgn_cln)
-  terra::writeRaster(x = nonf_vop_25km, filename = outfile, overwrite = T)
-} else {
-  nonf_vop_25km <- terra::rast(outfile)
-}; rm(outfile)
+total_vop <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_spam2010V2r0_global_V_agg_VP_CROP_A.tif')); names(total_vop) <- 'total_vop'
+food_vop  <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_spam2010V2r0_global_V_agg_VP_FOOD_A.tif')); names(food_vop) <- 'food_vop'
+nonf_vop  <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_spam2010V2r0_global_V_agg_VP_NONF_A.tif')); names(nonf_vop) <- 'non-food_vop'
 
 ## Livestock diversity
 # Metric: Livestock equivalent units
@@ -237,11 +205,11 @@ if(!file.exists(outfile)){
   lsu <- sum(lvstc_unt)
   rm(lvstc_fls, lvstc_cnt)
   names(lsu) <- 'total_livestock_units'
-  lsu_25km <- terra::resample(x = lsu, y = agex_sgn_cln, method = 'cubicspline', threads = T)
-  lsu_25km <- terra::mask(x = lsu_25km, mask = agex_sgn_cln)
-  terra::writeRaster(x = lsu_25km, filename = outfile, overwrite = T)
+  # lsu_25km <- terra::resample(x = lsu, y = agex_sgn_cln, method = 'cubicspline', threads = T)
+  # lsu_25km <- terra::mask(x = lsu_25km, mask = agex_sgn_cln)
+  terra::writeRaster(x = lsu, filename = outfile, overwrite = T)
 } else {
-  lsu_25km <- terra::rast(outfile)
+  lsu <- terra::rast(outfile)
 }; rm(outfile)
 
 ## Exposed population
@@ -251,11 +219,11 @@ outfile <- paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/popula
 if(!file.exists(outfile)){
   dir.create(path = dirname(outfile), F, T)
   pop <- geodata::population(year = 2020, res = 10, path = tempdir())
-  pop_25km <- terra::resample(x = pop, y = agex_sgn_cln, method = 'cubicspline', threads = T)
-  pop_25km <- terra::mask(x = pop_25km, mask = agex_sgn_cln)
-  terra::writeRaster(x = pop_25km, filename = outfile, overwrite = T)
+  # pop_25km <- terra::resample(x = pop, y = agex_sgn_cln, method = 'cubicspline', threads = T)
+  # pop_25km <- terra::mask(x = pop_25km, mask = agex_sgn_cln)
+  terra::writeRaster(x = pop, filename = outfile, overwrite = T)
 } else {
-  pop_25km <- terra::rast(outfile)
+  pop <- terra::rast(outfile)
 }; rm(outfile)
 
 ## Index severity
@@ -267,6 +235,35 @@ stp <- data.frame(gs = c('one','two','two'), season = c('1','1','2'))
 idx_one_s1 <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_',index,'/agex_',index,'_25km/',stp$gs[1],'_s',stp$season[1],'_',index,'_25km.tif'))
 idx_two_s1 <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_',index,'/agex_',index,'_25km/',stp$gs[2],'_s',stp$season[2],'_',index,'_25km.tif'))
 idx_two_s2 <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_',index,'/agex_',index,'_25km/',stp$gs[3],'_s',stp$season[3],'_',index,'_25km.tif'))
+
+# SPEI-6 range
+outfile <- paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/SPEI-6_range.tif')
+if(!file.exists(outfile)){
+  dir.create(path = dirname(outfile), F, T)
+  idx_one_s1_range <- range(idx_one_s1)
+  idx_two_s1_range <- range(idx_two_s1)
+  idx_two_s2_range <- range(idx_two_s2)
+  idx_two_range <- c(mean(idx_two_s1_range[[1]],idx_two_s2_range[[1]]),
+                     mean(idx_two_s1_range[[2]],idx_two_s2_range[[2]])); rm(idx_two_s1_range, idx_two_s2_range)
+  idx_range <- terra::merge(idx_one_s1_range, idx_two_range); rm(idx_one_s1_range, idx_two_range)
+  terra::writeRaster(x = idx_range, filename = outfile, overwrite = T)
+} else {
+  idx_range <- terra::rast(outfile)
+}; rm(outfile)
+
+# SPEI-6 average
+outfile <- paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/SPEI-6_average.tif')
+if(!file.exists()){
+  dir.create(path = dirname(outfile), F, T)
+  idx_one_s1_avg <- mean(idx_one_s1)
+  idx_two_s1_avg <- mean(idx_two_s1)
+  idx_two_s2_avg <- mean(idx_two_s2)
+  idx_two_avg <- mean(c(idx_two_s1_avg,idx_two_s2_avg)); rm(idx_two_s1_avg, idx_two_s2_avg)
+  idx_avg <- terra::merge(idx_one_s1_avg, idx_two_avg)
+  terra::writeRaster(x = idx_avg, filename = outfile, overwrite = T)
+} else {
+  idx_avg <- terra::rast(outfile)
+}; rm(outfile)
 
 # # Trend
 # idx_one_s1_slp <- terra::app(x = idx_one_s1, fun = function(i, ff) ff(i), cores = 20, ff = get_trend); names(idx_one_s1_slp) <- 'SPEI-6_slope'
@@ -311,8 +308,18 @@ if(!file.exists(outfile)){
   idx_cnt <- terra::rast(outfile)
 }; rm(outfile)
 
-rst_mtrcs <- terra::zonal(x = c(pop_25km, all_vop_25km, food_vop_25km, nonf_vop_25km, crp_ntp_25km, lsu_25km, idx_sxt, idx_cnt),
-                          z = agex_sgn_cln, fun = 'mean', na.rm = T)
+# Transform extreme drought clusters into shapefile
+agex_sgn_poly <- terra::as.polygons(x = agex_sgn_cln)
+
+rst_mtrcs <- cbind(
+  terra::zonal(x = pop, z = agex_sgn_poly, fun = 'mean', na.rm = T),
+  terra::zonal(x = c(total_vop, food_vop, nonf_vop), z = agex_sgn_poly, fun = 'sum', na.rm = T),
+  terra::zonal(x = crp_ntp, z = agex_sgn_poly, fun = 'mean', na.rm = T),
+  terra::zonal(x = lsu, z = agex_sgn_poly, fun = 'sum', na.rm = T),
+  terra::zonal(x = idx_sxt, z = agex_sgn_poly, fun = 'mean', na.rm = T)
+)
+rst_mtrcs$extreme_cluster <- 1:nrow(rst_mtrcs)
+rst_mtrcs <- rst_mtrcs[,c('extreme_cluster',names(rst_mtrcs)[-ncol(rst_mtrcs)])]
 rst_mtrcs[,-1] <- round(rst_mtrcs[,-1], 2)
 
 dfm <- dplyr::left_join(x = collaborations, y = rst_mtrcs, by = 'extreme_cluster')
@@ -330,7 +337,6 @@ hist(dfm$total_livestock_units)
 abline(v = quantile(x = dfm$total_livestock_units, probs = seq(0,1,1/4)), lty = 2, col = 'red')
 c('Very low','Low','Medium','High')
 
-agex_sgn_poly <- terra::as.polygons(x = agex_sgn_cln)
 agex_sgn_poly <- terra::merge(x = agex_sgn_poly, y = dfm)
 
 terra::writeVector(x = agex_sgn_poly, filename = paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/vct_agex_global_',index,'.gpkg'), overwrite = T)

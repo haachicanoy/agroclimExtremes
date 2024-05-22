@@ -2,40 +2,32 @@
 ## Supplementary material
 ## By: Harold Achicanoy
 ## WUR & ABC
-## Apr. 2024
+## May 2024
 ## ------------------------------------------ ##
 
-# R options and packages loading
+## R options and packages loading ----
 options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
 suppressMessages(pacman::p_load(terra,dplyr,stringr,tidyr,pivottabler,data.table,openxlsx))
 
 grep2 <- Vectorize(FUN = grep, vectorize.args = 'pattern')
 
-## Key arguments
+## Setup arguments ----
 root   <- '//CATALOGUE/WFP_ClimateRiskPr1'
 index  <- 'spei-6'
-gs     <- 'one'
-season <- 1
 
-### Extreme clusters
-agex_sgn <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/clusters/agex_global_',index,'_',gs,'_s',season,'_fmadogram_clean.tif'))
+## Extreme drought clusters ----
+agex_sgn <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
+names(agex_sgn) <- 'extreme_cluster'
 
-## Arable land
-
-# Directories
-root <- '//CATALOGUE/WFP_ClimateRiskPr1'           # Server
-inp_dir <- 'D:/Data/Maps'                          # Local
-out_dir <- 'D:/OneDrive - CGIAR/PhD/papers/paper1' # local
-
-## Cropland areas from MapSPAM 2010
-crops_dir <- paste0(inp_dir,'/spam2010') # Directory
-crops_fls <- list.files(path = crops_dir, pattern = '_A.tif', full.names = T)
+## Arable lands ----
+# Cropland areas from MapSPAM 2010
+crops_fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_raw_data/croplands/spam2010'), pattern = '_A.tif', full.names = T)
 
 # Crops classification
 grp <- read.csv('https://raw.githubusercontent.com/wri/MAPSPAM/master/metadata_tables/4-Methodology-Crops-of-SPAM-2005-2015-02-26.csv')
 grp <- grp[,c('SPAM.short.name','GROUP')]
-foods <- grp[!(grp$GROUP %in% c('fibres','stimulant')),'SPAM.short.name']
+foods <- grp[!(grp$GROUP %in% c('fibres','stimulant','')),'SPAM.short.name']
 crops_fls <- crops_fls[grep2(pattern = toupper(foods), x = crops_fls)]
 
 crops_area <- terra::rast(crops_fls) |> terra::resample(y = agex_sgn, method = 'cubicspline', threads = T) |> terra::mask(mask = agex_sgn)

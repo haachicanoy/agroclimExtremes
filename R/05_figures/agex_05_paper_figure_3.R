@@ -139,8 +139,8 @@ for(i in 1:length(shp)){
 
 ### Legend ----
 fig3_leg <- make_maps_legend(dims = 4,
-                             xlabl = 'Drought severity',
-                             ylabl = 'Crops diversity',
+                             xlabl = 'Extreme drought\nintensification',
+                             ylabl = 'Crop classes\ndiversity',
                              xbrks = c('Negative','Low','Medium','High'),
                              ybrks = c('Very low','Low','Medium','High'),
                              palette = 'GrPink2',
