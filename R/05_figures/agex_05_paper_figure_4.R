@@ -352,7 +352,7 @@ layout <- matrix(c(1:12,NA,13,13,NA), nrow = 4, ncol = 4, byrow = TRUE)
 
 fg_01 <- ggpubr::annotate_figure(gg_ts_NA,
                                  top = text_grob(
-                                   label  = 'a) Transnational.\nOne-GS',
+                                   label  = 'a) Transnational. One-GS',
                                    face   = 'plain',
                                    size   = 13,
                                    family = 'serif'
@@ -373,14 +373,14 @@ fg_03 <- ggpubr::annotate_figure(ggm_SA,
                                  ))
 fg_04 <- ggpubr::annotate_figure(gg_ts_SA,
                                  top = text_grob(
-                                   label  = 'b) Transnational.\nTwo-GS',
+                                   label  = 'b) Transnational. Two-GS',
                                    face   = 'plain',
                                    size   = 13,
                                    family = 'serif'
                                  ))
 fg_05 <- ggpubr::annotate_figure(gg_ts_AF,
                                  top = text_grob(
-                                   label  = 'c) Transnational.\nOne-GS',
+                                   label  = 'c) Transnational. One-GS',
                                    face   = 'plain',
                                    size   = 13,
                                    family = 'serif'
@@ -401,14 +401,14 @@ fg_07 <- ggpubr::annotate_figure(ggm_EU,
                                  ))
 fg_08 <- ggpubr::annotate_figure(gg_ts_EU,
                                  top = text_grob(
-                                   label  = 'd) Transnational.\nOne-GS',
+                                   label  = 'd) Transnational. One-GS',
                                    face   = 'plain',
                                    size   = 13,
                                    family = 'serif'
                                  ))
 fg_09 <- ggpubr::annotate_figure(gg_ts_AS,
                                  top = text_grob(
-                                   label  = 'e) National.\nOne-GS',
+                                   label  = 'e) National. One-GS',
                                    face   = 'plain',
                                    size   = 13,
                                    family = 'serif'
@@ -429,7 +429,7 @@ fg_11 <- ggpubr::annotate_figure(ggm_OC,
                                  ))
 fg_12 <- ggpubr::annotate_figure(gg_ts_OC,
                                  top = text_grob(
-                                   label  = 'f) National.\nOne-GS',
+                                   label  = 'f) National. One-GS',
                                    face   = 'plain',
                                    size   = 13,
                                    family = 'serif'
