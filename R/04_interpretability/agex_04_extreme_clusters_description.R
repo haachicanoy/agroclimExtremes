@@ -333,16 +333,23 @@ agex_sgn_poly <- terra::as.polygons(x = agex_sgn_cln)
 
 ## Save all metrics ----
 rst_mtrcs <- cbind(
-  terra::zonal(x = pop, z = agex_sgn_poly, fun = 'mean', na.rm = T),
+  terra::zonal(x = pop, z = agex_sgn_poly, fun = 'mean', na.rm = T, exact = T),
   terra::zonal(x = c(total_vop, food_vop, nonf_vop), z = agex_sgn_poly, fun = 'sum', na.rm = T),
   terra::zonal(x = hrvstd_area, z = agex_sgn_poly, fun = 'sum', na.rm = T),
+  terra::zonal(x = hrvstd_area, z = agex_sgn_poly, fun = 'mean', na.rm = T, exact = T) |> dplyr::rename(harvested_area_average = 'harvested_area_total'),
+  terra::zonal(x = hrvstd_area, z = agex_sgn_poly, fun = 'min', na.rm = T, exact = T) |> dplyr::rename(harvested_area_min = 'harvested_area_total'),
+  terra::zonal(x = hrvstd_area, z = agex_sgn_poly, fun = 'max', na.rm = T, exact = T) |> dplyr::rename(harvested_area_max = 'harvested_area_total'),
   terra::zonal(x = crp_ntp, z = agex_sgn_poly, fun = 'mean', na.rm = T),
-  terra::zonal(x = lsu, z = agex_sgn_poly, fun = 'sum', na.rm = T),
+  terra::zonal(x = lsu, z = agex_sgn_poly, fun = 'sum', na.rm = T) |> dplyr::rename(livestock_units_total = 'total_livestock_units'),
+  terra::zonal(x = lsu, z = agex_sgn_poly, fun = 'mean', na.rm = T, exact = T) |> dplyr::rename(livestock_units_average = 'total_livestock_units'),
+  terra::zonal(x = lsu, z = agex_sgn_poly, fun = 'min', na.rm = T, exact = T) |> dplyr::rename(livestock_units_min = 'total_livestock_units'),
+  terra::zonal(x = lsu, z = agex_sgn_poly, fun = 'max', na.rm = T, exact = T) |> dplyr::rename(livestock_units_max = 'total_livestock_units'),
   terra::zonal(x = c(idx_avg, idx_range, idx_sxt), z = agex_sgn_poly, fun = 'mean', na.rm = T)
 )
 rst_mtrcs$extreme_cluster <- 1:nrow(rst_mtrcs)
 rst_mtrcs <- rst_mtrcs[,c('extreme_cluster',names(rst_mtrcs)[-ncol(rst_mtrcs)])]
-rst_mtrcs[,-1] <- round(rst_mtrcs[,-1], 2)
+head(rst_mtrcs,3)
+rst_mtrcs[,-1] <- round(rst_mtrcs[,-1], 4)
 
 dfm <- dplyr::left_join(x = collaborations, y = rst_mtrcs, by = 'extreme_cluster')
 dfm <- dplyr::left_join(x = dfm, y = qlt_mtrcs, by = 'extreme_cluster')
@@ -355,8 +362,8 @@ hist(dfm$crop_classes_diversity)
 abline(v = quantile(x = dfm$crop_classes_diversity, probs = seq(0,1,1/4)), lty = 2, col = 'red')
 c('Very low','Low','Medium','High')
 
-hist(dfm$total_livestock_units)
-abline(v = quantile(x = dfm$total_livestock_units, probs = seq(0,1,1/4)), lty = 2, col = 'red')
+hist(dfm$livestock_units_total)
+abline(v = quantile(x = dfm$livestock_units_total, probs = seq(0,1,1/4)), lty = 2, col = 'red')
 c('Very low','Low','Medium','High')
 
 agex_sgn_poly <- terra::merge(x = agex_sgn_poly, y = dfm)
