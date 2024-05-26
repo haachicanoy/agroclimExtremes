@@ -150,12 +150,12 @@ fig3_leg <- make_maps_legend(dims = 4,
                              categories = colours) # ggplot2::ggsave(filename = paste0('D:/Figure3_paper1_legend.png'), plot = fig3_leg, device = 'png', width = 5, height = 5, units = 'in', dpi = 350)
 
 ### Panel a) North America ----
-# Cluster: 157 (USA)
+# Cluster: 223 (Haiti, Cuba, Jamaica)
 # One growing season
 
 idx_ts <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_25km/one_s1_spei-6_25km.tif'))
 # Filter time series per cluster of interest
-aux <- agex_sgn; aux[aux != 157] <- NA
+aux <- agex_sgn; aux[aux != 223] <- NA
 idx_ts_msk <- terra::mask(x = idx_ts, mask = aux) |> terra::trim()
 # Time series plotting
 idx_ts_msk_dfm <- terra::as.data.frame(x = idx_ts_msk, xy = T, cell = F)
@@ -282,12 +282,12 @@ ggm_EU <- ggm[[4]] +
                      color = 'red', size = 1.5, fill = NA)
 
 ### Panel e) Asia ----
-# Cluster: 201 (India)
-# Two growing seasons. Chosen season S1
+# Cluster: 42 (Kazakhstan,Russia)
+# One growing season. Chosen season S1
 
-idx_ts <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_25km/two_s1_spei-6_25km.tif'))
+idx_ts <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_25km/one_s1_spei-6_25km.tif'))
 # Filter time series per cluster of interest
-aux <- agex_sgn; aux[aux != 201] <- NA
+aux <- agex_sgn; aux[aux != 42] <- NA
 idx_ts_msk <- terra::mask(x = idx_ts, mask = aux) |> terra::trim()
 # Time series plotting
 idx_ts_msk_dfm <- terra::as.data.frame(x = idx_ts_msk, xy = T, cell = F)
@@ -411,7 +411,7 @@ fg_08 <- ggpubr::annotate_figure(gg_ts_EU,
                                  ))
 fg_09 <- ggpubr::annotate_figure(gg_ts_AS,
                                  top = text_grob(
-                                   label  = 'e) Transnational. Two-GS',
+                                   label  = 'e) Transnational. One-GS',
                                    face   = 'plain',
                                    size   = 13,
                                    family = 'serif'

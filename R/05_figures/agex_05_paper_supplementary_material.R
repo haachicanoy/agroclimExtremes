@@ -20,6 +20,8 @@ index  <- 'spei-6'
 agex_sgn <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
 names(agex_sgn) <- 'extreme_cluster'
 
+agex_sgn_poly <- terra::vect(paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/vct_agex_global_spei-6.gpkg'))
+
 ## Arable lands ----
 # Cropland areas from MapSPAM 2010
 crops_fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_raw_data/croplands/spam2010'), pattern = '_A.tif', full.names = T)
@@ -30,7 +32,7 @@ grp <- grp[,c('SPAM.short.name','GROUP')]
 foods <- grp[!(grp$GROUP %in% c('fibres','stimulant','')),'SPAM.short.name']
 crops_fls <- crops_fls[grep2(pattern = toupper(foods), x = crops_fls)]
 
-crops_area <- terra::rast(crops_fls) |> terra::resample(y = agex_sgn, method = 'cubicspline', threads = T) |> terra::mask(mask = agex_sgn)
+crops_area <- terra::rast(crops_fls) |> terra::mask(mask = agex_sgn_poly)
 names(crops_area) <- gsub('spam2010V2r0_global_H_', '', names(crops_area))
 names(crops_area) <- gsub('_A', '', names(crops_area))
 
@@ -41,10 +43,11 @@ grp$SPAM.short.name <- toupper(grp$SPAM.short.name)
 names(crops_area) <- grp$SPAM.long.name[match(x = names(crops_area), table = grp$SPAM.short.name)]
 names(crops_area) <- stringr::str_to_title(names(crops_area))
 
-min_vls <- terra::zonal(x = crops_area, z = agex_sgn, fun = 'min')
-max_vls <- terra::zonal(x = crops_area, z = agex_sgn, fun = 'max')
-avg_vls <- terra::zonal(x = crops_area, z = agex_sgn, fun = 'mean')
-std_vls <- terra::zonal(x = crops_area, z = agex_sgn, fun = 'sd')
+min_vls <- terra::zonal(x = crops_area, z = agex_sgn_poly, fun = 'min', exact = T, na.rm = T)
+max_vls <- terra::zonal(x = crops_area, z = agex_sgn_poly, fun = 'max', exact = T, na.rm = T)
+avg_vls <- terra::zonal(x = crops_area, z = agex_sgn_poly, fun = 'mean', exact = T, na.rm = T)
+sum_vls <- terra::zonal(x = crops_area, z = agex_sgn_poly, fun = 'sum', na.rm = T)
+std_vls <- terra::zonal(x = crops_area, z = agex_sgn_poly, fun = 'sd', na.rm = T)
 
 min_vls <- min_vls |>
   tidyr::pivot_longer(cols = 2:ncol(min_vls), names_to = 'Crop', values_to = 'Min') |>
