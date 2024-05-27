@@ -232,18 +232,10 @@ if(!file.exists(outfile)){
 }; rm(outfile)
 
 ## Exposed population ----
-# Metric: Population density
-# Meaning: number of people per unit of area
-outfile <- paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/population_density.tif')
-if(!file.exists(outfile)){
-  dir.create(path = dirname(outfile), F, T)
-  pop <- geodata::population(year = 2020, res = 10, path = tempdir())
-  # pop_25km <- terra::resample(x = pop, y = agex_sgn_cln, method = 'cubicspline', threads = T)
-  # pop_25km <- terra::mask(x = pop_25km, mask = agex_sgn_cln)
-  terra::writeRaster(x = pop, filename = outfile, overwrite = T)
-} else {
-  pop <- terra::rast(outfile)
-}; rm(outfile)
+# Metric: Population total
+# Meaning: number of people per pixel
+pop <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/gpw_v4_population_count_rev11_2020_15_min.tif'))
+names(pop) <- 'total_population'
 
 ## Index severity ----
 # Metric: SPEI-6 trend for 90th percentile. We also computed the number of years when SPEI < -1.5
@@ -334,7 +326,7 @@ agex_sgn_poly <- terra::as.polygons(x = agex_sgn_cln)
 
 ## Save all metrics ----
 rst_mtrcs <- cbind(
-  terra::zonal(x = pop, z = agex_sgn_poly, fun = 'mean', na.rm = T, exact = T),
+  terra::zonal(x = pop, z = agex_sgn_poly, fun = 'sum', na.rm = T),
   terra::zonal(x = c(total_vop, food_vop, nonf_vop), z = agex_sgn_poly, fun = 'sum', na.rm = T),
   terra::zonal(x = hrvstd_area, z = agex_sgn_poly, fun = 'sum', na.rm = T),
   terra::zonal(x = hrvstd_area, z = agex_sgn_poly, fun = 'mean', na.rm = T, exact = T) |> dplyr::rename(harvested_area_average = 'harvested_area_total'),

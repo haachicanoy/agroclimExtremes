@@ -150,12 +150,12 @@ fig4_leg <- make_maps_legend(dims = 4,
                              categories = colours) # ggplot2::ggsave(filename = paste0('D:/Figure3_paper1_legend.png'), plot = fig3_leg, device = 'png', width = 5, height = 5, units = 'in', dpi = 350)
 
 ### Panel a) North America ----
-# Cluster: 223 (Haiti, Cuba, Jamaica)
+# Cluster: 116 (US)
 # One growing season
 
 idx_ts <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_25km/one_s1_spei-6_25km.tif'))
 # Filter time series per cluster of interest
-aux <- agex_sgn; aux[aux != 223] <- NA
+aux <- agex_sgn; aux[aux != 116] <- NA
 idx_ts_msk <- terra::mask(x = idx_ts, mask = aux) |> terra::trim()
 # Time series plotting
 idx_ts_msk_dfm <- terra::as.data.frame(x = idx_ts_msk, xy = T, cell = F)
@@ -352,7 +352,7 @@ layout <- matrix(c(1:12,NA,13,13,NA), nrow = 4, ncol = 4, byrow = TRUE)
 
 fg_01 <- ggpubr::annotate_figure(gg_ts_NA,
                                  top = text_grob(
-                                   label  = 'a) Transnational. One-GS',
+                                   label  = 'a) National. One-GS',
                                    face   = 'plain',
                                    size   = 13,
                                    family = 'serif'

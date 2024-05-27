@@ -36,7 +36,9 @@ names(agex_sgn_num) <- 'extreme_cluster'
 # Metrics
 agex_sgn_metrics <- utils::read.csv(paste0(root,'/agroclimExtremes/agex_results/agex_all_metrics.csv'))
 
-## Clusters presence ----
+## Extreme drought clusters ----
+
+### Clusters presence ----
 cat('Extreme drought clusters in one country (%):',
     round(table(agex_sgn_metrics$countries_count)[[1]]/sum(table(agex_sgn_metrics$countries_count)) * 100, 1),
     '\n')
@@ -48,7 +50,6 @@ cat('Extreme drought clusters in two or more countries (%):',
 cat('One-GS. Extreme drought clusters in one country (%):',
     round(table(agex_sgn_metrics$countries_count[agex_sgn_metrics$growing_seasons == 1])[[1]]/sum(table(agex_sgn_metrics$countries_count[agex_sgn_metrics$growing_seasons == 1])) * 100, 1),
     '\n')
-# Extreme drought clusters in more than one country (%)
 cat('One-GS. Extreme drought clusters in two or more countries (%):',
     100 - round(table(agex_sgn_metrics$countries_count[agex_sgn_metrics$growing_seasons == 1])[[1]]/sum(table(agex_sgn_metrics$countries_count[agex_sgn_metrics$growing_seasons == 1])) * 100, 1),
     '\n')
@@ -61,10 +62,10 @@ cat('Two-GS. Extreme drought clusters in two or more countries (%):',
     100 - round(table(agex_sgn_metrics$countries_count[agex_sgn_metrics$growing_seasons == 2])[[1]]/sum(table(agex_sgn_metrics$countries_count[agex_sgn_metrics$growing_seasons == 2])) * 100, 2),
     '\n')
 
-## Top countries with more than clusters due to their size ----
+### Top countries with more than clusters due to their size ----
 sort(table(agex_sgn_metrics$countries[agex_sgn_metrics$countries_count == 1]), decreasing = T)[1:5]
 
-## Transcontinental clusters ----
+### Transcontinental clusters ----
 # Absolute frequency
 trscntn_cnt <- strsplit(x = agex_sgn_metrics$continents, split = ',') |>
   purrr::map(length) |>
@@ -74,13 +75,13 @@ trscntn_cnt <- strsplit(x = agex_sgn_metrics$continents, split = ',') |>
 trscntn_prc <- trscntn_cnt/nrow(agex_sgn_metrics) * 100
 round(sum(trscntn_prc[-1]), 1)
 
-## Continental clusters distribution ----
+### Continental clusters distribution ----
 trscntn_id <- strsplit(x = agex_sgn_metrics$continents, split = ',') |>
   purrr::map(length) |>
   base::unlist()
 round(sort(table(agex_sgn_metrics$continents[trscntn_id == 1]), decreasing = T)/nrow(agex_sgn_metrics) * 100, 1)
 
-## Potential cooperation per continent ----
+### Potential cooperation per continent ----
 agex_sgn_metrics |>
   dplyr::filter(trscntn_id == 1) |>
   dplyr::group_by(continents) |>
@@ -91,10 +92,38 @@ agex_sgn_metrics |>
   dplyr::arrange(-freq) |>
   base::as.data.frame()
 
-## Cooperation case studies per continent ----
+### Cooperation case studies per continent ----
 table(agex_sgn_metrics$countries_count[grep(pattern = '[aA]frica', agex_sgn_metrics$continents)])/101 * 100
 table(agex_sgn_metrics$countries_count[grep(pattern = '[eE]urope', agex_sgn_metrics$continents)])/76 * 100
 table(agex_sgn_metrics$countries_count[grep(pattern = '[sS]outh [aA]merica', agex_sgn_metrics$continents)])/77 * 100
 table(agex_sgn_metrics$countries_count[grep(pattern = '[nN]orth [aA]merica', agex_sgn_metrics$continents)])/64 * 100
 table(agex_sgn_metrics$countries_count[grep(pattern = '[aA]sia', agex_sgn_metrics$continents)])/158 * 100
 table(agex_sgn_metrics$countries_count[grep(pattern = '[oO]ceania', agex_sgn_metrics$continents)])/15
+
+## Drought extremes and agricultural exposure hotspots ----
+# North America
+agex_sgn_metrics[agex_sgn_metrics$extreme_cluster == 223,]
+
+# What crops are grown in a specific extreme cluster
+area_sts_vls[area_sts_vls$extreme_cluster == 223,c('Crop','Total')] |>
+  dplyr::mutate(Percentage = round(Total/sum(Total) * 100, 2)) |>
+  dplyr::arrange(-Percentage)
+
+# During when
+ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_ini_25km_croplands.tif'))
+names(ini) <- 'Start'
+end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_end_25km_croplands.tif'))
+names(end) <- 'End'
+
+terra::zonal(x = c(ini, end), z = agex_sgn, fun = 'min', na.rm = T) |>
+  dplyr::filter(extreme_cluster == 223)
+terra::zonal(x = c(ini, end), z = agex_sgn, fun = 'max', na.rm = T) |>
+  dplyr::filter(extreme_cluster == 223)
+terra::zonal(x = c(ini, end), z = agex_sgn, fun = 'median', na.rm = T) |>
+  dplyr::filter(extreme_cluster == 223)
+
+as.Date(115, origin = '2014-01-01') |> lubridate::month()
+as.Date(21, origin = '2014-01-01') |> lubridate::month()
+
+terra::zonal(x = pop, z = agex_sgn_poly, fun = 'sum', na.rm = T) |>
+  dplyr::filter(extreme_cluster == 223)

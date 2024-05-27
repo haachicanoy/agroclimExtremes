@@ -44,10 +44,15 @@ names(crops_area) <- grp$SPAM.long.name[match(x = names(crops_area), table = grp
 names(crops_area) <- stringr::str_to_title(names(crops_area))
 
 min_vls <- terra::zonal(x = crops_area, z = agex_sgn_poly, fun = 'min', exact = T, na.rm = T)
+min_vls <- cbind(data.frame(extreme_cluster = 1:nrow(min_vls)), min_vls)
 max_vls <- terra::zonal(x = crops_area, z = agex_sgn_poly, fun = 'max', exact = T, na.rm = T)
+max_vls <- cbind(data.frame(extreme_cluster = 1:nrow(max_vls)), max_vls)
 avg_vls <- terra::zonal(x = crops_area, z = agex_sgn_poly, fun = 'mean', exact = T, na.rm = T)
+avg_vls <- cbind(data.frame(extreme_cluster = 1:nrow(avg_vls)), avg_vls)
 sum_vls <- terra::zonal(x = crops_area, z = agex_sgn_poly, fun = 'sum', na.rm = T)
+sum_vls <- cbind(data.frame(extreme_cluster = 1:nrow(sum_vls)), sum_vls)
 std_vls <- terra::zonal(x = crops_area, z = agex_sgn_poly, fun = 'sd', na.rm = T)
+std_vls <- cbind(data.frame(extreme_cluster = 1:nrow(std_vls)), std_vls)
 
 min_vls <- min_vls |>
   tidyr::pivot_longer(cols = 2:ncol(min_vls), names_to = 'Crop', values_to = 'Min') |>
@@ -64,6 +69,11 @@ avg_vls <- avg_vls |>
   base::as.data.frame()
 avg_vls$Mean <- round(avg_vls$Mean, 2)
 
+sum_vls <- sum_vls |>
+  tidyr::pivot_longer(cols = 2:ncol(sum_vls), names_to = 'Crop', values_to = 'Total') |>
+  base::as.data.frame()
+sum_vls$Total <- round(sum_vls$Total, 2)
+
 std_vls <- std_vls |>
   tidyr::pivot_longer(cols = 2:ncol(std_vls), names_to = 'Crop', values_to = 'Sd') |>
   base::as.data.frame()
@@ -72,8 +82,21 @@ std_vls$Sd <- round(std_vls$Sd, 2)
 area_sts_vls <- dplyr::left_join(x = min_vls, y = max_vls, by = c('extreme_cluster','Crop'))
 area_sts_vls <- dplyr::left_join(x = area_sts_vls, y = avg_vls, by = c('extreme_cluster','Crop'))
 area_sts_vls <- dplyr::left_join(x = area_sts_vls, y = std_vls, by = c('extreme_cluster','Crop'))
+area_sts_vls <- dplyr::left_join(x = area_sts_vls, y = sum_vls, by = c('extreme_cluster','Crop'))
 
-area_sts_vls_lng <- tidyr::pivot_longer(data = area_sts_vls, cols = `Min`:`Sd`, names_to = 'Statistic', values_to = 'Value') |> base::as.data.frame()
+# Just totals
+totals <- area_sts_vls[,c('extreme_cluster','Crop','Total')] |>
+  tidyr::pivot_wider(names_from = 'Crop', values_from = Total) |>
+  base::as.data.frame()
+write.csv(x = totals, file = paste0(root,'/agroclimExtremes/agex_results/agex_harvested_areas_totals.csv'), row.names = F)
+
+totals_prc <- totals
+totals_prc$Total <- rowSums(x = totals[,-1], na.rm = T)
+totals_prc[,-1]  <- round(totals_prc[,-1]/totals_prc$Total * 100, 2)
+totals_prc$Total <- NULL
+write.csv(x = totals, file = paste0(root,'/agroclimExtremes/agex_results/agex_harvested_areas_percentages.csv'), row.names = F)
+
+area_sts_vls_lng <- tidyr::pivot_longer(data = area_sts_vls, cols = `Min`:`Total`, names_to = 'Statistic', values_to = 'Value') |> base::as.data.frame()
 
 pt <- PivotTable$new(evaluationMode = 'batch',
                      processingLibrary = 'data.table')
@@ -88,19 +111,4 @@ wb <- createWorkbook(creator = Sys.getenv('USERNAME'))
 addWorksheet(wb, 'Data')
 pt$writeToExcelWorksheet(wb = wb, wsName = 'Data',
                          topRowNumber = 1, leftMostColumnNumber = 1, applyStyles = F)
-saveWorkbook(wb, file='D:/arable_land_statistics_per_crop.xlsx', overwrite = T)
-
-crops_total_area <- sum(crops_area)
-min_total_vls <- terra::zonal(x = crops_total_area, z = agex_sgn, fun = 'min')
-names(min_total_vls)[2] <- 'Min'
-max_total_vls <- terra::zonal(x = crops_total_area, z = agex_sgn, fun = 'max')
-names(max_total_vls)[2] <- 'Max'
-avg_total_vls <- terra::zonal(x = crops_total_area, z = agex_sgn, fun = 'mean')
-names(avg_total_vls)[2] <- 'Mean'
-std_total_vls <- terra::zonal(x = crops_total_area, z = agex_sgn, fun = 'sd')
-names(std_total_vls)[2] <- 'Sd'
-
-total_area_sts_vls <- dplyr::left_join(x = min_total_vls, y = max_total_vls, by = c('extreme_cluster'))
-total_area_sts_vls <- dplyr::left_join(x = total_area_sts_vls, y = avg_total_vls, by = c('extreme_cluster'))
-total_area_sts_vls <- dplyr::left_join(x = total_area_sts_vls, y = std_total_vls, by = c('extreme_cluster'))
-total_area_sts_vls$Cv <- total_area_sts_vls$Sd / total_area_sts_vls$Mean * 100
+saveWorkbook(wb, file = paste0(root,'/agroclimExtremes/agex_results/arable_land_statistics_per_crop.xlsx'), overwrite = T)
