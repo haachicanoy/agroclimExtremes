@@ -101,29 +101,242 @@ table(agex_sgn_metrics$countries_count[grep(pattern = '[aA]sia', agex_sgn_metric
 table(agex_sgn_metrics$countries_count[grep(pattern = '[oO]ceania', agex_sgn_metrics$continents)])/15
 
 ## Drought extremes and agricultural exposure hotspots ----
-# North America
-agex_sgn_metrics[agex_sgn_metrics$extreme_cluster == 223,]
 
+### North America ----
+# One growing season
+cls <- 223
 # What crops are grown in a specific extreme cluster
-area_sts_vls[area_sts_vls$extreme_cluster == 223,c('Crop','Total')] |>
-  dplyr::mutate(Percentage = round(Total/sum(Total) * 100, 2)) |>
+arable_land_sts <- read.csv(paste0(root,'/agroclimExtremes/agex_results/agex_harvested_areas_percentages.csv'))
+arable_land_sts |>
+  dplyr::filter(extreme_cluster == cls) |>
+  tidyr::pivot_longer(-1, names_to = 'Crop', values_to = 'Percentage') |>
   dplyr::arrange(-Percentage)
 
-# During when
-ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_ini_25km_croplands.tif'))
-names(ini) <- 'Start'
-end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_end_25km_croplands.tif'))
-names(end) <- 'End'
+# During when (one month before, both cases)
+s1_ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_ini_25km_croplands.tif'))
+names(s1_ini) <- 'S1_start'
+s1_end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_end_25km_croplands.tif'))
+names(s1_end) <- 'S1_end'
 
-terra::zonal(x = c(ini, end), z = agex_sgn, fun = 'min', na.rm = T) |>
-  dplyr::filter(extreme_cluster == 223)
-terra::zonal(x = c(ini, end), z = agex_sgn, fun = 'max', na.rm = T) |>
-  dplyr::filter(extreme_cluster == 223)
-terra::zonal(x = c(ini, end), z = agex_sgn, fun = 'median', na.rm = T) |>
-  dplyr::filter(extreme_cluster == 223)
+clndr <- terra::zonal(x = c(s1_ini, s1_end), z = agex_sgn, fun = 'median', na.rm = T) |>
+  dplyr::filter(extreme_cluster == cls) |>
+  base::as.data.frame()
 
-as.Date(115, origin = '2014-01-01') |> lubridate::month()
-as.Date(21, origin = '2014-01-01') |> lubridate::month()
+clndr <- rbind(clndr,
+               data.frame(extreme_cluster = cls,
+                          S1_start = lubridate::month(as.Date(clndr$S1_start,'2014-01-01')),
+                          S1_end = lubridate::month(as.Date(clndr$S1_end,'2014-01-01'))
+               )
+)
+clndr$Date_format <- c('DOY','Month')
 
-terra::zonal(x = pop, z = agex_sgn_poly, fun = 'sum', na.rm = T) |>
-  dplyr::filter(extreme_cluster == 223)
+# How many people
+agex_sgn_metrics[agex_sgn_metrics$extreme_cluster == cls, 'total_population']
+
+## How much agricultural value vs total
+# Value of production (food crops)
+agex_sgn_metrics$food_vop[agex_sgn_metrics$extreme_cluster == cls]
+# Value of production (total)
+agex_sgn_metrics$total_vop[agex_sgn_metrics$extreme_cluster == cls]
+# Percentage
+round(agex_sgn_metrics$food_vop[agex_sgn_metrics$extreme_cluster == cls]/agex_sgn_metrics$total_vop[agex_sgn_metrics$extreme_cluster == cls] * 100, 1)
+
+### South America ----
+# Two growing seasons
+cls <- 420
+# What crops are grown in a specific extreme cluster
+arable_land_sts <- read.csv(paste0(root,'/agroclimExtremes/agex_results/agex_harvested_areas_percentages.csv'))
+arable_land_sts |>
+  dplyr::filter(extreme_cluster == cls) |>
+  tidyr::pivot_longer(-1, names_to = 'Crop', values_to = 'Percentage') |>
+  dplyr::arrange(-Percentage)
+
+# During when (one month before, both cases)
+s1_ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s1_ini_25km_croplands.tif'))
+names(s1_ini) <- 'S1_start'
+s1_end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s1_end_25km_croplands.tif'))
+names(s1_end) <- 'S1_end'
+s2_ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s2_ini_25km_croplands.tif'))
+names(s2_ini) <- 'S2_start'
+s2_end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s2_end_25km_croplands.tif'))
+names(s2_end) <- 'S2_end'
+
+clndr <- terra::zonal(x = c(s1_ini, s1_end, s2_ini, s2_end), z = agex_sgn, fun = 'median', na.rm = T) |>
+  dplyr::filter(extreme_cluster == cls) |>
+  base::as.data.frame()
+clndr <- rbind(clndr,
+               data.frame(extreme_cluster = cls,
+                          S1_start = lubridate::month(as.Date(clndr$S1_start,'2014-01-01')),
+                          S1_end = lubridate::month(as.Date(clndr$S1_end,'2014-01-01')),
+                          S2_start = lubridate::month(as.Date(clndr$S2_start,'2014-01-01')),
+                          S2_end = lubridate::month(as.Date(clndr$S2_end,'2014-01-01'))
+                          )
+               )
+clndr$Date_format <- c('DOY','Month')
+
+# How many people
+agex_sgn_metrics[agex_sgn_metrics$extreme_cluster == cls, 'total_population']
+
+## How much agricultural value vs total
+# Value of production (food crops)
+agex_sgn_metrics$food_vop[agex_sgn_metrics$extreme_cluster == cls]
+# Value of production (total)
+agex_sgn_metrics$total_vop[agex_sgn_metrics$extreme_cluster == cls]
+# Percentage
+round(agex_sgn_metrics$food_vop[agex_sgn_metrics$extreme_cluster == cls]/agex_sgn_metrics$total_vop[agex_sgn_metrics$extreme_cluster == cls] * 100, 1)
+
+### Africa ----
+# One growing season
+cls <- 270
+# What crops are grown in a specific extreme cluster
+arable_land_sts <- read.csv(paste0(root,'/agroclimExtremes/agex_results/agex_harvested_areas_percentages.csv'))
+arable_land_sts |>
+  dplyr::filter(extreme_cluster == cls) |>
+  tidyr::pivot_longer(-1, names_to = 'Crop', values_to = 'Percentage') |>
+  dplyr::arrange(-Percentage)
+
+# During when (one month before, both cases)
+s1_ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_ini_25km_croplands.tif'))
+names(s1_ini) <- 'S1_start'
+s1_end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_end_25km_croplands.tif'))
+names(s1_end) <- 'S1_end'
+
+clndr <- terra::zonal(x = c(s1_ini, s1_end), z = agex_sgn, fun = 'median', na.rm = T) |>
+  dplyr::filter(extreme_cluster == cls) |>
+  base::as.data.frame()
+
+clndr <- rbind(clndr,
+               data.frame(extreme_cluster = cls,
+                          S1_start = lubridate::month(as.Date(clndr$S1_start,'2014-01-01')),
+                          S1_end = lubridate::month(as.Date(clndr$S1_end,'2014-01-01'))
+               )
+)
+clndr$Date_format <- c('DOY','Month')
+
+# How many people
+agex_sgn_metrics[agex_sgn_metrics$extreme_cluster == cls, 'total_population']
+
+## How much agricultural value vs total
+# Value of production (food crops)
+agex_sgn_metrics$food_vop[agex_sgn_metrics$extreme_cluster == cls]
+# Value of production (total)
+agex_sgn_metrics$total_vop[agex_sgn_metrics$extreme_cluster == cls]
+# Percentage
+round(agex_sgn_metrics$food_vop[agex_sgn_metrics$extreme_cluster == cls]/agex_sgn_metrics$total_vop[agex_sgn_metrics$extreme_cluster == cls] * 100, 1)
+
+### Europe ----
+# One growing season
+cls <- 33
+# What crops are grown in a specific extreme cluster
+arable_land_sts <- read.csv(paste0(root,'/agroclimExtremes/agex_results/agex_harvested_areas_percentages.csv'))
+arable_land_sts |>
+  dplyr::filter(extreme_cluster == cls) |>
+  tidyr::pivot_longer(-1, names_to = 'Crop', values_to = 'Percentage') |>
+  dplyr::arrange(-Percentage)
+
+# During when (one month before, both cases)
+s1_ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_ini_25km_croplands.tif'))
+names(s1_ini) <- 'S1_start'
+s1_end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_end_25km_croplands.tif'))
+names(s1_end) <- 'S1_end'
+
+clndr <- terra::zonal(x = c(s1_ini, s1_end), z = agex_sgn, fun = 'median', na.rm = T) |>
+  dplyr::filter(extreme_cluster == cls) |>
+  base::as.data.frame()
+
+clndr <- rbind(clndr,
+               data.frame(extreme_cluster = cls,
+                          S1_start = lubridate::month(as.Date(clndr$S1_start,'2014-01-01')),
+                          S1_end = lubridate::month(as.Date(clndr$S1_end,'2014-01-01'))
+               )
+)
+clndr$Date_format <- c('DOY','Month')
+
+# How many people
+agex_sgn_metrics[agex_sgn_metrics$extreme_cluster == cls, 'total_population']
+
+## How much agricultural value vs total
+# Value of production (food crops)
+agex_sgn_metrics$food_vop[agex_sgn_metrics$extreme_cluster == cls]
+# Value of production (total)
+agex_sgn_metrics$total_vop[agex_sgn_metrics$extreme_cluster == cls]
+# Percentage
+round(agex_sgn_metrics$food_vop[agex_sgn_metrics$extreme_cluster == cls]/agex_sgn_metrics$total_vop[agex_sgn_metrics$extreme_cluster == cls] * 100, 1)
+
+### Asia ----
+# One growing season
+cls <- 42
+# What crops are grown in a specific extreme cluster
+arable_land_sts <- read.csv(paste0(root,'/agroclimExtremes/agex_results/agex_harvested_areas_percentages.csv'))
+arable_land_sts |>
+  dplyr::filter(extreme_cluster == cls) |>
+  tidyr::pivot_longer(-1, names_to = 'Crop', values_to = 'Percentage') |>
+  dplyr::arrange(-Percentage)
+
+# During when (one month before, both cases)
+s1_ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_ini_25km_croplands.tif'))
+names(s1_ini) <- 'S1_start'
+s1_end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_end_25km_croplands.tif'))
+names(s1_end) <- 'S1_end'
+
+clndr <- terra::zonal(x = c(s1_ini, s1_end), z = agex_sgn, fun = 'median', na.rm = T) |>
+  dplyr::filter(extreme_cluster == cls) |>
+  base::as.data.frame()
+
+clndr <- rbind(clndr,
+               data.frame(extreme_cluster = cls,
+                          S1_start = lubridate::month(as.Date(clndr$S1_start,'2014-01-01')),
+                          S1_end = lubridate::month(as.Date(clndr$S1_end,'2014-01-01'))
+               )
+)
+clndr$Date_format <- c('DOY','Month')
+
+# How many people
+agex_sgn_metrics[agex_sgn_metrics$extreme_cluster == cls, 'total_population']
+
+## How much agricultural value vs total
+# Value of production (food crops)
+agex_sgn_metrics$food_vop[agex_sgn_metrics$extreme_cluster == cls]
+# Value of production (total)
+agex_sgn_metrics$total_vop[agex_sgn_metrics$extreme_cluster == cls]
+# Percentage
+round(agex_sgn_metrics$food_vop[agex_sgn_metrics$extreme_cluster == cls]/agex_sgn_metrics$total_vop[agex_sgn_metrics$extreme_cluster == cls] * 100, 1)
+
+### Oceania ----
+# One growing season
+cls <- 442
+# What crops are grown in a specific extreme cluster
+arable_land_sts <- read.csv(paste0(root,'/agroclimExtremes/agex_results/agex_harvested_areas_percentages.csv'))
+arable_land_sts |>
+  dplyr::filter(extreme_cluster == cls) |>
+  tidyr::pivot_longer(-1, names_to = 'Crop', values_to = 'Percentage') |>
+  dplyr::arrange(-Percentage)
+
+# During when (one month before, both cases)
+s1_ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_ini_25km_croplands.tif'))
+names(s1_ini) <- 'S1_start'
+s1_end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_end_25km_croplands.tif'))
+names(s1_end) <- 'S1_end'
+
+clndr <- terra::zonal(x = c(s1_ini, s1_end), z = agex_sgn, fun = 'median', na.rm = T) |>
+  dplyr::filter(extreme_cluster == cls) |>
+  base::as.data.frame()
+
+clndr <- rbind(clndr,
+               data.frame(extreme_cluster = cls,
+                          S1_start = lubridate::month(as.Date(clndr$S1_start,'2014-01-01')),
+                          S1_end = lubridate::month(as.Date(clndr$S1_end,'2014-01-01'))
+               )
+)
+clndr$Date_format <- c('DOY','Month')
+
+# How many people
+agex_sgn_metrics[agex_sgn_metrics$extreme_cluster == cls, 'total_population']
+
+## How much agricultural value vs total
+# Value of production (food crops)
+agex_sgn_metrics$food_vop[agex_sgn_metrics$extreme_cluster == cls]
+# Value of production (total)
+agex_sgn_metrics$total_vop[agex_sgn_metrics$extreme_cluster == cls]
+# Percentage
+round(agex_sgn_metrics$food_vop[agex_sgn_metrics$extreme_cluster == cls]/agex_sgn_metrics$total_vop[agex_sgn_metrics$extreme_cluster == cls] * 100, 1)
