@@ -138,7 +138,7 @@ fig2 <- agex_sgn_metrics |>
   ggplot2::geom_bar(stat = 'identity', position = position_dodge()) +
   ggplot2::scale_x_continuous(breaks = 1:13) +
   ggplot2::scale_fill_manual(values = c(col_pltt[1], col_pltt[2])) +
-  ggplot2::xlab('Number of countries') +
+  ggplot2::xlab('Number of countries per extreme drought cluster') +
   ggplot2::ylab('Percentage of extreme drought clusters (%)') +
   ggplot2::labs(fill = 'Number of growing\nseasons') +
   ggplot2::theme_minimal() +

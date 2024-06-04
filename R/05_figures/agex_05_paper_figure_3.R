@@ -315,12 +315,12 @@ ggm_AS <- ggm[[5]] +
                      color = 'red', size = 1.5, fill = NA)
 
 ### Panel f) Oceania ----
-# Cluster: 442 (Australia)
+# Cluster: 444 (Australia)
 # One growing season
 
 idx_ts <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_25km/one_s1_spei-6_25km.tif'))
 # Filter time series per cluster of interest
-aux <- agex_sgn; aux[aux != 442] <- NA
+aux <- agex_sgn; aux[aux != 444] <- NA
 idx_ts_msk <- terra::mask(x = idx_ts, mask = aux) |> terra::trim()
 # Time series plotting
 idx_ts_msk_dfm <- terra::as.data.frame(x = idx_ts_msk, xy = T, cell = F)
@@ -350,7 +350,7 @@ ggm_OC <- ggm[[6]] +
 ## Full figure ----
 layout <- matrix(c(1:12,NA,13,13,NA), nrow = 4, ncol = 4, byrow = T)
 
-sts <- agex_sgn_metrics[agex_sgn_metrics$extreme_cluster %in% c(157,420,270,33,201,442),]
+sts <- agex_sgn_metrics[agex_sgn_metrics$extreme_cluster %in% c(157,420,270,33,201,444),]
 sts[,c('harvested_area_total','harvested_area_min','harvested_area_max')]
 
 fg_01 <- ggpubr::annotate_figure(gg_ts_NA,

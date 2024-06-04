@@ -101,8 +101,78 @@ table(agex_sgn_metrics$countries_count[grep(pattern = '[aA]sia', agex_sgn_metric
 table(agex_sgn_metrics$countries_count[grep(pattern = '[oO]ceania', agex_sgn_metrics$continents)])/15
 
 ## Drought extremes and agricultural exposure hotspots ----
+# Identification of vulnerable areas
+severity_brks <- quantile(x = agex_sgn_metrics$`SPEI.6_slope_95th`, probs = seq(0,1,1/4))
+diversity_brks <- quantile(x = agex_sgn_metrics$crop_classes_diversity, probs = seq(0,1,1/4))
+# Create categories
+agex_sgn_metrics$Severity_class <- cut(x = agex_sgn_metrics$`SPEI.6_slope_95th`, breaks = severity_brks) |> as.numeric() |> as.character()
+agex_sgn_metrics$Diversity_class <- cut(x = agex_sgn_metrics$crop_classes_diversity, breaks = diversity_brks) |> as.numeric() |> as.character()
+
+agex_sgn_metrics$agricultural_exposure <- paste0(agex_sgn_metrics$Severity_class,'-',agex_sgn_metrics$Diversity_class)
+agex_sgn_metrics$Severity_class <- NULL
+agex_sgn_metrics$Diversity_class <- NULL
+
+severity_brks <- quantile(x = agex_sgn_metrics$`SPEI.6_slope_95th`, probs = seq(0,1,1/4))
+diversity_brks <- quantile(x = agex_sgn_metrics$livestock_units_total, probs = seq(0,1,1/4))
+
+agex_sgn_metrics$Severity_class <- cut(x = agex_sgn_metrics$`SPEI.6_slope_95th`, breaks = severity_brks) |> as.numeric() |> as.character()
+agex_sgn_metrics$Diversity_class <- cut(x = agex_sgn_metrics$livestock_units_total, breaks = diversity_brks) |> as.numeric() |> as.character()
+
+agex_sgn_metrics$livestock_exposure <- paste0(agex_sgn_metrics$Severity_class,'-',agex_sgn_metrics$Diversity_class)
+agex_sgn_metrics$Severity_class <- NULL
+agex_sgn_metrics$Diversity_class <- NULL
+rm(severity_brks, diversity_brks)
+
+mtx_ref <- expand.grid(1:4, 1:4)
+names(mtx_ref) <- c('Severity','Diversity')
+mtx_ref <- mtx_ref |>
+  dplyr::arrange(Severity) |>
+  dplyr::mutate(key = paste0(Severity,'-',Diversity)) |>
+  base::as.data.frame()
 
 ### North America ----
+NA_crops <- agex_sgn_metrics$agricultural_exposure[grep(pattern = 'North America', x = agex_sgn_metrics$continents)] |>
+  gtools::mixedsort() |>
+  table() |>
+  base::as.data.frame() |>
+  tidyr::separate(col = 'Var1', into = c('Severity','Diversity'), remove = F)
+names(NA_crops)[1] <- 'key'
+NA_crops$key <- as.character(NA_crops$key)
+mss_cats <- data.frame(key = base::setdiff(x = mtx_ref$key, y = NA_crops$key))
+if(nrow(mss_cats) > 0){
+  mss_cats <- mss_cats |>
+    tidyr::separate(col = 'key', into = c('Severity','Diversity'), remove = F) |>
+    dplyr::mutate(Freq = 0) |>
+    base::as.data.frame()
+  NA_crops <- rbind(NA_crops, mss_cats); rm(mss_cats)
+  NA_crops <- NA_crops |>
+    dplyr::arrange(Severity, Diversity) |>
+    base::as.data.frame()
+}
+NA_crops |>
+  dplyr::filter(Severity >= 3 & Diversity >= 3)
+
+NA_lvstc <- agex_sgn_metrics$livestock_exposure[grep(pattern = 'North America', x = agex_sgn_metrics$continents)] |>
+  gtools::mixedsort() |>
+  table() |>
+  base::as.data.frame() |>
+  tidyr::separate(col = 'Var1', into = c('Severity','Diversity'), remove = F)
+names(NA_lvstc)[1] <- 'key'
+NA_lvstc$key <- as.character(NA_lvstc$key)
+mss_cats <- data.frame(key = base::setdiff(x = mtx_ref$key, y = NA_lvstc$key))
+if(nrow(mss_cats) > 0){
+  mss_cats <- mss_cats |>
+    tidyr::separate(col = 'key', into = c('Severity','Diversity'), remove = F) |>
+    dplyr::mutate(Freq = 0) |>
+    base::as.data.frame()
+  NA_lvstc <- rbind(NA_lvstc, mss_cats); rm(mss_cats)
+  NA_lvstc <- NA_lvstc |>
+    dplyr::arrange(Severity, Diversity) |>
+    base::as.data.frame()
+}
+NA_lvstc |>
+  dplyr::filter(Severity >= 3 & Diversity >= 3)
+
 # One growing season
 cls <- 223
 # What crops are grown in a specific extreme cluster
@@ -142,6 +212,48 @@ agex_sgn_metrics$total_vop[agex_sgn_metrics$extreme_cluster == cls]
 round(agex_sgn_metrics$food_vop[agex_sgn_metrics$extreme_cluster == cls]/agex_sgn_metrics$total_vop[agex_sgn_metrics$extreme_cluster == cls] * 100, 1)
 
 ### South America ----
+SA_crops <- agex_sgn_metrics$agricultural_exposure[grep(pattern = 'South America', x = agex_sgn_metrics$continents)] |>
+  gtools::mixedsort() |>
+  table() |>
+  base::as.data.frame() |>
+  tidyr::separate(col = 'Var1', into = c('Severity','Diversity'), remove = F)
+names(SA_crops)[1] <- 'key'
+SA_crops$key <- as.character(SA_crops$key)
+mss_cats <- data.frame(key = base::setdiff(x = mtx_ref$key, y = SA_crops$key))
+if(nrow(mss_cats) > 0){
+  mss_cats <- mss_cats |>
+    tidyr::separate(col = 'key', into = c('Severity','Diversity'), remove = F) |>
+    dplyr::mutate(Freq = 0) |>
+    base::as.data.frame()
+  SA_crops <- rbind(SA_crops, mss_cats); rm(mss_cats)
+  SA_crops <- SA_crops |>
+    dplyr::arrange(Severity, Diversity) |>
+    base::as.data.frame()
+}
+SA_crops |>
+  dplyr::filter(Severity >= 3 & Diversity >= 3)
+
+SA_lvstc <- agex_sgn_metrics$livestock_exposure[grep(pattern = 'South America', x = agex_sgn_metrics$continents)] |>
+  gtools::mixedsort() |>
+  table() |>
+  base::as.data.frame() |>
+  tidyr::separate(col = 'Var1', into = c('Severity','Diversity'), remove = F)
+names(SA_lvstc)[1] <- 'key'
+SA_lvstc$key <- as.character(SA_lvstc$key)
+mss_cats <- data.frame(key = base::setdiff(x = mtx_ref$key, y = SA_lvstc$key))
+if(nrow(mss_cats) > 0){
+  mss_cats <- mss_cats |>
+    tidyr::separate(col = 'key', into = c('Severity','Diversity'), remove = F) |>
+    dplyr::mutate(Freq = 0) |>
+    base::as.data.frame()
+  SA_lvstc <- rbind(SA_lvstc, mss_cats); rm(mss_cats)
+  SA_lvstc <- SA_lvstc |>
+    dplyr::arrange(Severity, Diversity) |>
+    base::as.data.frame()
+}
+SA_lvstc |>
+  dplyr::filter(Severity >= 3 & Diversity >= 3)
+
 # Two growing seasons
 cls <- 420
 # What crops are grown in a specific extreme cluster
@@ -186,6 +298,48 @@ agex_sgn_metrics$total_vop[agex_sgn_metrics$extreme_cluster == cls]
 round(agex_sgn_metrics$food_vop[agex_sgn_metrics$extreme_cluster == cls]/agex_sgn_metrics$total_vop[agex_sgn_metrics$extreme_cluster == cls] * 100, 1)
 
 ### Africa ----
+AF_crops <- agex_sgn_metrics$agricultural_exposure[grep(pattern = 'Africa', x = agex_sgn_metrics$continents)] |>
+  gtools::mixedsort() |>
+  table() |>
+  base::as.data.frame() |>
+  tidyr::separate(col = 'Var1', into = c('Severity','Diversity'), remove = F)
+names(AF_crops)[1] <- 'key'
+AF_crops$key <- as.character(AF_crops$key)
+mss_cats <- data.frame(key = base::setdiff(x = mtx_ref$key, y = AF_crops$key))
+if(nrow(mss_cats) > 0){
+  mss_cats <- mss_cats |>
+    tidyr::separate(col = 'key', into = c('Severity','Diversity'), remove = F) |>
+    dplyr::mutate(Freq = 0) |>
+    base::as.data.frame()
+  AF_crops <- rbind(AF_crops, mss_cats); rm(mss_cats)
+  AF_crops <- AF_crops |>
+    dplyr::arrange(Severity, Diversity) |>
+    base::as.data.frame()
+}
+AF_crops |>
+  dplyr::filter(Severity >= 3 & Diversity >= 3)
+
+AF_lvstc <- agex_sgn_metrics$livestock_exposure[grep(pattern = 'Africa', x = agex_sgn_metrics$continents)] |>
+  gtools::mixedsort() |>
+  table() |>
+  base::as.data.frame() |>
+  tidyr::separate(col = 'Var1', into = c('Severity','Diversity'), remove = F)
+names(AF_lvstc)[1] <- 'key'
+AF_lvstc$key <- as.character(AF_lvstc$key)
+mss_cats <- data.frame(key = base::setdiff(x = mtx_ref$key, y = AF_lvstc$key))
+if(nrow(mss_cats) > 0){
+  mss_cats <- mss_cats |>
+    tidyr::separate(col = 'key', into = c('Severity','Diversity'), remove = F) |>
+    dplyr::mutate(Freq = 0) |>
+    base::as.data.frame()
+  AF_lvstc <- rbind(AF_lvstc, mss_cats); rm(mss_cats)
+  AF_lvstc <- AF_lvstc |>
+    dplyr::arrange(Severity, Diversity) |>
+    base::as.data.frame()
+}
+AF_lvstc |>
+  dplyr::filter(Severity >= 3 & Diversity >= 3)
+
 # One growing season
 cls <- 270
 # What crops are grown in a specific extreme cluster
@@ -225,6 +379,48 @@ agex_sgn_metrics$total_vop[agex_sgn_metrics$extreme_cluster == cls]
 round(agex_sgn_metrics$food_vop[agex_sgn_metrics$extreme_cluster == cls]/agex_sgn_metrics$total_vop[agex_sgn_metrics$extreme_cluster == cls] * 100, 1)
 
 ### Europe ----
+EU_crops <- agex_sgn_metrics$agricultural_exposure[grep(pattern = 'Europe', x = agex_sgn_metrics$continents)] |>
+  gtools::mixedsort() |>
+  table() |>
+  base::as.data.frame() |>
+  tidyr::separate(col = 'Var1', into = c('Severity','Diversity'), remove = F)
+names(EU_crops)[1] <- 'key'
+EU_crops$key <- as.character(EU_crops$key)
+mss_cats <- data.frame(key = base::setdiff(x = mtx_ref$key, y = EU_crops$key))
+if(nrow(mss_cats) > 0){
+  mss_cats <- mss_cats |>
+    tidyr::separate(col = 'key', into = c('Severity','Diversity'), remove = F) |>
+    dplyr::mutate(Freq = 0) |>
+    base::as.data.frame()
+  EU_crops <- rbind(EU_crops, mss_cats); rm(mss_cats)
+  EU_crops <- EU_crops |>
+    dplyr::arrange(Severity, Diversity) |>
+    base::as.data.frame()
+}
+EU_crops |>
+  dplyr::filter(Severity >= 3 & Diversity >= 3)
+
+EU_lvstc <- agex_sgn_metrics$livestock_exposure[grep(pattern = 'Europe', x = agex_sgn_metrics$continents)] |>
+  gtools::mixedsort() |>
+  table() |>
+  base::as.data.frame() |>
+  tidyr::separate(col = 'Var1', into = c('Severity','Diversity'), remove = F)
+names(EU_lvstc)[1] <- 'key'
+EU_lvstc$key <- as.character(EU_lvstc$key)
+mss_cats <- data.frame(key = base::setdiff(x = mtx_ref$key, y = EU_lvstc$key))
+if(nrow(mss_cats) > 0){
+  mss_cats <- mss_cats |>
+    tidyr::separate(col = 'key', into = c('Severity','Diversity'), remove = F) |>
+    dplyr::mutate(Freq = 0) |>
+    base::as.data.frame()
+  EU_lvstc <- rbind(EU_lvstc, mss_cats); rm(mss_cats)
+  EU_lvstc <- EU_lvstc |>
+    dplyr::arrange(Severity, Diversity) |>
+    base::as.data.frame()
+}
+EU_lvstc |>
+  dplyr::filter(Severity >= 3 & Diversity >= 3)
+
 # One growing season
 cls <- 33
 # What crops are grown in a specific extreme cluster
@@ -264,6 +460,48 @@ agex_sgn_metrics$total_vop[agex_sgn_metrics$extreme_cluster == cls]
 round(agex_sgn_metrics$food_vop[agex_sgn_metrics$extreme_cluster == cls]/agex_sgn_metrics$total_vop[agex_sgn_metrics$extreme_cluster == cls] * 100, 1)
 
 ### Asia ----
+AS_crops <- agex_sgn_metrics$agricultural_exposure[grep(pattern = 'Asia', x = agex_sgn_metrics$continents)] |>
+  gtools::mixedsort() |>
+  table() |>
+  base::as.data.frame() |>
+  tidyr::separate(col = 'Var1', into = c('Severity','Diversity'), remove = F)
+names(AS_crops)[1] <- 'key'
+AS_crops$key <- as.character(AS_crops$key)
+mss_cats <- data.frame(key = base::setdiff(x = mtx_ref$key, y = AS_crops$key))
+if(nrow(mss_cats) > 0){
+  mss_cats <- mss_cats |>
+    tidyr::separate(col = 'key', into = c('Severity','Diversity'), remove = F) |>
+    dplyr::mutate(Freq = 0) |>
+    base::as.data.frame()
+  AS_crops <- rbind(AS_crops, mss_cats); rm(mss_cats)
+  AS_crops <- AS_crops |>
+    dplyr::arrange(Severity, Diversity) |>
+    base::as.data.frame()
+}
+AS_crops |>
+  dplyr::filter(Severity >= 3 & Diversity >= 3)
+
+AS_lvstc <- agex_sgn_metrics$livestock_exposure[grep(pattern = 'Asia', x = agex_sgn_metrics$continents)] |>
+  gtools::mixedsort() |>
+  table() |>
+  base::as.data.frame() |>
+  tidyr::separate(col = 'Var1', into = c('Severity','Diversity'), remove = F)
+names(AS_lvstc)[1] <- 'key'
+AS_lvstc$key <- as.character(AS_lvstc$key)
+mss_cats <- data.frame(key = base::setdiff(x = mtx_ref$key, y = AS_lvstc$key))
+if(nrow(mss_cats) > 0){
+  mss_cats <- mss_cats |>
+    tidyr::separate(col = 'key', into = c('Severity','Diversity'), remove = F) |>
+    dplyr::mutate(Freq = 0) |>
+    base::as.data.frame()
+  AS_lvstc <- rbind(AS_lvstc, mss_cats); rm(mss_cats)
+  AS_lvstc <- AS_lvstc |>
+    dplyr::arrange(Severity, Diversity) |>
+    base::as.data.frame()
+}
+AS_lvstc |>
+  dplyr::filter(Severity >= 3 & Diversity >= 3)
+
 # One growing season
 cls <- 42
 # What crops are grown in a specific extreme cluster
@@ -303,8 +541,50 @@ agex_sgn_metrics$total_vop[agex_sgn_metrics$extreme_cluster == cls]
 round(agex_sgn_metrics$food_vop[agex_sgn_metrics$extreme_cluster == cls]/agex_sgn_metrics$total_vop[agex_sgn_metrics$extreme_cluster == cls] * 100, 1)
 
 ### Oceania ----
+OC_crops <- agex_sgn_metrics$agricultural_exposure[grep(pattern = 'Oceania', x = agex_sgn_metrics$continents)] |>
+  gtools::mixedsort() |>
+  table() |>
+  base::as.data.frame() |>
+  tidyr::separate(col = 'Var1', into = c('Severity','Diversity'), remove = F)
+names(OC_crops)[1] <- 'key'
+OC_crops$key <- as.character(OC_crops$key)
+mss_cats <- data.frame(key = base::setdiff(x = mtx_ref$key, y = OC_crops$key))
+if(nrow(mss_cats) > 0){
+  mss_cats <- mss_cats |>
+    tidyr::separate(col = 'key', into = c('Severity','Diversity'), remove = F) |>
+    dplyr::mutate(Freq = 0) |>
+    base::as.data.frame()
+  OC_crops <- rbind(OC_crops, mss_cats); rm(mss_cats)
+  OC_crops <- OC_crops |>
+    dplyr::arrange(Severity, Diversity) |>
+    base::as.data.frame()
+}
+OC_crops |>
+  dplyr::filter(Severity >= 2 & Diversity >= 2)
+
+OC_lvstc <- agex_sgn_metrics$livestock_exposure[grep(pattern = 'Oceania', x = agex_sgn_metrics$continents)] |>
+  gtools::mixedsort() |>
+  table() |>
+  base::as.data.frame() |>
+  tidyr::separate(col = 'Var1', into = c('Severity','Diversity'), remove = F)
+names(OC_lvstc)[1] <- 'key'
+OC_lvstc$key <- as.character(OC_lvstc$key)
+mss_cats <- data.frame(key = base::setdiff(x = mtx_ref$key, y = OC_lvstc$key))
+if(nrow(mss_cats) > 0){
+  mss_cats <- mss_cats |>
+    tidyr::separate(col = 'key', into = c('Severity','Diversity'), remove = F) |>
+    dplyr::mutate(Freq = 0) |>
+    base::as.data.frame()
+  OC_lvstc <- rbind(OC_lvstc, mss_cats); rm(mss_cats)
+  OC_lvstc <- OC_lvstc |>
+    dplyr::arrange(Severity, Diversity) |>
+    base::as.data.frame()
+}
+OC_lvstc |>
+  dplyr::filter(Severity >= 3 & Diversity >= 3)
+
 # One growing season
-cls <- 442
+cls <- 444
 # What crops are grown in a specific extreme cluster
 arable_land_sts <- read.csv(paste0(root,'/agroclimExtremes/agex_results/agex_harvested_areas_percentages.csv'))
 arable_land_sts |>
