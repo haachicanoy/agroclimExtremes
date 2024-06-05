@@ -166,6 +166,7 @@ gg_ts_NA <- idx_ts_msk_dfm |>
   base::as.data.frame() |>
   ggplot2::ggplot(aes(x = Years, y = `SPEI-6`, group = ID)) +
   ggplot2::geom_line(alpha = 0.1) +
+  ggplot2::geom_hline(yintercept = 1.5, linetype = 'dashed', color = 'red', size = 1.1) +
   ggplot2::theme_minimal() +
   ggplot2::theme(legend.position = 'none',
                  axis.text       = element_text(family = 'serif'),
@@ -199,6 +200,7 @@ gg_ts_SA <- idx_ts_msk_dfm |>
   base::as.data.frame() |>
   ggplot2::ggplot(aes(x = Years, y = `SPEI-6`, group = ID)) +
   ggplot2::geom_line(alpha = 0.1) +
+  ggplot2::geom_hline(yintercept = 1.5, linetype = 'dashed', color = 'red', size = 1.1) +
   ggplot2::theme_minimal() +
   ggplot2::theme(legend.position = 'none',
                  axis.text       = element_text(family = 'serif'),
@@ -232,6 +234,7 @@ gg_ts_AF <- idx_ts_msk_dfm |>
   base::as.data.frame() |>
   ggplot2::ggplot(aes(x = Years, y = `SPEI-6`, group = ID)) +
   ggplot2::geom_line(alpha = 0.1) +
+  ggplot2::geom_hline(yintercept = 1.5, linetype = 'dashed', color = 'red', size = 1.1) +
   ggplot2::theme_minimal() +
   ggplot2::theme(legend.position = 'none',
                  axis.text       = element_text(family = 'serif'),
@@ -265,6 +268,7 @@ gg_ts_EU <- idx_ts_msk_dfm |>
   base::as.data.frame() |>
   ggplot2::ggplot(aes(x = Years, y = `SPEI-6`, group = ID)) +
   ggplot2::geom_line(alpha = 0.1) +
+  ggplot2::geom_hline(yintercept = 1.5, linetype = 'dashed', color = 'red', size = 1.1) +
   ggplot2::theme_minimal() +
   ggplot2::theme(legend.position = 'none',
                  axis.text       = element_text(family = 'serif'),
@@ -298,6 +302,7 @@ gg_ts_AS <- idx_ts_msk_dfm |>
   base::as.data.frame() |>
   ggplot2::ggplot(aes(x = Years, y = `SPEI-6`, group = ID)) +
   ggplot2::geom_line(alpha = 0.1) +
+  ggplot2::geom_hline(yintercept = 1.5, linetype = 'dashed', color = 'red', size = 1.1) +
   ggplot2::theme_minimal() +
   ggplot2::theme(legend.position = 'none',
                  axis.text       = element_text(family = 'serif'),
@@ -331,6 +336,7 @@ gg_ts_OC <- idx_ts_msk_dfm |>
   base::as.data.frame() |>
   ggplot2::ggplot(aes(x = Years, y = `SPEI-6`, group = ID)) +
   ggplot2::geom_line(alpha = 0.1) +
+  ggplot2::geom_hline(yintercept = 1.5, linetype = 'dashed', color = 'red', size = 1.1) +
   ggplot2::theme_minimal() +
   ggplot2::theme(legend.position = 'none',
                  axis.text       = element_text(family = 'serif'),
