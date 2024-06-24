@@ -130,6 +130,20 @@ mtx_ref <- mtx_ref |>
   dplyr::mutate(key = paste0(Severity,'-',Diversity)) |>
   base::as.data.frame()
 
+# Crops hotspots
+crops <- utils::read.csv(paste0(root,'/agroclimExtremes/agex_results/agex_harvested_areas_percentages.csv'))
+crops_hotspots <- dplyr::inner_join(x = agex_sgn_metrics[agex_sgn_metrics$agricultural_exposure == '4-4',], y = crops, by = 'extreme_cluster'); rm(crops)
+crops_hotspots$top5crops <- crops_hotspots |>
+  dplyr::select(Wheat:Vegetables) |>
+  apply(MARGIN = 1, function(x) names(sort(x, decreasing = T))[1:5]) |>
+  apply(MARGIN = 2, function(x) paste0(sort(x), collapse = ', '))
+utils::write.csv(x = crops_hotspots, file = paste0(root,'/agroclimExtremes/agex_results/agex_crops_hotspots.csv'), row.names = F)
+
+# Livestock hotspots
+livestock <- utils::read.csv(paste0(root,'/agroclimExtremes/agex_results/agex_livestock_units_percentages.csv'))
+livestock_hotspots <- dplyr::inner_join(x = agex_sgn_metrics[agex_sgn_metrics$livestock_exposure == '4-4',], y = livestock, by = 'extreme_cluster'); rm(livestock)
+utils::write.csv(x = livestock_hotspots, file = paste0(root,'/agroclimExtremes/agex_results/agex_livestock_hotspots.csv'), row.names = F)
+
 ### North America ----
 NA_crops <- agex_sgn_metrics$agricultural_exposure[grep(pattern = 'North America', x = agex_sgn_metrics$continents)] |>
   gtools::mixedsort() |>

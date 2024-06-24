@@ -120,11 +120,13 @@ lsu <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_vulnerabilit
 total_lsu <- terra::zonal(x = lsu, z = agex_sgn_poly, fun = 'sum', na.rm = T)
 total_lsu <- round(total_lsu, 2)
 total_lsu <- cbind(data.frame(extreme_cluster = 1:nrow(total_lsu)), total_lsu)
+write.csv(x = total_lsu, file = paste0(root,'/agroclimExtremes/agex_results/agex_livestock_units_totals.csv'), row.names = F)
 
 prc_lsu <- total_lsu
 prc_lsu$Total <- rowSums(prc_lsu[,-1], na.rm = T)
 prc_lsu[,-1] <- round(prc_lsu[,-1]/prc_lsu$Total * 100, 2)
 prc_lsu$Total <- NULL
+write.csv(x = prc_lsu, file = paste0(root,'/agroclimExtremes/agex_results/agex_livestock_units_percentages.csv'), row.names = F)
 
 total_lsu <- total_lsu |>
   tidyr::pivot_longer(cols = 2:ncol(total_lsu), names_to = 'Animal', values_to = 'LSU') |>

@@ -1,5 +1,5 @@
 ## ------------------------------------------ ##
-## Paper figures 1 & 2
+## Paper figures 1, 2, 4 & 6
 ## By: Harold Achicanoy
 ## WUR & ABC
 ## May 2024
@@ -155,3 +155,54 @@ fig2 <- agex_sgn_metrics |>
                  plot.caption    = element_text(size = 15, hjust = 0, colour = 'black'),
                  legend.position = 'bottom')
 ggplot2::ggsave(filename = paste0(root,'/agroclimExtremes/agex_results/agex_figures/Figure2_paper1.png'), plot = fig2, device = 'png', width = 7, height = 6.1, units = 'in', dpi = 350); rm(fig2,col_pltt)
+
+## Figure 4 ----
+crops_hotspots <- utils::read.csv(paste0(root,'/agroclimExtremes/agex_results/agex_crops_hotspots.csv'))
+crops_hotspots$continents[crops_hotspots$continents == 'Asia,Europe'] <- 'Asia'
+
+## Figure 4
+fig4 <- crops_hotspots |>
+  ggplot2::ggplot(aes(x = reorder(continents, SPEI.6_slope_95th, FUN = median, decreasing = T), y = SPEI.6_slope_95th * 10)) +
+  ggplot2::geom_boxplot() +
+  ggplot2::ylim(0, 0.6) +
+  ggplot2::xlab('Continent') +
+  ggplot2::ylab('SPEI units per decade') +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(text            = element_text(size = 17, colour = 'black', family = 'serif'),
+                 axis.text.x     = element_text(size = 16, colour = 'black'),
+                 axis.text.y     = element_text(size = 16, colour = 'black'),
+                 axis.title      = element_text(size = 20, colour = 'black'),
+                 legend.text     = element_text(size = 13, colour = 'black'),
+                 legend.title    = element_text(size = 15, colour = 'black'),
+                 plot.title      = element_text(size = 25, colour = 'black'),
+                 plot.subtitle   = element_text(size = 17, colour = 'black'),
+                 strip.text.x    = element_text(size = 17, colour = 'black'),
+                 strip.text.y    = element_text(size = 17, colour = 'black'),
+                 plot.caption    = element_text(size = 15, hjust = 0, colour = 'black'),
+                 legend.position = 'bottom')
+ggplot2::ggsave(filename = paste0(root,'/agroclimExtremes/agex_results/agex_figures/Figure4_paper1.png'), plot = fig4, device = 'png', width = 7, height = 6.1, units = 'in', dpi = 350); rm(fig4)
+
+## Figure 6 ----
+livestock_hotspots <- utils::read.csv(paste0(root,'/agroclimExtremes/agex_results/agex_livestock_hotspots.csv'))
+livestock_hotspots$continents <- factor(x = livestock_hotspots$continents, levels = c('Africa','Asia','South America','Europe','North America'))
+
+fig6 <- livestock_hotspots |>
+  ggplot2::ggplot(aes(x = continents, y = SPEI.6_slope_95th * 10)) +
+  ggplot2::geom_boxplot() +
+  ggplot2::ylim(0, 0.5) +
+  ggplot2::xlab('Continent') +
+  ggplot2::ylab('SPEI units per decade') +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(text            = element_text(size = 17, colour = 'black', family = 'serif'),
+                 axis.text.x     = element_text(size = 16, colour = 'black'),
+                 axis.text.y     = element_text(size = 16, colour = 'black'),
+                 axis.title      = element_text(size = 20, colour = 'black'),
+                 legend.text     = element_text(size = 13, colour = 'black'),
+                 legend.title    = element_text(size = 15, colour = 'black'),
+                 plot.title      = element_text(size = 25, colour = 'black'),
+                 plot.subtitle   = element_text(size = 17, colour = 'black'),
+                 strip.text.x    = element_text(size = 17, colour = 'black'),
+                 strip.text.y    = element_text(size = 17, colour = 'black'),
+                 plot.caption    = element_text(size = 15, hjust = 0, colour = 'black'),
+                 legend.position = 'bottom')
+ggplot2::ggsave(filename = paste0(root,'/agroclimExtremes/agex_results/agex_figures/Figure6_paper1.png'), plot = fig6, device = 'png', width = 7, height = 6.1, units = 'in', dpi = 350); rm(fig6)

@@ -1,5 +1,5 @@
 ## ------------------------------------------ ##
-## Paper figure 4
+## Paper figure 5
 ## By: Harold Achicanoy
 ## WUR & ABC
 ## May 2024
@@ -81,7 +81,7 @@ sam <- rnaturalearth::ne_countries(scale = 'large', continent = 'south america',
 # Put them all together
 shp <- list(nam, sam, afr, eur, asi, oce); rm(nam, sam, afr, eur, asi, oce)
 
-## Figure 4 ----
+## Figure 5 ----
 # Bivariate map of SPEI severity vs livestock equivalent units (livestock exposure)
 
 # Livestock equivalent units
@@ -141,7 +141,7 @@ for(i in 1:length(shp)){
 }; rm(i,aux_dfm)
 
 ### Legend ----
-fig4_leg <- make_maps_legend(dims = 4,
+fig5_leg <- make_maps_legend(dims = 4,
                              xlabl = 'Extreme drought\nintensification',
                              ylabl = 'Livestock units',
                              xbrks = c('Negative','Low','Medium','High'),
@@ -440,16 +440,16 @@ fg_12 <- ggpubr::annotate_figure(gg_ts_OC,
                                    size   = 13,
                                    family = 'serif'
                                  ))
-fg_13 <- ggpubr::annotate_figure(fig4_leg, top = NULL)
+fg_13 <- ggpubr::annotate_figure(fig5_leg, top = NULL)
 
-fig4 <- gridExtra::grid.arrange(fg_01, fg_02, fg_03, fg_04,
+fig5 <- gridExtra::grid.arrange(fg_01, fg_02, fg_03, fg_04,
                                 fg_05, fg_06, fg_07, fg_08,
                                 fg_09, fg_10, fg_11, fg_12,
                                 fg_13,
                                 layout_matrix = layout)
-ggplot2::ggsave(filename = paste0(root,'/agroclimExtremes/agex_results/agex_figures/Figure4_paper1.png'), plot = fig4, device = 'png', width = 12, height = 10, units = 'in', dpi = 350)
+ggplot2::ggsave(filename = paste0(root,'/agroclimExtremes/agex_results/agex_figures/Figure5_paper1.png'), plot = fig5, device = 'png', width = 12, height = 10, units = 'in', dpi = 350)
 rm(ggm,
    ggm_NA,ggm_SA,ggm_AF,ggm_EU,ggm_AS,ggm_OC,
    gg_ts_NA,gg_ts_SA,gg_ts_AF,gg_ts_EU,gg_ts_AS,gg_ts_OC,
    fg_01,fg_02,fg_03,fg_04,fg_05,fg_06,fg_07,fg_08,fg_09,fg_10,fg_11,fg_12,fg_13,
-   fig4_leg,fig4)
+   fig5_leg,fig5)
