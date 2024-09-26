@@ -1,0 +1,12 @@
+name: extreme_drought_clusters
+title: extreme_drought_clusters
+username: haachicanoy
+account: haachicanoy
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 12843341
+bundleId: 9150509
+url: https://haachicanoy.shinyapps.io/extreme_drought_clusters/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
