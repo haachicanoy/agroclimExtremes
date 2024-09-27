@@ -231,6 +231,20 @@ if(!file.exists(outfile)){
   lsu <- terra::rast(outfile)
 }; rm(outfile)
 
+outfile <- paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/lsu_diversity.tif')
+if(!file.exists(outfile)){
+  dir.create(path = dirname(outfile), F, T)
+  lvs_ntp <- terra::app(x = lvstc_unt, fun = function(i, ff) ff(i), cores = 20, ff = entropy::entropy)
+  names(lvs_ntp) <- 'livestock_units_diversity'
+  terra::writeRaster(x = lvs_ntp, filename = outfile, overwrite = T)
+  lvs_ntp_25km <- terra::resample(x = lvs_ntp, y = agex_sgn_cln, method = 'cubicspline', threads = T)
+  lvs_ntp_25km <- terra::mask(x = lvs_ntp_25km, mask = agex_sgn_cln)
+  terra::writeRaster(x = lvs_ntp_25km, filename = paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/lsu_diversity_25km.tif'), overwrite = T)
+} else {
+  lvs_ntp <- terra::rast(outfile)
+}; rm(outfile)
+
+
 ## Exposed population ----
 # Metric: Population total
 # Meaning: number of people per pixel
