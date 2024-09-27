@@ -1,5 +1,5 @@
 ## ------------------------------------------ ##
-## Paper figure 3
+## Paper figure 3: crop diversity vs drought intensification
 ## By: Harold Achicanoy
 ## WUR & ABC
 ## May 2024
@@ -104,7 +104,11 @@ rm(agex_sgn_extreme_trend, agex_sgn_crp_diversity)
 # Produce bivariate maps
 # Define severity and diversity quantiles
 severity_brks <- quantile(x = metrics$`SPEI-6_slope_95th`, probs = seq(0,1,1/4))
+severity_brks[1] <- terra::as.data.frame(idx_sxt) |> min()
+severity_brks[5] <- terra::as.data.frame(idx_sxt) |> max()
 diversity_brks <- quantile(x = metrics$crop_classes_diversity, probs = seq(0,1,1/4))
+diversity_brks[1] <- terra::as.data.frame(crp_diversity)|> min()
+diversity_brks[5] <- terra::as.data.frame(crp_diversity)|> max()
 # Create categories
 agex_sgn_severity_vs_crops$Severity_class <- cut(x = agex_sgn_severity_vs_crops$`SPEI-6_slope_95th`, breaks = severity_brks) |> as.numeric() |> as.character()
 agex_sgn_severity_vs_crops$Diversity_class <- cut(x = agex_sgn_severity_vs_crops$crop_classes_diversity, breaks = diversity_brks) |> as.numeric() |> as.character()
@@ -450,7 +454,7 @@ fig3 <- gridExtra::grid.arrange(fg_01, fg_02, fg_03, fg_04,
                                 fg_09, fg_10, fg_11, fg_12,
                                 fg_13,
                                 layout_matrix = layout)
-ggplot2::ggsave(filename = paste0(root,'/agroclimExtremes/agex_results/agex_figures/Figure3_paper1.png'), plot = fig3, device = 'png', width = 12, height = 10, units = 'in', dpi = 350)
+ggplot2::ggsave(filename = paste0(root,'/agroclimExtremes/agex_results/agex_figures/Figure3_paper1-crop_diversity.png'), plot = fig3, device = 'png', width = 12, height = 10, units = 'in', dpi = 350)
 rm(ggm,
    ggm_NA,ggm_SA,ggm_AF,ggm_EU,ggm_AS,ggm_OC,
    gg_ts_NA,gg_ts_SA,gg_ts_AF,gg_ts_EU,gg_ts_AS,gg_ts_OC,

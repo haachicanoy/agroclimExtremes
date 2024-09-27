@@ -1,8 +1,8 @@
 ## ------------------------------------------ ##
-## Paper figure 5
+## Paper figure 5: LSU diversity vs drought intensification
 ## By: Harold Achicanoy
 ## WUR & ABC
-## May 2024
+## Sep 2024
 ## ------------------------------------------ ##
 
 ## R options and packages loading ----
@@ -18,7 +18,7 @@ extrafont::fonts()
 # Functions
 make_maps_legend <- function(dims = 4,
                              xlabl = 'Drought trend severity',
-                             ylabl = 'Crop classes diversity',
+                             ylabl = 'Livestock units diversity',
                              xbrks = c('Negative','Low','Medium','High'),
                              ybrks = c('Very low','Low','Medium','High'),
                              palette = 'GrPink2',
@@ -81,11 +81,11 @@ sam <- rnaturalearth::ne_countries(scale = 'large', continent = 'south america',
 # Put them all together
 shp <- list(nam, sam, afr, eur, asi, oce); rm(nam, sam, afr, eur, asi, oce)
 
-## Figure 5 ----
-# Bivariate map of SPEI severity vs livestock equivalent units (livestock exposure)
+## Figure 5-supplementary ----
+# Bivariate map of SPEI severity vs livestock units diversity (livestock exposure)
 
-# Livestock equivalent units
-lvstck_units  <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/lsu_total_25km.tif'))
+# Crop classes diversity
+lsu_diversity <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/lsu_diversity_25km.tif'))
 
 # Index characterization: extreme trend
 idx_sxt <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/SPEI-6_extreme_trend.tif'))
@@ -93,33 +93,37 @@ idx_sxt <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_vulnerab
 # Zonal statistics per extreme drought cluster (mean)
 agex_sgn_extreme_trend <- terra::zonal(x = idx_sxt, z = agex_sgn_num, fun = 'mean', na.rm = T, as.raster = T)
 metrics1 <- terra::zonal(x = idx_sxt, z = agex_sgn_num, fun = 'mean', na.rm = T)
-agex_sgn_lvstck_units <- terra::zonal(x = lvstck_units, z = agex_sgn_num, fun = 'mean', na.rm = T, as.raster = T)
-metrics2 <- terra::zonal(x = lvstck_units, z = agex_sgn_num, fun = 'mean', na.rm = T)
+agex_sgn_lsu_diversity <- terra::zonal(x = lsu_diversity, z = agex_sgn_num, fun = 'mean', na.rm = T, as.raster = T)
+metrics2 <- terra::zonal(x = lsu_diversity, z = agex_sgn_num, fun = 'mean', na.rm = T)
 metrics <- dplyr::left_join(x = metrics1, y = metrics2, by = 'extreme_cluster'); rm(metrics1, metrics2)
 
 # Merge data.frames
-agex_sgn_severity_vs_lvstck <- terra::as.data.frame(x = c(agex_sgn, agex_sgn_extreme_trend, agex_sgn_lvstck_units), xy = T, cell = T)
-rm(agex_sgn_extreme_trend, agex_sgn_lvstck_units)
+agex_sgn_severity_vs_lvst <- terra::as.data.frame(x = c(agex_sgn, agex_sgn_extreme_trend, agex_sgn_lsu_diversity), xy = T, cell = T)
+rm(agex_sgn_extreme_trend, agex_sgn_lsu_diversity)
 
 # Produce bivariate maps
 # Define severity and diversity quantiles
 severity_brks <- quantile(x = metrics$`SPEI-6_slope_95th`, probs = seq(0,1,1/4))
-diversity_brks <- quantile(x = metrics$total_livestock_units, probs = seq(0,1,1/4))
+severity_brks[1] <- terra::as.data.frame(idx_sxt) |> min()
+severity_brks[5] <- terra::as.data.frame(idx_sxt) |> max()
+diversity_brks <- quantile(x = metrics$livestock_units_diversity, probs = seq(0,1,1/4))
+diversity_brks[1] <- terra::as.data.frame(lsu_diversity)|> min()
+diversity_brks[5] <- terra::as.data.frame(lsu_diversity)|> max()
 # Create categories
-agex_sgn_severity_vs_lvstck$Severity_class <- cut(x = agex_sgn_severity_vs_lvstck$`SPEI-6_slope_95th`, breaks = severity_brks) |> as.numeric() |> as.character()
-agex_sgn_severity_vs_lvstck$Diversity_class <- cut(x = agex_sgn_severity_vs_lvstck$total_livestock_units, breaks = diversity_brks) |> as.numeric() |> as.character()
+agex_sgn_severity_vs_lvst$Severity_class <- cut(x = agex_sgn_severity_vs_lvst$`SPEI-6_slope_95th`, breaks = severity_brks) |> as.numeric() |> as.character()
+agex_sgn_severity_vs_lvst$Diversity_class <- cut(x = agex_sgn_severity_vs_lvst$livestock_units_diversity, breaks = diversity_brks) |> as.numeric() |> as.character()
 # Create bivariate categories
-agex_sgn_severity_vs_lvstck$bi_class <- paste0(agex_sgn_severity_vs_lvstck$Severity_class,'-',agex_sgn_severity_vs_lvstck$Diversity_class)
-agex_sgn_severity_vs_lvstck <- agex_sgn_severity_vs_lvstck[,c('cell','x','y','extreme_cluster','SPEI-6_slope_95th','total_livestock_units','bi_class')]
+agex_sgn_severity_vs_lvst$bi_class <- paste0(agex_sgn_severity_vs_lvst$Severity_class,'-',agex_sgn_severity_vs_lvst$Diversity_class)
+agex_sgn_severity_vs_lvst <- agex_sgn_severity_vs_lvst[,c('cell','x','y','extreme_cluster','SPEI-6_slope_95th','livestock_units_diversity','bi_class')]
 # Define color palette for bivariate categories
-colours <- data.frame(bi_class = sort(unique(agex_sgn_severity_vs_lvstck$bi_class)))
+colours <- data.frame(bi_class = sort(unique(agex_sgn_severity_vs_lvst$bi_class)))
 colours$category <- 1:nrow(colours)
-agex_sgn_severity_vs_lvstck <- dplyr::left_join(x = agex_sgn_severity_vs_lvstck, y = colours, by = 'bi_class')
+agex_sgn_severity_vs_lvst <- dplyr::left_join(x = agex_sgn_severity_vs_lvst, y = colours, by = 'bi_class')
 
 # Create auxiliary raster of bivariate categories
 aux <- agex_sgn
 terra::values(aux) <- NA
-aux[agex_sgn_severity_vs_lvstck$cell] <- agex_sgn_severity_vs_lvstck$category
+aux[agex_sgn_severity_vs_lvst$cell] <- agex_sgn_severity_vs_lvst$category
 names(aux) <- 'category'
 
 # Create a list of maps (per continent)
@@ -141,21 +145,21 @@ for(i in 1:length(shp)){
 }; rm(i,aux_dfm)
 
 ### Legend ----
-fig5_leg <- make_maps_legend(dims = 4,
+fig3_leg <- make_maps_legend(dims = 4,
                              xlabl = 'Extreme drought\nintensification',
-                             ylabl = 'Livestock units',
+                             ylabl = 'Livestock units\ndiversity',
                              xbrks = c('Negative','Low','Medium','High'),
                              ybrks = c('Very low','Low','Medium','High'),
                              palette = 'GrPink2',
                              categories = colours) # ggplot2::ggsave(filename = paste0('D:/Figure3_paper1_legend.png'), plot = fig3_leg, device = 'png', width = 5, height = 5, units = 'in', dpi = 350)
 
 ### Panel a) North America ----
-# Cluster: 116 (US)
+# Cluster: 227 (USA, Mexico)
 # One growing season
 
 idx_ts <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_25km/one_s1_spei-6_25km.tif'))
 # Filter time series per cluster of interest
-aux <- agex_sgn; aux[aux != 116] <- NA
+aux <- agex_sgn; aux[aux != 227] <- NA
 idx_ts_msk <- terra::mask(x = idx_ts, mask = aux) |> terra::trim()
 # Time series plotting
 idx_ts_msk_dfm <- terra::as.data.frame(x = idx_ts_msk, xy = T, cell = F)
@@ -184,12 +188,12 @@ ggm_NA <- ggm[[1]] +
                      color = 'red', size = 1.5, fill = NA)
 
 ### Panel b) South America ----
-# Cluster: 285 (Ecuador, Colombia, Venezuela)
-# Two growing seasons. Chosen season S1
+# Cluster: 402 (Bolivia,Peru,Argentina)
+# One growing season
 
-idx_ts <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_25km/two_s1_spei-6_25km.tif'))
+idx_ts <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_25km/one_s1_spei-6_25km.tif'))
 # Filter time series per cluster of interest
-aux <- agex_sgn; aux[aux != 285] <- NA
+aux <- agex_sgn; aux[aux != 402] <- NA
 idx_ts_msk <- terra::mask(x = idx_ts, mask = aux) |> terra::trim()
 # Time series plotting
 idx_ts_msk_dfm <- terra::as.data.frame(x = idx_ts_msk, xy = T, cell = F)
@@ -218,12 +222,12 @@ ggm_SA <- ggm[[2]] +
                      color = 'red', size = 1.5, fill = NA)
 
 ### Panel c) Africa ----
-# Cluster: 249 (Ethiopia, South Sudan, Sudan, Eritrea)
-# One growing season
+# Cluster: 289 (Nigeria,Benin,Togo,Ghana)
+# Two growing season. Chosen season S1
 
-idx_ts <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_25km/one_s1_spei-6_25km.tif'))
+idx_ts <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_25km/two_s1_spei-6_25km.tif'))
 # Filter time series per cluster of interest
-aux <- agex_sgn; aux[aux != 249] <- NA
+aux <- agex_sgn; aux[aux != 289] <- NA
 idx_ts_msk <- terra::mask(x = idx_ts, mask = aux) |> terra::trim()
 # Time series plotting
 idx_ts_msk_dfm <- terra::as.data.frame(x = idx_ts_msk, xy = T, cell = F)
@@ -252,12 +256,12 @@ ggm_AF <- ggm[[3]] +
                      color = 'red', size = 1.5, fill = NA)
 
 ### Panel d) Europe ----
-# Cluster: 58 (France, Germany, Italy, Switzerland)
+# Cluster: 50 (Ukraine,Russia)
 # One growing season
 
 idx_ts <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_25km/one_s1_spei-6_25km.tif'))
 # Filter time series per cluster of interest
-aux <- agex_sgn; aux[aux != 58] <- NA
+aux <- agex_sgn; aux[aux != 50] <- NA
 idx_ts_msk <- terra::mask(x = idx_ts, mask = aux) |> terra::trim()
 # Time series plotting
 idx_ts_msk_dfm <- terra::as.data.frame(x = idx_ts_msk, xy = T, cell = F)
@@ -286,12 +290,12 @@ ggm_EU <- ggm[[4]] +
                      color = 'red', size = 1.5, fill = NA)
 
 ### Panel e) Asia ----
-# Cluster: 169 (China)
-# Two growing seasons. Chosen season S1
+# Cluster: 171 (People's Republic of China,South Korea,Japan)
+# One growing season
 
 idx_ts <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_25km/one_s1_spei-6_25km.tif'))
 # Filter time series per cluster of interest
-aux <- agex_sgn; aux[aux != 169] <- NA
+aux <- agex_sgn; aux[aux != 171] <- NA
 idx_ts_msk <- terra::mask(x = idx_ts, mask = aux) |> terra::trim()
 # Time series plotting
 idx_ts_msk_dfm <- terra::as.data.frame(x = idx_ts_msk, xy = T, cell = F)
@@ -320,12 +324,12 @@ ggm_AS <- ggm[[5]] +
                      color = 'red', size = 1.5, fill = NA)
 
 ### Panel f) Oceania ----
-# Cluster: 450 (New Zealand)
+# Cluster: 444 (Australia)
 # One growing season
 
 idx_ts <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_25km/one_s1_spei-6_25km.tif'))
 # Filter time series per cluster of interest
-aux <- agex_sgn; aux[aux != 450] <- NA
+aux <- agex_sgn; aux[aux != 444] <- NA
 idx_ts_msk <- terra::mask(x = idx_ts, mask = aux) |> terra::trim()
 # Time series plotting
 idx_ts_msk_dfm <- terra::as.data.frame(x = idx_ts_msk, xy = T, cell = F)
@@ -354,11 +358,14 @@ ggm_OC <- ggm[[6]] +
                      color = 'red', size = 1.5, fill = NA)
 
 ## Full figure ----
-layout <- matrix(c(1:12,NA,13,13,NA), nrow = 4, ncol = 4, byrow = TRUE)
+layout <- matrix(c(1:12,NA,13,13,NA), nrow = 4, ncol = 4, byrow = T)
+
+sts <- agex_sgn_metrics[agex_sgn_metrics$extreme_cluster %in% c(157,420,270,33,201,444),]
+sts[,c('harvested_area_total','harvested_area_min','harvested_area_max')]
 
 fg_01 <- ggpubr::annotate_figure(gg_ts_NA,
                                  top = text_grob(
-                                   label  = 'a) National. One-GS',
+                                   label  = 'a) Transnational. One-GS',
                                    face   = 'plain',
                                    size   = 13,
                                    family = 'serif'
@@ -379,14 +386,14 @@ fg_03 <- ggpubr::annotate_figure(ggm_SA,
                                  ))
 fg_04 <- ggpubr::annotate_figure(gg_ts_SA,
                                  top = text_grob(
-                                   label  = 'b) Transnational. Two-GS',
+                                   label  = 'b) Transnational. One-GS',
                                    face   = 'plain',
                                    size   = 13,
                                    family = 'serif'
                                  ))
 fg_05 <- ggpubr::annotate_figure(gg_ts_AF,
                                  top = text_grob(
-                                   label  = 'c) Transnational. One-GS',
+                                   label  = 'c) Transnational. Two-GS',
                                    face   = 'plain',
                                    size   = 13,
                                    family = 'serif'
@@ -414,7 +421,7 @@ fg_08 <- ggpubr::annotate_figure(gg_ts_EU,
                                  ))
 fg_09 <- ggpubr::annotate_figure(gg_ts_AS,
                                  top = text_grob(
-                                   label  = 'e) National. One-GS',
+                                   label  = 'e) Transnational. One-GS',
                                    face   = 'plain',
                                    size   = 13,
                                    family = 'serif'
@@ -440,16 +447,16 @@ fg_12 <- ggpubr::annotate_figure(gg_ts_OC,
                                    size   = 13,
                                    family = 'serif'
                                  ))
-fg_13 <- ggpubr::annotate_figure(fig5_leg, top = NULL)
+fg_13 <- ggpubr::annotate_figure(fig3_leg, top = NULL)
 
-fig5 <- gridExtra::grid.arrange(fg_01, fg_02, fg_03, fg_04,
+fig3 <- gridExtra::grid.arrange(fg_01, fg_02, fg_03, fg_04,
                                 fg_05, fg_06, fg_07, fg_08,
                                 fg_09, fg_10, fg_11, fg_12,
                                 fg_13,
                                 layout_matrix = layout)
-ggplot2::ggsave(filename = paste0(root,'/agroclimExtremes/agex_results/agex_figures/Figure5_paper1.png'), plot = fig5, device = 'png', width = 12, height = 10, units = 'in', dpi = 350)
+ggplot2::ggsave(filename = paste0(root,'/agroclimExtremes/agex_results/agex_figures/Figure5_paper1-livestock_diversity.png'), plot = fig3, device = 'png', width = 12, height = 10, units = 'in', dpi = 350)
 rm(ggm,
    ggm_NA,ggm_SA,ggm_AF,ggm_EU,ggm_AS,ggm_OC,
    gg_ts_NA,gg_ts_SA,gg_ts_AF,gg_ts_EU,gg_ts_AS,gg_ts_OC,
    fg_01,fg_02,fg_03,fg_04,fg_05,fg_06,fg_07,fg_08,fg_09,fg_10,fg_11,fg_12,fg_13,
-   fig5_leg,fig5)
+   fig3_leg,fig3)
