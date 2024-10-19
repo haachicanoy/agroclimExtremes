@@ -10,12 +10,12 @@ options(warn = -1, scipen = 999)
 list.files2 <- Vectorize(FUN = list.files, vectorize.args = 'pattern')
 
 # Define directories
-root <- '//CATALOGUE/WFP_ClimateRiskPr1'           # Server
+root <- '//CATALOGUE/AgroclimExtremes'             # Server
 inp_dir <- 'D:/Data/Maps'                          # Local
 out_dir <- 'D:/OneDrive - CGIAR/PhD/papers/paper1' # local
 
 # Load MapSPAM readme
-mapspam_info <- readLines(paste0(root,'/agroclimExtremes/agex_raw_data/croplands/spam2010/ReadMe_v2r0_Global.txt'))
+mapspam_info <- readLines(paste0(root,'/agex_raw_data/croplands/spam2010/ReadMe_v2r0_Global.txt'))
 
 # Food crops
 crps <- strsplit(x = mapspam_info[105:132], split = '\t', fixed = T)
@@ -72,10 +72,10 @@ for(i in 1:length(grps)){
       r <- terra::rast(x); r[r != 0] <- 1; return(r)
     }) |> terra::rast() |> sum()
     terra::writeRaster(x = crops_lnd, filename = paste0(out_dir,'/data/agex_',gsub(' ','_',grps[i]),'_count.tif'), overwrite = T)
-    if(!file.exists(paste0(root,'/agroclimExtremes/agex_raw_data/agex_',gsub(' ','_',grps[i]),'_count_10km.tif'))){
+    if(!file.exists(paste0(root,'/agex_raw_data/agex_',gsub(' ','_',grps[i]),'_count_10km.tif'))){
       # Resampling MapSPAM into AgERA5 template resolution
       crops_lnd_10km <- terra::resample(x = crops_lnd, y = tmp_10km, method = 'near')
-      terra::writeRaster(x = crops_lnd_10km, filename = paste0(root,'/agroclimExtremes/agex_raw_data/agex_',gsub(' ','_',grps[i]),'_count_10km.tif'), overwrite = T)
+      terra::writeRaster(x = crops_lnd_10km, filename = paste0(root,'/agex_raw_data/agex_',gsub(' ','_',grps[i]),'_count_10km.tif'), overwrite = T)
     }
   }
 }

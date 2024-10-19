@@ -46,12 +46,12 @@ make_maps_legend <- function(dims = 4,
 }
 
 ## Setup arguments ----
-root   <- '//CATALOGUE/WFP_ClimateRiskPr1'
+root   <- '//CATALOGUE/AgroclimExtremes'
 index  <- 'spei-6'
 
 ## Extreme drought clusters ----
 # Categorical
-agex_sgn <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
+agex_sgn <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
 names(agex_sgn) <- 'extreme_cluster'
 cls <- data.frame(extreme_cluster = sort(unique(terra::values(agex_sgn))))
 cls$id <- cls$extreme_cluster
@@ -60,11 +60,11 @@ cls$extreme_cluster <- as.character(cls$extreme_cluster)
 levels(agex_sgn) <- cls; rm(cls)
 
 # Numerical
-agex_sgn_num <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
+agex_sgn_num <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
 names(agex_sgn_num) <- 'extreme_cluster'
 
 # Metrics
-agex_sgn_metrics <- utils::read.csv(paste0(root,'/agroclimExtremes/agex_results/agex_all_metrics.csv'))
+agex_sgn_metrics <- utils::read.csv(paste0(root,'/agex_results/agex_all_metrics.csv'))
 
 ## Shapefiles ----
 # Continent shapefiles. Some of them cropped
@@ -85,10 +85,10 @@ shp <- list(nam, sam, afr, eur, asi, oce); rm(nam, sam, afr, eur, asi, oce)
 # Bivariate map of SPEI severity vs livestock equivalent units (livestock exposure)
 
 # Livestock equivalent units
-lvstck_units  <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/lsu_total_25km.tif'))
+lvstck_units  <- terra::rast(paste0(root,'/agex_results/agex_vulnerability/lsu_total_25km.tif'))
 
 # Index characterization: extreme trend
-idx_sxt <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/SPEI-6_extreme_trend.tif'))
+idx_sxt <- terra::rast(paste0(root,'/agex_results/agex_vulnerability/SPEI-6_extreme_trend.tif'))
 
 # Zonal statistics per extreme drought cluster (mean)
 agex_sgn_extreme_trend <- terra::zonal(x = idx_sxt, z = agex_sgn_num, fun = 'mean', na.rm = T, as.raster = T)
@@ -157,7 +157,7 @@ fig5_leg <- make_maps_legend(dims = 4,
 # Cluster: 116 (US)
 # One growing season
 
-idx_ts <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_25km/one_s1_spei-6_25km.tif'))
+idx_ts <- terra::rast(paste0(root,'/agex_indices/agex_spei-6/agex_spei-6_25km/one_s1_spei-6_25km.tif'))
 # Filter time series per cluster of interest
 aux <- agex_sgn; aux[aux != 116] <- NA
 idx_ts_msk <- terra::mask(x = idx_ts, mask = aux) |> terra::trim()
@@ -191,7 +191,7 @@ ggm_NA <- ggm[[1]] +
 # Cluster: 285 (Ecuador, Colombia, Venezuela)
 # Two growing seasons. Chosen season S1
 
-idx_ts <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_25km/two_s1_spei-6_25km.tif'))
+idx_ts <- terra::rast(paste0(root,'/agex_indices/agex_spei-6/agex_spei-6_25km/two_s1_spei-6_25km.tif'))
 # Filter time series per cluster of interest
 aux <- agex_sgn; aux[aux != 285] <- NA
 idx_ts_msk <- terra::mask(x = idx_ts, mask = aux) |> terra::trim()
@@ -225,7 +225,7 @@ ggm_SA <- ggm[[2]] +
 # Cluster: 249 (Ethiopia, South Sudan, Sudan, Eritrea)
 # One growing season
 
-idx_ts <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_25km/one_s1_spei-6_25km.tif'))
+idx_ts <- terra::rast(paste0(root,'/agex_indices/agex_spei-6/agex_spei-6_25km/one_s1_spei-6_25km.tif'))
 # Filter time series per cluster of interest
 aux <- agex_sgn; aux[aux != 249] <- NA
 idx_ts_msk <- terra::mask(x = idx_ts, mask = aux) |> terra::trim()
@@ -259,7 +259,7 @@ ggm_AF <- ggm[[3]] +
 # Cluster: 58 (France, Germany, Italy, Switzerland)
 # One growing season
 
-idx_ts <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_25km/one_s1_spei-6_25km.tif'))
+idx_ts <- terra::rast(paste0(root,'/agex_indices/agex_spei-6/agex_spei-6_25km/one_s1_spei-6_25km.tif'))
 # Filter time series per cluster of interest
 aux <- agex_sgn; aux[aux != 58] <- NA
 idx_ts_msk <- terra::mask(x = idx_ts, mask = aux) |> terra::trim()
@@ -293,7 +293,7 @@ ggm_EU <- ggm[[4]] +
 # Cluster: 169 (China)
 # Two growing seasons. Chosen season S1
 
-idx_ts <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_25km/one_s1_spei-6_25km.tif'))
+idx_ts <- terra::rast(paste0(root,'/agex_indices/agex_spei-6/agex_spei-6_25km/one_s1_spei-6_25km.tif'))
 # Filter time series per cluster of interest
 aux <- agex_sgn; aux[aux != 169] <- NA
 idx_ts_msk <- terra::mask(x = idx_ts, mask = aux) |> terra::trim()
@@ -327,7 +327,7 @@ ggm_AS <- ggm[[5]] +
 # Cluster: 450 (New Zealand)
 # One growing season
 
-idx_ts <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_25km/one_s1_spei-6_25km.tif'))
+idx_ts <- terra::rast(paste0(root,'/agex_indices/agex_spei-6/agex_spei-6_25km/one_s1_spei-6_25km.tif'))
 # Filter time series per cluster of interest
 aux <- agex_sgn; aux[aux != 450] <- NA
 idx_ts_msk <- terra::mask(x = idx_ts, mask = aux) |> terra::trim()
@@ -451,7 +451,7 @@ fig5 <- gridExtra::grid.arrange(fg_01, fg_02, fg_03, fg_04,
                                 fg_09, fg_10, fg_11, fg_12,
                                 fg_13,
                                 layout_matrix = layout)
-ggplot2::ggsave(filename = paste0(root,'/agroclimExtremes/agex_results/agex_figures/Figure5_paper1-livestock_units.png'), plot = fig5, device = 'png', width = 12, height = 10, units = 'in', dpi = 350)
+ggplot2::ggsave(filename = paste0(root,'/agex_results/agex_figures/Figure5_paper1-livestock_units.png'), plot = fig5, device = 'png', width = 12, height = 10, units = 'in', dpi = 350)
 rm(ggm,
    ggm_NA,ggm_SA,ggm_AF,ggm_EU,ggm_AS,ggm_OC,
    gg_ts_NA,gg_ts_SA,gg_ts_AF,gg_ts_EU,gg_ts_AS,gg_ts_OC,

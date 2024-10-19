@@ -14,14 +14,14 @@ suppressMessages(pacman::p_load(terra, geodata, Kendall, tidyverse, psych,
                                 fastcluster, eurostat, giscoR, parallelDist))
 
 ## Key arguments
-root   <- '//CATALOGUE/WFP_ClimateRiskPr1'
+root   <- '//CATALOGUE/AgroclimExtremes'
 yrs    <- 1980:2022
 index  <- 'spei-6'
 gs     <- 'one'
 season <- 1
 
 ## List and load files
-fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_indices/agex_',index,'/agex_',index,'_25km'), pattern = paste0(gs,'_s',season,'_',index,'_'), full.names = T)
+fls <- list.files(path = paste0(root,'/agex_indices/agex_',index,'/agex_',index,'_25km'), pattern = paste0(gs,'_s',season,'_',index,'_'), full.names = T)
 # Leave it open to compute for 10 km resolution
 # fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_indices/agex_',index,'/agex_',index,'_10km'), pattern = paste0(gs,'_s',season,'_',index,'_'), full.names = T)
 idx_roi <- terra::rast(fls)
@@ -128,5 +128,5 @@ terra::values(tmp) <- NA
 fmado_r <- tmp; fmado_r[qry$cell] <- qry$fmado_cluster; plot(fmado_r)
 eucld_r <- tmp; eucld_r[qry$cell] <- qry$eucld_cluster; plot(eucld_r)
 
-terra::writeRaster(x = fmado_r, filename = paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/agex_global_',index,'_',gs,'_s',season,'_fmadogram_k',optimal_k,'.tif'), overwrite = T)
-terra::writeRaster(x = eucld_r, filename = paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/agex_global_',index,'_',gs,'_s',season,'_euclidean_k',optimal_k,'.tif'), overwrite = T)
+terra::writeRaster(x = fmado_r, filename = paste0(root,'/agex_results/agex_results_clusters/agex_global_',index,'_',gs,'_s',season,'_fmadogram_k',optimal_k,'.tif'), overwrite = T)
+terra::writeRaster(x = eucld_r, filename = paste0(root,'/agex_results/agex_results_clusters/agex_global_',index,'_',gs,'_s',season,'_euclidean_k',optimal_k,'.tif'), overwrite = T)

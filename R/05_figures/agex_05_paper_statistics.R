@@ -16,12 +16,12 @@ extrafont::loadfonts(device = 'win')
 extrafont::fonts()
 
 ## Setup arguments ----
-root   <- '//CATALOGUE/WFP_ClimateRiskPr1'
+root   <- '//CATALOGUE/AgroclimExtremes'
 index  <- 'spei-6'
 
 ## Extreme drought clusters ----
 # Categorical
-agex_sgn <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
+agex_sgn <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
 names(agex_sgn) <- 'extreme_cluster'
 cls <- data.frame(extreme_cluster = sort(unique(terra::values(agex_sgn))))
 cls$id <- cls$extreme_cluster
@@ -30,11 +30,11 @@ cls$extreme_cluster <- as.character(cls$extreme_cluster)
 levels(agex_sgn) <- cls; rm(cls)
 
 # Numerical
-agex_sgn_num <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
+agex_sgn_num <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
 names(agex_sgn_num) <- 'extreme_cluster'
 
 # Metrics
-agex_sgn_metrics <- utils::read.csv(paste0(root,'/agroclimExtremes/agex_results/agex_all_metrics.csv'))
+agex_sgn_metrics <- utils::read.csv(paste0(root,'/agex_results/agex_all_metrics.csv'))
 
 ## Extreme drought clusters ----
 
@@ -131,16 +131,16 @@ mtx_ref <- mtx_ref |>
   base::as.data.frame()
 
 # Crops hotspots
-crops <- utils::read.csv(paste0(root,'/agroclimExtremes/agex_results/agex_harvested_areas_percentages.csv'))
+crops <- utils::read.csv(paste0(root,'/agex_results/agex_harvested_areas_percentages.csv'))
 crops_hotspots <- dplyr::inner_join(x = agex_sgn_metrics[agex_sgn_metrics$agricultural_exposure == '4-4',], y = crops, by = 'extreme_cluster'); rm(crops)
 crops_hotspots$top5crops <- crops_hotspots |>
   dplyr::select(Wheat:Vegetables) |>
   apply(MARGIN = 1, function(x) names(sort(x, decreasing = T))[1:5]) |>
   apply(MARGIN = 2, function(x) paste0(sort(x), collapse = ', '))
-utils::write.csv(x = crops_hotspots, file = paste0(root,'/agroclimExtremes/agex_results/agex_crops_hotspots.csv'), row.names = F)
+utils::write.csv(x = crops_hotspots, file = paste0(root,'/agex_results/agex_crops_hotspots.csv'), row.names = F)
 
 # Livestock hotspots
-livestock <- utils::read.csv(paste0(root,'/agroclimExtremes/agex_results/agex_livestock_units_percentages.csv'))
+livestock <- utils::read.csv(paste0(root,'/agex_results/agex_livestock_units_percentages.csv'))
 livestock_hotspots <- dplyr::inner_join(x = agex_sgn_metrics[agex_sgn_metrics$livestock_exposure == '4-4',], y = livestock, by = 'extreme_cluster'); rm(livestock)
 utils::write.csv(x = livestock_hotspots, file = paste0(root,'/agroclimExtremes/agex_results/agex_livestock_hotspots.csv'), row.names = F)
 
@@ -190,16 +190,16 @@ NA_lvstc |>
 # One growing season
 cls <- 223
 # What crops are grown in a specific extreme cluster
-arable_land_sts <- read.csv(paste0(root,'/agroclimExtremes/agex_results/agex_harvested_areas_percentages.csv'))
+arable_land_sts <- read.csv(paste0(root,'/agex_results/agex_harvested_areas_percentages.csv'))
 arable_land_sts |>
   dplyr::filter(extreme_cluster == cls) |>
   tidyr::pivot_longer(-1, names_to = 'Crop', values_to = 'Percentage') |>
   dplyr::arrange(-Percentage)
 
 # During when (one month before, both cases)
-s1_ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_ini_25km_croplands.tif'))
+s1_ini <- terra::rast(paste0(root,'/agex_raw_data/agex_one_s1_ini_25km_croplands.tif'))
 names(s1_ini) <- 'S1_start'
-s1_end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_end_25km_croplands.tif'))
+s1_end <- terra::rast(paste0(root,'/agex_raw_data/agex_one_s1_end_25km_croplands.tif'))
 names(s1_end) <- 'S1_end'
 
 clndr <- terra::zonal(x = c(s1_ini, s1_end), z = agex_sgn, fun = 'median', na.rm = T) |>
@@ -271,20 +271,20 @@ SA_lvstc |>
 # Two growing seasons
 cls <- 420
 # What crops are grown in a specific extreme cluster
-arable_land_sts <- read.csv(paste0(root,'/agroclimExtremes/agex_results/agex_harvested_areas_percentages.csv'))
+arable_land_sts <- read.csv(paste0(root,'/agex_results/agex_harvested_areas_percentages.csv'))
 arable_land_sts |>
   dplyr::filter(extreme_cluster == cls) |>
   tidyr::pivot_longer(-1, names_to = 'Crop', values_to = 'Percentage') |>
   dplyr::arrange(-Percentage)
 
 # During when (one month before, both cases)
-s1_ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s1_ini_25km_croplands.tif'))
+s1_ini <- terra::rast(paste0(root,'/agex_raw_data/agex_two_s1_ini_25km_croplands.tif'))
 names(s1_ini) <- 'S1_start'
-s1_end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s1_end_25km_croplands.tif'))
+s1_end <- terra::rast(paste0(root,'/agex_raw_data/agex_two_s1_end_25km_croplands.tif'))
 names(s1_end) <- 'S1_end'
-s2_ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s2_ini_25km_croplands.tif'))
+s2_ini <- terra::rast(paste0(root,'/agex_raw_data/agex_two_s2_ini_25km_croplands.tif'))
 names(s2_ini) <- 'S2_start'
-s2_end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_two_s2_end_25km_croplands.tif'))
+s2_end <- terra::rast(paste0(root,'/agex_raw_data/agex_two_s2_end_25km_croplands.tif'))
 names(s2_end) <- 'S2_end'
 
 clndr <- terra::zonal(x = c(s1_ini, s1_end, s2_ini, s2_end), z = agex_sgn, fun = 'median', na.rm = T) |>
@@ -357,16 +357,16 @@ AF_lvstc |>
 # One growing season
 cls <- 270
 # What crops are grown in a specific extreme cluster
-arable_land_sts <- read.csv(paste0(root,'/agroclimExtremes/agex_results/agex_harvested_areas_percentages.csv'))
+arable_land_sts <- read.csv(paste0(root,'/agex_results/agex_harvested_areas_percentages.csv'))
 arable_land_sts |>
   dplyr::filter(extreme_cluster == cls) |>
   tidyr::pivot_longer(-1, names_to = 'Crop', values_to = 'Percentage') |>
   dplyr::arrange(-Percentage)
 
 # During when (one month before, both cases)
-s1_ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_ini_25km_croplands.tif'))
+s1_ini <- terra::rast(paste0(root,'/agex_raw_data/agex_one_s1_ini_25km_croplands.tif'))
 names(s1_ini) <- 'S1_start'
-s1_end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_end_25km_croplands.tif'))
+s1_end <- terra::rast(paste0(root,'/agex_raw_data/agex_one_s1_end_25km_croplands.tif'))
 names(s1_end) <- 'S1_end'
 
 clndr <- terra::zonal(x = c(s1_ini, s1_end), z = agex_sgn, fun = 'median', na.rm = T) |>
@@ -438,16 +438,16 @@ EU_lvstc |>
 # One growing season
 cls <- 33
 # What crops are grown in a specific extreme cluster
-arable_land_sts <- read.csv(paste0(root,'/agroclimExtremes/agex_results/agex_harvested_areas_percentages.csv'))
+arable_land_sts <- read.csv(paste0(root,'/agex_results/agex_harvested_areas_percentages.csv'))
 arable_land_sts |>
   dplyr::filter(extreme_cluster == cls) |>
   tidyr::pivot_longer(-1, names_to = 'Crop', values_to = 'Percentage') |>
   dplyr::arrange(-Percentage)
 
 # During when (one month before, both cases)
-s1_ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_ini_25km_croplands.tif'))
+s1_ini <- terra::rast(paste0(root,'/agex_raw_data/agex_one_s1_ini_25km_croplands.tif'))
 names(s1_ini) <- 'S1_start'
-s1_end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_end_25km_croplands.tif'))
+s1_end <- terra::rast(paste0(root,'/agex_raw_data/agex_one_s1_end_25km_croplands.tif'))
 names(s1_end) <- 'S1_end'
 
 clndr <- terra::zonal(x = c(s1_ini, s1_end), z = agex_sgn, fun = 'median', na.rm = T) |>
@@ -519,16 +519,16 @@ AS_lvstc |>
 # One growing season
 cls <- 42
 # What crops are grown in a specific extreme cluster
-arable_land_sts <- read.csv(paste0(root,'/agroclimExtremes/agex_results/agex_harvested_areas_percentages.csv'))
+arable_land_sts <- read.csv(paste0(root,'/agex_results/agex_harvested_areas_percentages.csv'))
 arable_land_sts |>
   dplyr::filter(extreme_cluster == cls) |>
   tidyr::pivot_longer(-1, names_to = 'Crop', values_to = 'Percentage') |>
   dplyr::arrange(-Percentage)
 
 # During when (one month before, both cases)
-s1_ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_ini_25km_croplands.tif'))
+s1_ini <- terra::rast(paste0(root,'/agex_raw_data/agex_one_s1_ini_25km_croplands.tif'))
 names(s1_ini) <- 'S1_start'
-s1_end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_end_25km_croplands.tif'))
+s1_end <- terra::rast(paste0(root,'/agex_raw_data/agex_one_s1_end_25km_croplands.tif'))
 names(s1_end) <- 'S1_end'
 
 clndr <- terra::zonal(x = c(s1_ini, s1_end), z = agex_sgn, fun = 'median', na.rm = T) |>
@@ -600,16 +600,16 @@ OC_lvstc |>
 # One growing season
 cls <- 444
 # What crops are grown in a specific extreme cluster
-arable_land_sts <- read.csv(paste0(root,'/agroclimExtremes/agex_results/agex_harvested_areas_percentages.csv'))
+arable_land_sts <- read.csv(paste0(root,'/agex_results/agex_harvested_areas_percentages.csv'))
 arable_land_sts |>
   dplyr::filter(extreme_cluster == cls) |>
   tidyr::pivot_longer(-1, names_to = 'Crop', values_to = 'Percentage') |>
   dplyr::arrange(-Percentage)
 
 # During when (one month before, both cases)
-s1_ini <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_ini_25km_croplands.tif'))
+s1_ini <- terra::rast(paste0(root,'/agex_raw_data/agex_one_s1_ini_25km_croplands.tif'))
 names(s1_ini) <- 'S1_start'
-s1_end <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_one_s1_end_25km_croplands.tif'))
+s1_end <- terra::rast(paste0(root,'/agex_raw_data/agex_one_s1_end_25km_croplands.tif'))
 names(s1_end) <- 'S1_end'
 
 clndr <- terra::zonal(x = c(s1_ini, s1_end), z = agex_sgn, fun = 'median', na.rm = T) |>

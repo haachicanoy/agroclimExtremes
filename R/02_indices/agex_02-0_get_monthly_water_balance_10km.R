@@ -11,7 +11,8 @@ suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pa
 suppressMessages(pacman::p_load(tidyverse,terra))
 
 # Root directory
-root <- '//CATALOGUE/WFP_ClimateRiskPr1'
+ddir <- '//CATALOGUE/WFP_ClimateRiskPr1'
+root <- '//CATALOGUE/AgroclimExtremes'
 
 # Historical setup
 yrs <- 1979:2023
@@ -22,10 +23,10 @@ stp <- stp %>%
   dplyr::arrange(yrs, mns) %>%
   base::as.data.frame()
 # Input directories
-evp_pth <- paste0(root,'/agroclimExtremes/agex_raw_data/monthly_evapotranspiration')
-prc_pth <- paste0(root,'/agroclimExtremes/agex_raw_data/monthly_precipitation')
+evp_pth <- paste0(root,'/agex_raw_data/monthly_evapotranspiration')
+prc_pth <- paste0(root,'/agex_raw_data/monthly_precipitation')
 # Output directory
-out_pth <- paste0(root,'/agroclimExtremes/agex_raw_data/monthly_balance')
+out_pth <- paste0(root,'/agex_raw_data/monthly_balance')
 
 calc_balance <- function(yr, mn){
   evp <- terra::rast(paste0(evp_pth,'/ET-',yr,'-',mn,'.tif'))

@@ -1,11 +1,11 @@
 library(terra)
 
-root <- '//CATALOGUE/WFP_ClimateRiskPr1'
-cdd <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_cdd/agex_cdd_25km/one_s1_cdd_25km.tif'))
+root <- '//CATALOGUE/AgroclimExtremes'
+cdd <- terra::rast(paste0(root,'/agex_indices/agex_cdd/agex_cdd_25km/one_s1_cdd_25km.tif'))
 cdd <- cdd[[2:(terra::nlyr(cdd))]]
 cdd[is.infinite(cdd)] <- 0
 
-spei <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_25km/one_s1_spei-6_25km.tif'))
+spei <- terra::rast(paste0(root,'/agex_indices/agex_spei-6/agex_spei-6_25km/one_s1_spei-6_25km.tif'))
 
 idx_cor <- terra::lapp(x = terra::sds(cdd,spei), fun = cor, method = 'spearman')
 plot(idx_cor)
@@ -26,8 +26,8 @@ plot(idx_cor2)
 terra::writeRaster(x = idx_cor2, filename = 'D:/correlation__palmeravg_vs_spei.tif')
 
 ## Load THI max
-thi <- terra::rast(list.files(path = paste0(root,'/agroclimExtremes/agex_raw_data/monthly_thi'), pattern = 'THI_max', full.names = T))
-nms <- basename(list.files(path = paste0(root,'/agroclimExtremes/agex_raw_data/monthly_thi'), pattern = 'THI_max', full.names = T))
+thi <- terra::rast(list.files(path = paste0(root,'/agex_raw_data/monthly_thi'), pattern = 'THI_max', full.names = T))
+nms <- basename(list.files(path = paste0(root,'/agex_raw_data/monthly_thi'), pattern = 'THI_max', full.names = T))
 nms <- gsub('THI_max-','',nms)
 nms <- gsub('.tif','',nms)
 dts <- paste0(nms,'-01')
@@ -92,5 +92,3 @@ plot(terra::rast(bed2$ecdf))
 
 plot(terra::rast(bed1$ecdf))
 plot(terra::rast(bed2$ecdf))
-
-

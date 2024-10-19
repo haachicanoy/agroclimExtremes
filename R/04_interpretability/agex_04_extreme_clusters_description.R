@@ -38,16 +38,16 @@ getmode <- function(v) {
 }
 
 ## Key arguments ----
-root   <- '//CATALOGUE/WFP_ClimateRiskPr1'
+root   <- '//CATALOGUE/AgroclimExtremes'
 index  <- 'spei-6'
 
 ## Extreme weather clusters ----
-agex_sgn_cln <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
+agex_sgn_cln <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
 names(agex_sgn_cln) <- 'extreme_cluster'
 # Extreme weather clusters by growing seasons
-agex_sgn_gs1 <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/agex_global_spei-6_one_s1_fmadogram_clean.tif'))
+agex_sgn_gs1 <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_spei-6_one_s1_fmadogram_clean.tif'))
 agex_sgn_gs1[!is.na(agex_sgn_gs1)] <- 1
-agex_sgn_gs2 <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/agex_global_spei-6_two_fmadogram_clean.tif'))
+agex_sgn_gs2 <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_spei-6_two_fmadogram_clean.tif'))
 agex_sgn_gs2[!is.na(agex_sgn_gs2)] <- 2
 agex_sgn_gs <- terra::merge(agex_sgn_gs1, agex_sgn_gs2); rm(agex_sgn_gs1, agex_sgn_gs2)
 names(agex_sgn_gs) <- 'growing_seasons'
@@ -62,7 +62,7 @@ wrl <- wrl[,c('adm0_iso','name_en','continent','subregion')]
 
 ## Countries collaboration ----
 # Countries coverage across extreme drought clusters
-out <- paste0(root,'/agroclimExtremes/agex_results/agex_country_collaborations.csv')
+out <- paste0(root,'/agex_results/agex_country_collaborations.csv')
 if(!file.exists(out)){
   
   # Pixels within countries
@@ -111,7 +111,7 @@ collaborations <- dplyr::left_join(x = collaborations, y = area_dfm, by = 'extre
 # Meaning:
 # - 0 if patches of class become more isolated
 # - 100 if patches of class i become more aggregated
-outfile <- paste0(root,'/agroclimExtremes/agex_results/agex_quality_metrics.csv')
+outfile <- paste0(root,'/agex_results/agex_quality_metrics.csv')
 if(!file.exists(outfile)){
   dir.create(path = dirname(outfile), F, T)
   agex_chs <- landscapemetrics::lsm_c_cohesion(landscape = agex_sgn_cln) |> base::as.data.frame()
@@ -149,10 +149,10 @@ if(!file.exists(outfile)){
 ## Crop classes diversity ----
 # Metric: Shannon diversity index
 # Meaning: High entropy means high variation of food/non-food classes
-outfile <- paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/crop_classes_diversity.tif')
+outfile <- paste0(root,'/agex_results/agex_vulnerability/crop_classes_diversity.tif')
 if(!file.exists(outfile)){
   dir.create(path = dirname(outfile), F, T)
-  crp_fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_raw_data'), pattern = '^agex_cropclass_', full.names = T)
+  crp_fls <- list.files(path = paste0(root,'/agex_raw_data'), pattern = '^agex_cropclass_', full.names = T)
   crp_fls <- crp_fls[-grep2(pattern = c('fibres','stimulant','rest_of_crops'), x = crp_fls)] # Categories to exclude
   crp_typ <- terra::rast(crp_fls)
   crp_ntp <- terra::app(x = crp_typ, fun = function(i, ff) ff(i), cores = 20, ff = entropy::entropy)
@@ -160,16 +160,16 @@ if(!file.exists(outfile)){
   terra::writeRaster(x = crp_ntp, filename = outfile, overwrite = T)
   crp_ntp_25km <- terra::resample(x = crp_ntp, y = agex_sgn_cln, method = 'cubicspline', threads = T)
   crp_ntp_25km <- terra::mask(x = crp_ntp_25km, mask = agex_sgn_cln)
-  terra::writeRaster(x = crp_ntp_25km, filename = paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/crop_classes_diversity_25km.tif'), overwrite = T)
+  terra::writeRaster(x = crp_ntp_25km, filename = paste0(root,'/agex_results/agex_vulnerability/crop_classes_diversity_25km.tif'), overwrite = T)
 } else {
   crp_ntp <- terra::rast(outfile)
 }; rm(outfile)
 
 ## Arable lands ----
-outfile <- paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/harvested_area_total.tif')
+outfile <- paste0(root,'/agex_results/agex_vulnerability/harvested_area_total.tif')
 if(!file.exists(outfile)){
   dir.create(path = dirname(outfile), F, T)
-  crops_fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_raw_data/croplands/spam2010'), pattern = '_A.tif', full.names = T)
+  crops_fls <- list.files(path = paste0(root,'/agex_raw_data/croplands/spam2010'), pattern = '_A.tif', full.names = T)
   # Crops classification
   grp <- read.csv('https://raw.githubusercontent.com/wri/MAPSPAM/master/metadata_tables/4-Methodology-Crops-of-SPAM-2005-2015-02-26.csv')
   grp <- grp[,c('SPAM.short.name','GROUP')]
@@ -186,15 +186,15 @@ if(!file.exists(outfile)){
 ## Agricultural economic value ----
 # Metric: Value of production
 # Meaning: High value of production means high economic value from agriculture
-total_vop <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_spam2010V2r0_global_V_agg_VP_CROP_A.tif')); names(total_vop) <- 'total_vop'
-food_vop  <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_spam2010V2r0_global_V_agg_VP_FOOD_A.tif')); names(food_vop) <- 'food_vop'
-nonf_vop  <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_spam2010V2r0_global_V_agg_VP_NONF_A.tif')); names(nonf_vop) <- 'non-food_vop'
+total_vop <- terra::rast(paste0(root,'/agex_raw_data/agex_spam2010V2r0_global_V_agg_VP_CROP_A.tif')); names(total_vop) <- 'total_vop'
+food_vop  <- terra::rast(paste0(root,'/agex_raw_data/agex_spam2010V2r0_global_V_agg_VP_FOOD_A.tif')); names(food_vop) <- 'food_vop'
+nonf_vop  <- terra::rast(paste0(root,'/agex_raw_data/agex_spam2010V2r0_global_V_agg_VP_NONF_A.tif')); names(nonf_vop) <- 'non-food_vop'
 
 ## Livestock diversity ----
 # Metric: Livestock equivalent units
 # Meaning: grazing equivalent of one adult dairy cow producing 3 000 kg of milk
 # annually, without additional concentrated foodstuffs
-lvs_dir <- paste0(root,'/agroclimExtremes/agex_raw_data/livestock')
+lvs_dir <- paste0(root,'/agex_raw_data/livestock')
 anmls   <- list.dirs(path = lvs_dir, full.names = F, recursive = F)
 anmls   <- anmls[-grep('horses',anmls)]
 lvstc_fls <- list.files2(path = paste0(lvs_dir,'/',anmls), pattern = '_Da.tif$', full.names = T); rm(lvs_dir, anmls)
@@ -206,7 +206,7 @@ lvstc_cnt <- terra::rast(lvstc_fls)
 # LU = Buffaloes * 1 + Cattle * 1 + Chickens * ((0.007 + 0.014)/2) +
 #      Ducks * 0.01 + Goats * 0.1 + Pigs * ((0.5+0.027)/2) + Sheep * 0.1
 # Source: https://ec.europa.eu/eurostat/statistics-explained/index.php?title=Glossary:Livestock_unit_(LSU)
-outfile <- paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/lsu_individuals.tif')
+outfile <- paste0(root,'/agex_results/agex_vulnerability/lsu_individuals.tif')
 if(!file.exists(outfile)){
   dir.create(path = dirname(outfile), F, T)
   wghts <- c(1, 1, (0.007 + 0.014)/2, 0.01, 0.1, (0.5+0.027)/2, 0.1)
@@ -217,7 +217,7 @@ if(!file.exists(outfile)){
   lvstc_unt <- terra::rast(outfile)
 }; rm(outfile)
 
-outfile <- paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/lsu_total.tif')
+outfile <- paste0(root,'/agex_results/agex_vulnerability/lsu_total.tif')
 if(!file.exists(outfile)){
   dir.create(path = dirname(outfile), F, T)
   lsu <- sum(lvstc_unt)
@@ -226,12 +226,12 @@ if(!file.exists(outfile)){
   terra::writeRaster(x = lsu, filename = outfile, overwrite = T)
   lsu_25km <- terra::resample(x = lsu, y = agex_sgn_cln, method = 'cubicspline', threads = T)
   lsu_25km <- terra::mask(x = lsu_25km, mask = agex_sgn_cln)
-  terra::writeRaster(x = lsu_25km, filename = paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/lsu_total_25km.tif'), overwrite = T)
+  terra::writeRaster(x = lsu_25km, filename = paste0(root,'/agex_results/agex_vulnerability/lsu_total_25km.tif'), overwrite = T)
 } else {
   lsu <- terra::rast(outfile)
 }; rm(outfile)
 
-outfile <- paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/lsu_diversity.tif')
+outfile <- paste0(root,'/agex_results/agex_vulnerability/lsu_diversity.tif')
 if(!file.exists(outfile)){
   dir.create(path = dirname(outfile), F, T)
   lvs_ntp <- terra::app(x = lvstc_unt, fun = function(i, ff) ff(i), cores = 20, ff = entropy::entropy)
@@ -239,7 +239,7 @@ if(!file.exists(outfile)){
   terra::writeRaster(x = lvs_ntp, filename = outfile, overwrite = T)
   lvs_ntp_25km <- terra::resample(x = lvs_ntp, y = agex_sgn_cln, method = 'cubicspline', threads = T)
   lvs_ntp_25km <- terra::mask(x = lvs_ntp_25km, mask = agex_sgn_cln)
-  terra::writeRaster(x = lvs_ntp_25km, filename = paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/lsu_diversity_25km.tif'), overwrite = T)
+  terra::writeRaster(x = lvs_ntp_25km, filename = paste0(root,'/agex_results/agex_vulnerability/lsu_diversity_25km.tif'), overwrite = T)
 } else {
   lvs_ntp <- terra::rast(outfile)
 }; rm(outfile)
@@ -248,7 +248,7 @@ if(!file.exists(outfile)){
 ## Exposed population ----
 # Metric: Population total
 # Meaning: number of people per pixel
-pop <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/gpw_v4_population_count_rev11_2020_15_min.tif'))
+pop <- terra::rast(paste0(root,'/agex_raw_data/gpw_v4_population_count_rev11_2020_15_min.tif'))
 names(pop) <- 'total_population'
 
 ## Index severity ----
@@ -257,12 +257,12 @@ names(pop) <- 'total_population'
 # Meaning: extreme drought trend over time
 # Loading SPEI-6 time series
 stp <- data.frame(gs = c('one','two','two'), season = c('1','1','2'))
-idx_one_s1 <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_',index,'/agex_',index,'_25km/',stp$gs[1],'_s',stp$season[1],'_',index,'_25km.tif'))
-idx_two_s1 <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_',index,'/agex_',index,'_25km/',stp$gs[2],'_s',stp$season[2],'_',index,'_25km.tif'))
-idx_two_s2 <- terra::rast(paste0(root,'/agroclimExtremes/agex_indices/agex_',index,'/agex_',index,'_25km/',stp$gs[3],'_s',stp$season[3],'_',index,'_25km.tif'))
+idx_one_s1 <- terra::rast(paste0(root,'/agex_indices/agex_',index,'/agex_',index,'_25km/',stp$gs[1],'_s',stp$season[1],'_',index,'_25km.tif'))
+idx_two_s1 <- terra::rast(paste0(root,'/agex_indices/agex_',index,'/agex_',index,'_25km/',stp$gs[2],'_s',stp$season[2],'_',index,'_25km.tif'))
+idx_two_s2 <- terra::rast(paste0(root,'/agex_indices/agex_',index,'/agex_',index,'_25km/',stp$gs[3],'_s',stp$season[3],'_',index,'_25km.tif'))
 
 # SPEI-6 average
-outfile <- paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/SPEI-6_average.tif')
+outfile <- paste0(root,'/agex_results/agex_vulnerability/SPEI-6_average.tif')
 if(!file.exists(outfile)){
   dir.create(path = dirname(outfile), F, T)
   idx_one_s1_avg <- mean(idx_one_s1)
@@ -277,7 +277,7 @@ if(!file.exists(outfile)){
 }; rm(outfile)
 
 # SPEI-6 range
-outfile <- paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/SPEI-6_range.tif')
+outfile <- paste0(root,'/agex_results/agex_vulnerability/SPEI-6_range.tif')
 if(!file.exists(outfile)){
   dir.create(path = dirname(outfile), F, T)
   idx_one_s1_range <- range(idx_one_s1)
@@ -298,7 +298,7 @@ if(!file.exists(outfile)){
 # idx_two_s2_slp <- terra::app(x = idx_two_s2, fun = function(i, ff) ff(i), cores = 20, ff = get_trend); names(idx_two_s2_slp) <- 'SPEI-6_slope'
 
 # Extreme trend
-outfile <- paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/SPEI-6_extreme_trend.tif')
+outfile <- paste0(root,'/agex_results/agex_vulnerability/SPEI-6_extreme_trend.tif')
 if(!file.exists(outfile)){
   dir.create(path = dirname(outfile), F, T)
   # Calculating extreme trend (95th percentile) for one-growing-season places
@@ -317,7 +317,7 @@ if(!file.exists(outfile)){
 }; rm(outfile)
 
 # Extreme drought years' count
-outfile <- paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/SPEI-6_extreme_years_count.tif')
+outfile <- paste0(root,'/agex_results/agex_vulnerability/SPEI-6_extreme_years_count.tif')
 if(!file.exists(outfile)){
   dir.create(path = dirname(outfile), F, T)
   # Calculating extreme years count (SPEI-6 < -1.5) for one-growing-season places
@@ -375,5 +375,5 @@ c('Very low','Low','Medium','High')
 
 agex_sgn_poly <- terra::merge(x = agex_sgn_poly, y = dfm)
 
-terra::writeVector(x = agex_sgn_poly, filename = paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/vct_agex_global_',index,'.gpkg'), overwrite = T)
-utils::write.csv(x = dfm, paste0(root,'/agroclimExtremes/agex_results/agex_all_metrics.csv'), row.names = F)
+terra::writeVector(x = agex_sgn_poly, filename = paste0(root,'/agex_results/agex_results_clusters/vct_agex_global_',index,'.gpkg'), overwrite = T)
+utils::write.csv(x = dfm, paste0(root,'/agex_results/agex_all_metrics.csv'), row.names = F)

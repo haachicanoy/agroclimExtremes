@@ -15,7 +15,8 @@ source('https://raw.githubusercontent.com/haachicanoy/agroclimExtremes/main/R/ag
 grep2 <- Vectorize(FUN = grep, vectorize.args = 'pattern')
 
 # Root directory
-root <- '//CATALOGUE/WFP_ClimateRiskPr1'
+ddir <- '//CATALOGUE/WFP_ClimateRiskPr1'
+root <- '//CATALOGUE/AgroclimExtremes'
 
 # Calculate THI function
 calc_thi <- function(yr, mn){
@@ -61,11 +62,11 @@ calc_thi <- function(yr, mn){
 }
 
 #input data paths for agera5
-ae5tx_pth <- paste0(root,'/1.Data/AgERA5/2m_temperature-24_hour_mean') # Mean temperature
-ae5rh_pth <- paste0(root,'/1.Data/AgERA5/2m_relative_humidity') # Relative humidity
+ae5tx_pth <- paste0(ddir,'/1.Data/AgERA5/2m_temperature-24_hour_mean') # Mean temperature
+ae5rh_pth <- paste0(ddir,'/1.Data/AgERA5/2m_relative_humidity') # Relative humidity
 
 #output path
-out_dir <- paste0(root,'/agroclimExtremes/agex_raw_data/monthly_thi')
+out_dir <- paste0(root,'/agex_raw_data/monthly_thi')
 
 # Historical setup
 yrs <- 1979:2023

@@ -16,12 +16,12 @@ extrafont::loadfonts(device = 'win')
 extrafont::fonts()
 
 ## Setup arguments ----
-root   <- '//CATALOGUE/WFP_ClimateRiskPr1'
+root   <- '//CATALOGUE/AgroclimExtremes'
 index  <- 'spei-6'
 
 ## Extreme drought clusters ----
 # Categorical
-agex_sgn <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
+agex_sgn <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
 names(agex_sgn) <- 'extreme_cluster'
 cls <- data.frame(extreme_cluster = sort(unique(terra::values(agex_sgn))))
 cls$id <- cls$extreme_cluster
@@ -30,11 +30,11 @@ cls$extreme_cluster <- as.character(cls$extreme_cluster)
 levels(agex_sgn) <- cls; rm(cls)
 
 # Numerical
-agex_sgn_num <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
+agex_sgn_num <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
 names(agex_sgn_num) <- 'extreme_cluster'
 
 # Metrics
-agex_sgn_metrics <- utils::read.csv(paste0(root,'/agroclimExtremes/agex_results/agex_all_metrics.csv'))
+agex_sgn_metrics <- utils::read.csv(paste0(root,'/agex_results/agex_all_metrics.csv'))
 
 ## Shapefiles ----
 wrl <- rnaturalearth::ne_countries(scale = 'large', returnclass = 'sv')
@@ -119,7 +119,7 @@ fig1 <- gridExtra::grid.arrange(fg_01, fg_02,
                                 fg_03, fg_04,
                                 fg_05, fg_06,
                                 layout_matrix = layout); rm(ggm,fg_01,fg_02,fg_03,fg_04,fg_05,fg_06,layout)
-ggplot2::ggsave(filename = paste0(root,'/agroclimExtremes/agex_results/agex_figures/Figure1_paper1.png'), plot = fig1, device = 'png', width = 10, height = 12.5, units = 'in', dpi = 350); rm(fig1)
+ggplot2::ggsave(filename = paste0(root,'/agex_results/agex_figures/Figure1_paper1.png'), plot = fig1, device = 'png', width = 10, height = 12.5, units = 'in', dpi = 350); rm(fig1)
 
 ## Figure 2 ----
 # Percentage of extreme drought clusters in one, two, or more countries (Collaboration potential)
@@ -154,7 +154,7 @@ fig2 <- agex_sgn_metrics |>
                  strip.text.y    = element_text(size = 17, colour = 'black'),
                  plot.caption    = element_text(size = 15, hjust = 0, colour = 'black'),
                  legend.position = 'bottom')
-ggplot2::ggsave(filename = paste0(root,'/agroclimExtremes/agex_results/agex_figures/Figure2_paper1.png'), plot = fig2, device = 'png', width = 7, height = 6.1, units = 'in', dpi = 350); rm(fig2,col_pltt)
+ggplot2::ggsave(filename = paste0(root,'/agex_results/agex_figures/Figure2_paper1.png'), plot = fig2, device = 'png', width = 7, height = 6.1, units = 'in', dpi = 350); rm(fig2,col_pltt)
 
 ## Figure 4 ----
 crops_hotspots <- utils::read.csv(paste0(root,'/agroclimExtremes/agex_results/agex_crops_hotspots.csv'))
@@ -180,10 +180,10 @@ fig4 <- crops_hotspots |>
                  strip.text.y    = element_text(size = 17, colour = 'black'),
                  plot.caption    = element_text(size = 15, hjust = 0, colour = 'black'),
                  legend.position = 'bottom')
-ggplot2::ggsave(filename = paste0(root,'/agroclimExtremes/agex_results/agex_figures/Figure4_paper1.png'), plot = fig4, device = 'png', width = 7, height = 6.1, units = 'in', dpi = 350); rm(fig4)
+ggplot2::ggsave(filename = paste0(root,'/agex_results/agex_figures/Figure4_paper1.png'), plot = fig4, device = 'png', width = 7, height = 6.1, units = 'in', dpi = 350); rm(fig4)
 
 ## Figure 6 ----
-livestock_hotspots <- utils::read.csv(paste0(root,'/agroclimExtremes/agex_results/agex_livestock_hotspots.csv'))
+livestock_hotspots <- utils::read.csv(paste0(root,'/agex_results/agex_livestock_hotspots.csv'))
 livestock_hotspots$continents <- factor(x = livestock_hotspots$continents, levels = c('Africa','Asia','South America','Europe','North America'))
 
 fig6 <- livestock_hotspots |>
@@ -205,4 +205,4 @@ fig6 <- livestock_hotspots |>
                  strip.text.y    = element_text(size = 17, colour = 'black'),
                  plot.caption    = element_text(size = 15, hjust = 0, colour = 'black'),
                  legend.position = 'bottom')
-ggplot2::ggsave(filename = paste0(root,'/agroclimExtremes/agex_results/agex_figures/Figure6_paper1.png'), plot = fig6, device = 'png', width = 7, height = 6.1, units = 'in', dpi = 350); rm(fig6)
+ggplot2::ggsave(filename = paste0(root,'/agex_results/agex_figures/Figure6_paper1.png'), plot = fig6, device = 'png', width = 7, height = 6.1, units = 'in', dpi = 350); rm(fig6)

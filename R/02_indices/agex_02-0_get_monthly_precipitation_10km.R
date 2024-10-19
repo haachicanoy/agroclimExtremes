@@ -11,7 +11,8 @@ suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pa
 suppressMessages(pacman::p_load(terra, dplyr, future, furrr))
 
 # Root directory
-root <- '//CATALOGUE/WFP_ClimateRiskPr1'
+ddir <- '//CATALOGUE/WFP_ClimateRiskPr1'
+root <- '//CATALOGUE/AgroclimExtremes'
 
 # Calculate monthly precipitation function
 calc_mprec <- function(yr, mn){
@@ -40,8 +41,8 @@ calc_mprec <- function(yr, mn){
   }
 }
 
-pr_pth <- paste0(root,'/1.Data/AgERA5/precipitation_flux')
-out_dir <- paste0(root,'/agroclimExtremes/agex_raw_data')
+pr_pth <- paste0(ddir,'/1.Data/AgERA5/precipitation_flux')
+out_dir <- paste0(root,'/agex_raw_data')
 
 # Define setup
 yrs <- 1979:2023

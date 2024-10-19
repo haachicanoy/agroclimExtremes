@@ -13,18 +13,18 @@ suppressMessages(pacman::p_load(terra,dplyr,stringr,tidyr,pivottabler,data.table
 grep2 <- Vectorize(FUN = grep, vectorize.args = 'pattern')
 
 ## Setup arguments ----
-root   <- '//CATALOGUE/WFP_ClimateRiskPr1'
+root   <- '//CATALOGUE/AgroclimExtremes'
 index  <- 'spei-6'
 
 ## Extreme drought clusters ----
-agex_sgn <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
+agex_sgn <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
 names(agex_sgn) <- 'extreme_cluster'
 
-agex_sgn_poly <- terra::vect(paste0(root,'/agroclimExtremes/agex_results/agex_results_clusters/vct_agex_global_spei-6.gpkg'))
+agex_sgn_poly <- terra::vect(paste0(root,'/agex_results/agex_results_clusters/vct_agex_global_spei-6.gpkg'))
 
 ## Arable lands ----
 # Cropland areas from MapSPAM 2010
-crops_fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_raw_data/croplands/spam2010'), pattern = '_A.tif', full.names = T)
+crops_fls <- list.files(path = paste0(root,'/agex_raw_data/croplands/spam2010'), pattern = '_A.tif', full.names = T)
 
 # Crops classification
 grp <- read.csv('https://raw.githubusercontent.com/wri/MAPSPAM/master/metadata_tables/4-Methodology-Crops-of-SPAM-2005-2015-02-26.csv')
@@ -88,13 +88,13 @@ area_sts_vls <- dplyr::left_join(x = area_sts_vls, y = sum_vls, by = c('extreme_
 totals <- area_sts_vls[,c('extreme_cluster','Crop','Total')] |>
   tidyr::pivot_wider(names_from = 'Crop', values_from = Total) |>
   base::as.data.frame()
-write.csv(x = totals, file = paste0(root,'/agroclimExtremes/agex_results/agex_harvested_areas_totals.csv'), row.names = F)
+write.csv(x = totals, file = paste0(root,'/agex_results/agex_harvested_areas_totals.csv'), row.names = F)
 
 totals_prc <- totals
 totals_prc$Total <- rowSums(x = totals[,-1], na.rm = T)
 totals_prc[,-1]  <- round(totals_prc[,-1]/totals_prc$Total * 100, 2)
 totals_prc$Total <- NULL
-write.csv(x = totals_prc, file = paste0(root,'/agroclimExtremes/agex_results/agex_harvested_areas_percentages.csv'), row.names = F)
+write.csv(x = totals_prc, file = paste0(root,'/agex_results/agex_harvested_areas_percentages.csv'), row.names = F)
 
 area_sts_vls_lng <- tidyr::pivot_longer(data = area_sts_vls, cols = `Min`:`Total`, names_to = 'Statistic', values_to = 'Value') |> base::as.data.frame()
 
@@ -111,22 +111,22 @@ wb <- createWorkbook(creator = Sys.getenv('USERNAME'))
 addWorksheet(wb, 'Data')
 pt$writeToExcelWorksheet(wb = wb, wsName = 'Data',
                          topRowNumber = 1, leftMostColumnNumber = 1, applyStyles = F)
-saveWorkbook(wb, file = paste0(root,'/agroclimExtremes/agex_results/arable_land_statistics_per_crop.xlsx'), overwrite = T)
+saveWorkbook(wb, file = paste0(root,'/agex_results/arable_land_statistics_per_crop.xlsx'), overwrite = T)
 
 ## Livestock units ----
 # Load number of livestock equivalent units
-lsu <- terra::rast(paste0(root,'/agroclimExtremes/agex_results/agex_vulnerability/lsu_individuals.tif'))
+lsu <- terra::rast(paste0(root,'/agex_results/agex_vulnerability/lsu_individuals.tif'))
 
 total_lsu <- terra::zonal(x = lsu, z = agex_sgn_poly, fun = 'sum', na.rm = T)
 total_lsu <- round(total_lsu, 2)
 total_lsu <- cbind(data.frame(extreme_cluster = 1:nrow(total_lsu)), total_lsu)
-write.csv(x = total_lsu, file = paste0(root,'/agroclimExtremes/agex_results/agex_livestock_units_totals.csv'), row.names = F)
+write.csv(x = total_lsu, file = paste0(root,'/agex_results/agex_livestock_units_totals.csv'), row.names = F)
 
 prc_lsu <- total_lsu
 prc_lsu$Total <- rowSums(prc_lsu[,-1], na.rm = T)
 prc_lsu[,-1] <- round(prc_lsu[,-1]/prc_lsu$Total * 100, 2)
 prc_lsu$Total <- NULL
-write.csv(x = prc_lsu, file = paste0(root,'/agroclimExtremes/agex_results/agex_livestock_units_percentages.csv'), row.names = F)
+write.csv(x = prc_lsu, file = paste0(root,'/agex_results/agex_livestock_units_percentages.csv'), row.names = F)
 
 total_lsu <- total_lsu |>
   tidyr::pivot_longer(cols = 2:ncol(total_lsu), names_to = 'Animal', values_to = 'LSU') |>

@@ -15,9 +15,9 @@ suppressMessages(pacman::p_load(terra,fields,spatstat,future,furrr))
 tmp_25km <- terra::rast('https://github.com/haachicanoy/agroclimExtremes/raw/main/data/tmp_era5_25km.tif')
 
 # Directories
-root <- '//CATALOGUE/WFP_ClimateRiskPr1'
-aux  <- paste0(root,'/agroclimExtremes/agex_raw_data/agex_phenology')
-out  <- paste0(root,'/agroclimExtremes/agex_raw_data'); dir.create(out, F, T)
+root <- '//CATALOGUE/AgroclimExtremes'
+aux  <- paste0(root,'/agex_raw_data/agex_phenology')
+out  <- paste0(root,'/agex_raw_data'); dir.create(out, F, T)
 
 # Mapping dekads to day-of-year units
 yrs <- 1979:2023
@@ -38,9 +38,9 @@ dks_map$day[dks_map$dekad == 36] <- 1
 
 # Load number of growing seasons per site
 if(!file.exists(paste0(out,'/agex_nseasons_25km_corrected.tif'))){
-  n_seasons <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_phenology/phenonseasons_v03.tif')); gc(T)
+  n_seasons <- terra::rast(paste0(root,'/agex_raw_data/agex_phenology/phenonseasons_v03.tif')); gc(T)
   n_seasons <- terra::resample(x = n_seasons, y = tmp_25km, method = 'near', threads = T); gc(T) # Growing seasons per site at 25 km resolution
-  croplands <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_croplands_foods_mapspam_25km.tif'))
+  croplands <- terra::rast(paste0(root,'/agex_raw_data/agex_croplands_foods_mapspam_25km.tif'))
   n_seasons <- terra::mask(x = n_seasons, mask = croplands)
   terra::writeRaster(x = n_seasons, filename = paste0(out,'/agex_nseasons_25km.tif'), overwrite = T)
   

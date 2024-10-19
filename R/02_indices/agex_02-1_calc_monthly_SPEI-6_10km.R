@@ -11,14 +11,15 @@ suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pa
 suppressMessages(pacman::p_load(terra,SPEI))
 
 # Root directory
-root <- '//CATALOGUE/WFP_ClimateRiskPr1'
+ddir <- '//CATALOGUE/WFP_ClimateRiskPr1'
+root <- '//CATALOGUE/AgroclimExtremes'
 
 # List water balance files
-blc_fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_raw_data/monthly_balance'), pattern = '.tif$', full.names = T)
+blc_fls <- list.files(path = paste0(root,'/agex_raw_data/monthly_balance'), pattern = '.tif$', full.names = T)
 nms_fls <- gsub('.tif','', gsub('bal-', '', basename(blc_fls)))
 
 # Out files
-out_pth <- paste0(root,'/agroclimExtremes/agex_raw_data/monthly_spei')
+out_pth <- paste0(root,'/agex_raw_data/monthly_spei')
 out_fls <- paste0(out_pth,'/spei-',scl,'_',nms_fls,'.tif')
 
 # Load water balance files

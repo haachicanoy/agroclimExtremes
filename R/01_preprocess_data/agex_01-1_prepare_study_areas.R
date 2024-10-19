@@ -17,8 +17,8 @@ grep2 <- Vectorize(FUN = grep, vectorize.args = 'pattern')
 tmp_25km <- terra::rast('https://github.com/haachicanoy/agroclimExtremes/raw/main/data/tmp_era5_25km.tif')
 
 # Define directories
-root <- '//CATALOGUE/WFP_ClimateRiskPr1'
-inp_dir <- paste0(root,'/agroclimExtremes/agex_raw_data/croplands')
+root <- '//CATALOGUE/AgroclimExtremes'
+inp_dir <- paste0(root,'/agex_raw_data/croplands')
 # out_dir <- 'D:/OneDrive - CGIAR/PhD/papers/paper1' # local
 
 # # Cropland areas from CROPGRIDS
@@ -53,9 +53,9 @@ crops_lnd[!is.na(crops_lnd)] <- 1
 
 # Resampling MapSPAM into AgERA5 template resolution
 crops_lnd_10km <- terra::resample(x = crops_lnd, y = tmp_10km, method = 'near')
-terra::writeRaster(x = crops_lnd_10km, filename = paste0(root,'/agroclimExtremes/agex_raw_data/agex_croplands_foods_mapspam_10km.tif'), overwrite = T)
+terra::writeRaster(x = crops_lnd_10km, filename = paste0(root,'/agex_raw_data/agex_croplands_foods_mapspam_10km.tif'), overwrite = T)
 crops_lnd_25km <- terra::resample(x = crops_lnd, y = tmp_25km, method = 'near')
-terra::writeRaster(x = crops_lnd_25km, filename = paste0(root,'/agroclimExtremes/agex_raw_data/agex_croplands_foods_mapspam_25km.tif'), overwrite = T)
+terra::writeRaster(x = crops_lnd_25km, filename = paste0(root,'/agex_raw_data/agex_croplands_foods_mapspam_25km.tif'), overwrite = T)
 
 # # Mask of water bodies and protected areas
 # wbd <- terra::rast(paste0(inp_dir,'/water_bodies/glwd_3')) # Water bodies
@@ -111,7 +111,7 @@ rm(vls)
 lsu <- (lsu > 100) * 1; lsu[lsu == 0] <- NA
 # Resampling Livestock Units into AgERA5 template resolution
 lvstc_lnd_10km <- terra::resample(x = lsu, y = tmp_10km, method = 'near')
-terra::writeRaster(x = lvstc_lnd_10km, filename = paste0(root,'/agroclimExtremes/agex_raw_data/agex_livestockunits_FAO_10km.tif'), overwrite = T)
+terra::writeRaster(x = lvstc_lnd_10km, filename = paste0(root,'/agex_raw_data/agex_livestockunits_FAO_10km.tif'), overwrite = T)
 
 # # Replacing 0's with the minimum value of the distribution
 # for(i in 1:(terra::nlyr(lvstc_cnt))){

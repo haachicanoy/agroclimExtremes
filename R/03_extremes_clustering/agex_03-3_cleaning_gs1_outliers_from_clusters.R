@@ -18,13 +18,13 @@ getmode <- function(v) {
 }
 
 ## Key arguments
-root   <- '//CATALOGUE/WFP_ClimateRiskPr1'
+root   <- '//CATALOGUE/AgroclimExtremes'
 index  <- 'spei-6'
 gs     <- 'one'
 season <- 1
 
 # Load extreme weather clusters
-fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_results/clusters'), pattern = paste0('agex_global_',index,'_',gs,'_s',season,'_fmadogram_k[0-9][0-9][0-9].tif$'), full.names = T)
+fls <- list.files(path = paste0(root,'/agex_results/clusters'), pattern = paste0('agex_global_',index,'_',gs,'_s',season,'_fmadogram_k[0-9][0-9][0-9].tif$'), full.names = T)
 agex_sgn <- terra::rast(fls)
 names(agex_sgn) <- 'extreme_cluster'
 

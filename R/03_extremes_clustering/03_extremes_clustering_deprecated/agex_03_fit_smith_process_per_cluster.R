@@ -10,7 +10,7 @@ suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pa
 pacman::p_load(terra,clusterExtremes,landscapemetrics,geosphere,RColorBrewer,scales)
 
 ## Key arguments
-root   <- '//CATALOGUE/WFP_ClimateRiskPr1'
+root   <- '//CATALOGUE/AgroclimExtremes'
 yrs    <- 1980:2022
 index  <- 'spei-6'
 gs     <- 'one'
@@ -19,7 +19,7 @@ season <- 1
 yrs <- 1980:2022
 
 # Load extreme weather signatures
-fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_results/clusters'), pattern = paste0('agex_global_',index,'_',gs,'_s',season,'_fmadogram_*.*.tif$'), full.names = T)
+fls <- list.files(path = paste0(root,'/agex_results/clusters'), pattern = paste0('agex_global_',index,'_',gs,'_s',season,'_fmadogram_*.*.tif$'), full.names = T)
 agex_sgn <- terra::rast(fls)
 names(agex_sgn) <- 'extreme_signature'
 
@@ -34,14 +34,14 @@ auxl_sgn[!is.na(auxl_sgn)] <- 1; plot(auxl_sgn)
 crd <- terra::as.data.frame(x = auxl_sgn, xy = T, cell = T, na.rm = T) # Coordinates
 
 ## List and load files
-fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_indices/agex_',index,'/agex_',index,'_25km'), pattern = paste0(gs,'_s',season,'_',index,'_'), full.names = T)
+fls <- list.files(path = paste0(root,'/agex_indices/agex_',index,'/agex_',index,'_25km'), pattern = paste0(gs,'_s',season,'_',index,'_'), full.names = T)
 # Leave it open to compute for 10 km resolution
 # fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_indices/agex_',index,'/agex_',index,'_10km'), pattern = paste0(gs,'_s',season,'_',index,'_'), full.names = T)
 idx <- terra::rast(fls)
 names(idx) <- paste0('Y',yrs)
 
 # Mask by resampled growing season id
-ngs <- terra::rast(paste0(root,'/agroclimExtremes/agex_raw_data/agex_nseasons_25km.tif'))
+ngs <- terra::rast(paste0(root,'/agex_raw_data/agex_nseasons_25km.tif'))
 if(gs == 'one'){ngs[ngs == 2] <- NA} else {ngs[ngs == 1] <- NA; ngs[!is.na(ngs)] <- 1}
 
 ## Region of interest
@@ -325,7 +325,7 @@ ellipse_lst <- split(ellipse_df[,c('lon','lat')], ellipse_df$sim_index)
 polygons    <- purrr::map(.x = ellipse_lst, .f = function(x){terra::vect(x = as.matrix(x), type = 'polygons', crs = crdref)})
 polygons    <- terra::vect(polygons)
 plot(polygons)
-terra::writeVector(x = polygons, filename = paste0(root,'/agroclimExtremes/agex_results/clusters/',index,'_',gs,'_s',season,'_signature_',sgntr,'.gpkg'), overwrite = T)
+terra::writeVector(x = polygons, filename = paste0(root,'/agex_results/clusters/',index,'_',gs,'_s',season,'_signature_',sgntr,'.gpkg'), overwrite = T)
 
 crd |>
   ggplot2::ggplot() +

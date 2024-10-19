@@ -11,7 +11,8 @@ suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pa
 suppressMessages(pacman::p_load(tidyverse,terra,gtools,lubridate,geodata))
 
 # Root directory
-root <- '//CATALOGUE/WFP_ClimateRiskPr1'
+ddir <- '//CATALOGUE/WFP_ClimateRiskPr1'
+root <- '//CATALOGUE/AgroclimExtremes'
 
 # Calculate FAO-Penman-Monteith ET function
 calc_ET0 <- function(yr, mn){
@@ -102,14 +103,14 @@ names(stp) <- c('yrs','mns')
 stp <- stp %>%
   dplyr::arrange(yrs, mns) %>%
   base::as.data.frame()
-tx_pth <- paste0(root,'/1.Data/AgERA5/2m_temperature-24_hour_maximum') # Maximum temperature
-tm_pth <- paste0(root,'/1.Data/AgERA5/2m_temperature-24_hour_minimum') # Minimun temperature
-tav_pth <- paste0(root,'/1.Data/AgERA5/2m_temperature-24_hour_mean')   # Mean temperature
-sr_pth <- paste0(root,'/1.Data/AgERA5/solar_radiation_flux')           # Solar radiation
-ws_pth <- paste0(root,'/1.Data/AgERA5/10m_wind_speed')                 # Wind speed
-dp_pth <- paste0(root,'/1.Data/AgERA5/2m_dewpoint_temperature')        # Dewpoint temperature
+tx_pth <- paste0(ddir,'/1.Data/AgERA5/2m_temperature-24_hour_maximum') # Maximum temperature
+tm_pth <- paste0(ddir,'/1.Data/AgERA5/2m_temperature-24_hour_minimum') # Minimun temperature
+tav_pth <- paste0(ddir,'/1.Data/AgERA5/2m_temperature-24_hour_mean')   # Mean temperature
+sr_pth <- paste0(ddir,'/1.Data/AgERA5/solar_radiation_flux')           # Solar radiation
+ws_pth <- paste0(ddir,'/1.Data/AgERA5/10m_wind_speed')                 # Wind speed
+dp_pth <- paste0(ddir,'/1.Data/AgERA5/2m_dewpoint_temperature')        # Dewpoint temperature
 
-out_dir <- paste0(root,'/agroclimExtremes/agex_raw_data')
+out_dir <- paste0(root,'/agex_raw_data')
 # loop for each year and month
 1:nrow(stp) |>
   purrr::map(.f = function(i){calc_ET0(yr = stp$yrs[i], mn = stp$mns[i]); gc(T)})

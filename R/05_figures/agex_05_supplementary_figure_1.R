@@ -10,7 +10,7 @@ options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
 suppressMessages(pacman::p_load(terra,rnaturalearth,tidyverse))
 
-root <- '//CATALOGUE/WFP_ClimateRiskPr1/agroclimExtremes'
+root <- '//CATALOGUE/AgroclimExtremes'
 
 ## World shapefile ----
 wrld <- rnaturalearth::ne_coastline(scale = 'medium', returnclass = 'sv')
