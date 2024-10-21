@@ -2,7 +2,7 @@
 ## Interactive map extreme clusters one season
 ## By: Harold Achicanoy
 ## WUR & ABC
-## Mar. 2024
+## Oct. 2024
 ## ------------------------------------------ ##
 
 options(warn = -1, scipen = 999)
@@ -43,20 +43,23 @@ server <- function(input, output, session) {
         popup     = ~ paste("<div class='leaflet-popup-scrolled' style='max-width:250px;max-height:350px'",
                             '<br>',
                             '<b>','Extreme cluster: ','</b>',extreme_cluster,'<br>',
+                            '<b>','Growing seasons: ','</b>',growing_seasons,'<br>',
                             '<b>','Countries count:  ','</b>',countries_count,'<br>',
-                            '<b>','Countries ISO3:  ','</b>',countries,'<br>',
+                            '<b>','Countries:  ','</b>',countries,'<br>',
                             '<b>','Continents:  ','</b>',continents,'<br>',
+                            '<b>','Area (km^2):  ','</b>',area,'<br>',
                             '<b>','Total population:  ','</b>',total_population,'<br>',
-                            '<b>','Value of production:  ','</b>',total_vop,'<br>',
                             '<b>','Crop classes diversity:  ','</b>',crop_classes_diversity,'<br>',
+                            '<b>','Livestock units diversity:  ','</b>',livestock_units_diversity,'<br>',
+                            '<b>','Crops VoP:  ','</b>',crops_vop_total,'<br>',
                             '<b>','Livestock units:  ','</b>',livestock_units_total,'<br>',
                             '<b>','SPEI-6 mean:  ','</b>',`SPEI-6_average`,'<br>',
                             '<b>','SPEI-6 min:  ','</b>',`SPEI-6_min`,'<br>',
                             '<b>','SPEI-6 max:  ','</b>',`SPEI-6_max`,'<br>',
                             '<b>','SPEI-6 95th pr trend:  ','</b>',`SPEI-6_slope_95th`,'<br>',
-                            '<b>','Cluster cohesion: ','</b>',cls_cohesion,'<br>',
-                            '<b>','Cluster contiguity:  ','</b>',cls_contiguity,'<br>',
-                            '<b>','Cluster aggregation:  ','</b>',cls_aggregation,'<br>',
+                            # '<b>','Cluster cohesion: ','</b>',cls_cohesion,'<br>',
+                            # '<b>','Cluster contiguity:  ','</b>',cls_contiguity,'<br>',
+                            # '<b>','Cluster aggregation:  ','</b>',cls_aggregation,'<br>',
                             '<b>','Quality rank:  ','</b>',quality_rank,'<br>'),
         highlightOptions = hl_opts)
   })
