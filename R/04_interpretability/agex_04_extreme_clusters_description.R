@@ -2,7 +2,7 @@
 # Description of extreme weather clusters
 # By: Harold Achicanoy
 # WUR & ABC
-# May 2024
+# Oct 2024
 # ------------------------------------------ #
 
 ## R options and packages loading ----
@@ -244,7 +244,6 @@ if(!file.exists(outfile)){
   lvs_ntp <- terra::rast(outfile)
 }; rm(outfile)
 
-
 ## Exposed population ----
 # Metric: Population total
 # Meaning: number of people per pixel
@@ -341,12 +340,16 @@ agex_sgn_poly <- terra::as.polygons(x = agex_sgn_cln)
 ## Save all metrics ----
 rst_mtrcs <- cbind(
   terra::zonal(x = pop, z = agex_sgn_poly, fun = 'sum', na.rm = T),
-  terra::zonal(x = c(total_vop, food_vop, nonf_vop), z = agex_sgn_poly, fun = 'sum', na.rm = T),
   terra::zonal(x = hrvstd_area, z = agex_sgn_poly, fun = 'sum', na.rm = T),
   terra::zonal(x = hrvstd_area, z = agex_sgn_poly, fun = 'mean', na.rm = T, exact = T) |> dplyr::rename(harvested_area_average = 'harvested_area_total'),
   terra::zonal(x = hrvstd_area, z = agex_sgn_poly, fun = 'min', na.rm = T, exact = T) |> dplyr::rename(harvested_area_min = 'harvested_area_total'),
   terra::zonal(x = hrvstd_area, z = agex_sgn_poly, fun = 'max', na.rm = T, exact = T) |> dplyr::rename(harvested_area_max = 'harvested_area_total'),
   terra::zonal(x = crp_ntp, z = agex_sgn_poly, fun = 'mean', na.rm = T),
+  terra::zonal(x = lvs_ntp, z = agex_sgn_poly, fun = 'mean', na.rm = T),
+  terra::zonal(x = food_vop, z = agex_sgn_poly, fun = 'sum', na.rm = T) |> dplyr::rename(crops_vop_total = 'food_vop'),
+  terra::zonal(x = food_vop, z = agex_sgn_poly, fun = 'mean', na.rm = T) |> dplyr::rename(crops_vop_average = 'food_vop'),
+  terra::zonal(x = food_vop, z = agex_sgn_poly, fun = 'min', na.rm = T) |> dplyr::rename(crops_vop_min = 'food_vop'),
+  terra::zonal(x = food_vop, z = agex_sgn_poly, fun = 'max', na.rm = T) |> dplyr::rename(crops_vop_max = 'food_vop'),
   terra::zonal(x = lsu, z = agex_sgn_poly, fun = 'sum', na.rm = T) |> dplyr::rename(livestock_units_total = 'total_livestock_units'),
   terra::zonal(x = lsu, z = agex_sgn_poly, fun = 'mean', na.rm = T, exact = T) |> dplyr::rename(livestock_units_average = 'total_livestock_units'),
   terra::zonal(x = lsu, z = agex_sgn_poly, fun = 'min', na.rm = T, exact = T) |> dplyr::rename(livestock_units_min = 'total_livestock_units'),
@@ -367,6 +370,10 @@ c('Negative','Low','Medium','High')
 
 hist(dfm$crop_classes_diversity)
 abline(v = quantile(x = dfm$crop_classes_diversity, probs = seq(0,1,1/4)), lty = 2, col = 'red')
+c('Very low','Low','Medium','High')
+
+hist(dfm$livestock_units_diversity)
+abline(v = quantile(x = dfm$livestock_units_diversity, probs = seq(0,1,1/4)), lty = 2, col = 'red')
 c('Very low','Low','Medium','High')
 
 hist(dfm$livestock_units_total)
