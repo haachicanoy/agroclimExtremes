@@ -4,8 +4,8 @@ username: haachicanoy
 account: haachicanoy
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
-appId: 12843341
-bundleId: 9150509
+appId: 13081290
+bundleId: 9250670
 url: https://haachicanoy.shinyapps.io/extreme_drought_clusters/
 version: 1
 asMultiple: FALSE

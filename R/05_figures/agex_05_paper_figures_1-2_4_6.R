@@ -2,7 +2,7 @@
 ## Paper figures 1, 2, 4 & 6
 ## By: Harold Achicanoy
 ## WUR & ABC
-## May 2024
+## Oct. 2024
 ## ------------------------------------------ ##
 
 ## R options and packages loading ----
@@ -183,7 +183,21 @@ fig4 <- crops_hotspots |>
 ggplot2::ggsave(filename = paste0(root,'/agex_results/agex_figures/Figure4_paper1.png'), plot = fig4, device = 'png', width = 7, height = 6.1, units = 'in', dpi = 350); rm(fig4)
 
 ## Figure 6 ----
-livestock_hotspots <- utils::read.csv(paste0(root,'/agex_results/agex_livestock_hotspots.csv'))
+mtx_ref <- expand.grid(1:4, 1:4)
+names(mtx_ref) <- c('Severity','Diversity')
+mtx_ref <- mtx_ref |>
+  dplyr::arrange(Severity) |>
+  dplyr::mutate(key = paste0(Severity,'-',Diversity)) |>
+  base::as.data.frame()
+livestock_hotspots <- utils::read.csv(paste0(root,'/agex_results/agex_all_metrics_hotspots.csv'))
+livestock_hotspots <- livestock_hotspots |>
+  dplyr::left_join(y = mtx_ref,
+                   by = c('livestock_diversity_exposure' = 'key')) |>
+  dplyr::select(extreme_cluster,growing_seasons,
+                countries_count,countries,continents,
+                Severity,Diversity,SPEI.6_slope_95th) |>
+  dplyr::filter(Severity >= 3 & Diversity >= 3)
+livestock_hotspots$continents[grep(pattern = ',', x = livestock_hotspots$continents)] <- c('Asia','Europe','Europe','Asia','Europe','Africa','Asia','Asia','Asia','Asia','Asia','Asia','Europe')
 livestock_hotspots$continents <- factor(x = livestock_hotspots$continents, levels = c('Africa','Asia','South America','Europe','North America'))
 
 fig6 <- livestock_hotspots |>

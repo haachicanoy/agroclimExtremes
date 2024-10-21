@@ -2,7 +2,7 @@
 ## Paper statistics
 ## By: Harold Achicanoy
 ## WUR & ABC
-## Oct 2024
+## Oct. 2024
 ## ------------------------------------------ ##
 
 ## R options and packages loading ----
@@ -101,27 +101,65 @@ table(agex_sgn_metrics$countries_count[grep(pattern = '[aA]sia', agex_sgn_metric
 table(agex_sgn_metrics$countries_count[grep(pattern = '[oO]ceania', agex_sgn_metrics$continents)])/15
 
 ## Drought extremes and agricultural exposure hotspots ----
-# Identification of vulnerable areas
+# Identification of diversity hotspots
 severity_brks <- quantile(x = agex_sgn_metrics$`SPEI.6_slope_95th`, probs = seq(0,1,1/4))
-diversity_brks <- quantile(x = agex_sgn_metrics$crop_classes_diversity, probs = seq(0,1,1/4))
+severity_brks[1] <- severity_brks[1] - 0.05
+severity_brks[5] <- severity_brks[5] + 0.05
+crops_diversity_brks <- quantile(x = agex_sgn_metrics$crop_classes_diversity, probs = seq(0,1,1/4))
+crops_diversity_brks[1] <- crops_diversity_brks[1] - 0.05
+crops_diversity_brks[5] <- crops_diversity_brks[5] + 0.05
+lvstc_diversity_brks <- quantile(x = agex_sgn_metrics$livestock_units_diversity, probs = seq(0,1,1/4))
+lvstc_diversity_brks[1] <- lvstc_diversity_brks[1] - 0.05
+lvstc_diversity_brks[5] <- lvstc_diversity_brks[5] + 0.05
 # Create categories
 agex_sgn_metrics$Severity_class <- cut(x = agex_sgn_metrics$`SPEI.6_slope_95th`, breaks = severity_brks) |> as.numeric() |> as.character()
-agex_sgn_metrics$Diversity_class <- cut(x = agex_sgn_metrics$crop_classes_diversity, breaks = diversity_brks) |> as.numeric() |> as.character()
+agex_sgn_metrics$Crops_diversity_class <- cut(x = agex_sgn_metrics$crop_classes_diversity, breaks = crops_diversity_brks) |> as.numeric() |> as.character()
+agex_sgn_metrics$Livestock_diversity_class <- cut(x = agex_sgn_metrics$livestock_units_diversity, breaks = lvstc_diversity_brks) |> as.numeric() |> as.character()
 
-agex_sgn_metrics$agricultural_exposure <- paste0(agex_sgn_metrics$Severity_class,'-',agex_sgn_metrics$Diversity_class)
+agex_sgn_metrics$crops_diversity_exposure <- paste0(agex_sgn_metrics$Severity_class,'-',agex_sgn_metrics$Crops_diversity_class)
+agex_sgn_metrics$livestock_diversity_exposure <- paste0(agex_sgn_metrics$Severity_class,'-',agex_sgn_metrics$Livestock_diversity_class)
 agex_sgn_metrics$Severity_class <- NULL
-agex_sgn_metrics$Diversity_class <- NULL
+agex_sgn_metrics$Crops_diversity_class <- NULL
+agex_sgn_metrics$Livestock_diversity_class <- NULL
+rm(severity_brks, crops_diversity_brks, lvstc_diversity_brks)
 
+# Identification of agricultural value hotspots
 severity_brks <- quantile(x = agex_sgn_metrics$`SPEI.6_slope_95th`, probs = seq(0,1,1/4))
-diversity_brks <- quantile(x = agex_sgn_metrics$livestock_units_total, probs = seq(0,1,1/4))
-
+severity_brks[1] <- severity_brks[1] - 0.05
+severity_brks[5] <- severity_brks[5] + 0.05
+crops_vop_brks <- quantile(x = agex_sgn_metrics$crops_vop_total, probs = seq(0,1,1/4))
+crops_vop_brks[1] <- crops_vop_brks[1] - 50
+crops_vop_brks[5] <- crops_vop_brks[5] + 50
+lvstc_lsu_brks <- quantile(x = agex_sgn_metrics$livestock_units_total, probs = seq(0,1,1/4))
+lvstc_lsu_brks[1] <- lvstc_lsu_brks[1] - 50
+lvstc_lsu_brks[5] <- lvstc_lsu_brks[5] + 50
+# Create categories
 agex_sgn_metrics$Severity_class <- cut(x = agex_sgn_metrics$`SPEI.6_slope_95th`, breaks = severity_brks) |> as.numeric() |> as.character()
-agex_sgn_metrics$Diversity_class <- cut(x = agex_sgn_metrics$livestock_units_total, breaks = diversity_brks) |> as.numeric() |> as.character()
+agex_sgn_metrics$Crops_vop_class <- cut(x = agex_sgn_metrics$crops_vop_total, breaks = crops_vop_brks) |> as.numeric() |> as.character()
+agex_sgn_metrics$Livestock_lsu_class <- cut(x = agex_sgn_metrics$livestock_units_total, breaks = lvstc_lsu_brks) |> as.numeric() |> as.character()
 
-agex_sgn_metrics$livestock_exposure <- paste0(agex_sgn_metrics$Severity_class,'-',agex_sgn_metrics$Diversity_class)
+agex_sgn_metrics$crops_vop_exposure <- paste0(agex_sgn_metrics$Severity_class,'-',agex_sgn_metrics$Crops_vop_class)
+agex_sgn_metrics$livestock_lsu_exposure <- paste0(agex_sgn_metrics$Severity_class,'-',agex_sgn_metrics$Livestock_lsu_class)
 agex_sgn_metrics$Severity_class <- NULL
-agex_sgn_metrics$Diversity_class <- NULL
-rm(severity_brks, diversity_brks)
+agex_sgn_metrics$Crops_vop_class <- NULL
+agex_sgn_metrics$Livestock_lsu_class <- NULL
+rm(severity_brks, crops_vop_brks, lvstc_lsu_brks)
+
+utils::write.csv(x = agex_sgn_metrics, file = paste0(root,'/agex_results/agex_all_metrics_hotspots.csv'), row.names = F)
+
+# Crops: diversity vs VoP exposure
+crops_cmprsn <- table(agex_sgn_metrics$crops_diversity_exposure, agex_sgn_metrics$crops_vop_exposure) |> as.matrix()
+rownames(crops_cmprsn) <- paste0('Diversity_',rownames(crops_cmprsn))
+colnames(crops_cmprsn) <- paste0('VoP_',colnames(crops_cmprsn))
+utils::write.csv(x = crops_cmprsn, file = paste0(root,'/agex_results/crops_comparison.csv'), row.names = T)
+# Livestock: diversity vs VoP exposure
+table(agex_sgn_metrics$livestock_diversity_exposure, agex_sgn_metrics$livestock_lsu_exposure) |> as.matrix()
+# Diversity: crops vs livestock
+table(agex_sgn_metrics$crops_diversity_exposure,
+      agex_sgn_metrics$livestock_diversity_exposure)
+# Value of Production: crops vs livestock
+table(agex_sgn_metrics$crops_vop_exposure,
+      agex_sgn_metrics$livestock_lsu_exposure)
 
 mtx_ref <- expand.grid(1:4, 1:4)
 names(mtx_ref) <- c('Severity','Diversity')
@@ -129,6 +167,43 @@ mtx_ref <- mtx_ref |>
   dplyr::arrange(Severity) |>
   dplyr::mutate(key = paste0(Severity,'-',Diversity)) |>
   base::as.data.frame()
+
+# Change accordingly: crops_diversity_exposure, crops_vop_exposure
+# livestock_diversity_exposure, livestock_lsu_exposure
+agex_sgn_metrics |>
+  dplyr::left_join(y = mtx_ref,
+                   by = c('livestock_diversity_exposure' = 'key')) |>
+  dplyr::select(extreme_cluster,growing_seasons,
+                countries_count,countries,continents,
+                Severity,Diversity) |>
+  dplyr::filter(Severity >= 3 & Diversity >= 3) |>
+  View()
+
+agex_sgn_metrics |>
+  dplyr::left_join(y = mtx_ref,
+                   by = c('livestock_diversity_exposure' = 'key')) |>
+  dplyr::select(extreme_cluster,growing_seasons,
+                countries_count,countries,continents,
+                Severity,Diversity) |>
+  dplyr::filter(Severity >= 3 & Diversity >= 3) |>
+  dplyr::pull(continents) |>
+  table()
+
+
+
+
+
+
+
+
+
+
+NA_crops |>
+  dplyr::filter(Severity >= 3 & Diversity >= 3)
+
+
+
+
 
 # Crops hotspots
 crops <- utils::read.csv(paste0(root,'/agex_results/agex_harvested_areas_percentages.csv'))
