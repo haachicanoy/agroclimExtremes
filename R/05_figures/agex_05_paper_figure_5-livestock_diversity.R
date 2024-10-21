@@ -18,7 +18,7 @@ extrafont::fonts()
 # Functions
 make_maps_legend <- function(dims = 4,
                              xlabl = 'Drought trend severity',
-                             ylabl = 'Livestock units diversity',
+                             ylabl = 'Livestock species diversity',
                              xbrks = c('Negative','Low','Medium','High'),
                              ybrks = c('Very low','Low','Medium','High'),
                              palette = 'GrPink2',
@@ -147,7 +147,7 @@ for(i in 1:length(shp)){
 ### Legend ----
 fig3_leg <- make_maps_legend(dims = 4,
                              xlabl = 'Extreme drought\nintensification',
-                             ylabl = 'Livestock units\ndiversity',
+                             ylabl = 'Livestock species\ndiversity',
                              xbrks = c('Negative','Low','Medium','High'),
                              ybrks = c('Very low','Low','Medium','High'),
                              palette = 'GrPink2',
