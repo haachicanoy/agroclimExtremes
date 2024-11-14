@@ -51,7 +51,7 @@ server <- function(input, output, session) {
                             '<b>','Total population:  ','</b>',round(total_population,0),'<br>',
                             '<b>','Crop classes diversity:  ','</b>',round(crop_classes_diversity,2),'<br>',
                             '<b>','Livestock units diversity:  ','</b>',round(livestock_units_diversity,2),'<br>',
-                            '<b>','Crops VoP (million USD$):  ','</b>',round(crops_vop_total/1e6,2),'<br>',
+                            '<b>','Crops Value of Production<br />(million USD$):  ','</b>',round(crops_vop_total/1e6,2),'<br>',
                             '<b>','Livestock units:  ','</b>',round(livestock_units_total,0),'<br>',
                             '<b>','SPEI-6 mean:  ','</b>',round(`SPEI-6_average`,2),'<br>',
                             '<b>','SPEI-6 min:  ','</b>',round(`SPEI-6_min`,2),'<br>',
