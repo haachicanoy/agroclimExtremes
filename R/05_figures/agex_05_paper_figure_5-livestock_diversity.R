@@ -8,7 +8,7 @@
 ## R options and packages loading ----
 options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
-suppressMessages(pacman::p_load(terra,MetBrewer,rnaturalearth,tidyverse,ggpubr,tseries,biscale,pals,cowplot,gridExtra,grid))
+suppressMessages(pacman::p_load(terra,MetBrewer,sf,rnaturalearth,tidyverse,ggpubr,tseries,biscale,pals,cowplot,gridExtra,grid))
 
 # Activate Windows fonts
 extrafont::font_import()
@@ -168,9 +168,10 @@ gg_ts_NA <- idx_ts_msk_dfm |>
   dplyr::mutate(Years = as.numeric(gsub('spei-6_', '', Years)),
                 ID = paste0(x, '-', y)) |>
   base::as.data.frame() |>
-  ggplot2::ggplot(aes(x = Years, y = `SPEI-6`, group = ID)) +
+  ggplot2::ggplot(aes(x = Years, y = -1*`SPEI-6`, group = ID)) +
   ggplot2::geom_line(alpha = 0.1) +
-  ggplot2::geom_hline(yintercept = 1.5, linetype = 'dashed', color = 'red', size = 1.1) +
+  ggplot2::geom_hline(yintercept = -1.5, linetype = 'dashed', color = 'red', size = 1.1) +
+  ggplot2::ylab('SPEI-6') +
   ggplot2::theme_minimal() +
   ggplot2::theme(legend.position = 'none',
                  axis.text       = element_text(family = 'serif'),
@@ -202,9 +203,10 @@ gg_ts_SA <- idx_ts_msk_dfm |>
   dplyr::mutate(Years = as.numeric(gsub('spei-6_', '', Years)),
                 ID = paste0(x, '-', y)) |>
   base::as.data.frame() |>
-  ggplot2::ggplot(aes(x = Years, y = `SPEI-6`, group = ID)) +
+  ggplot2::ggplot(aes(x = Years, y = -1*`SPEI-6`, group = ID)) +
   ggplot2::geom_line(alpha = 0.1) +
-  ggplot2::geom_hline(yintercept = 1.5, linetype = 'dashed', color = 'red', size = 1.1) +
+  ggplot2::geom_hline(yintercept = -1.5, linetype = 'dashed', color = 'red', size = 1.1) +
+  ggplot2::ylab('SPEI-6') +
   ggplot2::theme_minimal() +
   ggplot2::theme(legend.position = 'none',
                  axis.text       = element_text(family = 'serif'),
@@ -236,9 +238,10 @@ gg_ts_AF <- idx_ts_msk_dfm |>
   dplyr::mutate(Years = as.numeric(gsub('spei-6_', '', Years)),
                 ID = paste0(x, '-', y)) |>
   base::as.data.frame() |>
-  ggplot2::ggplot(aes(x = Years, y = `SPEI-6`, group = ID)) +
+  ggplot2::ggplot(aes(x = Years, y = -1*`SPEI-6`, group = ID)) +
   ggplot2::geom_line(alpha = 0.1) +
-  ggplot2::geom_hline(yintercept = 1.5, linetype = 'dashed', color = 'red', size = 1.1) +
+  ggplot2::geom_hline(yintercept = -1.5, linetype = 'dashed', color = 'red', size = 1.1) +
+  ggplot2::ylab('SPEI-6') +
   ggplot2::theme_minimal() +
   ggplot2::theme(legend.position = 'none',
                  axis.text       = element_text(family = 'serif'),
@@ -270,9 +273,10 @@ gg_ts_EU <- idx_ts_msk_dfm |>
   dplyr::mutate(Years = as.numeric(gsub('spei-6_', '', Years)),
                 ID = paste0(x, '-', y)) |>
   base::as.data.frame() |>
-  ggplot2::ggplot(aes(x = Years, y = `SPEI-6`, group = ID)) +
+  ggplot2::ggplot(aes(x = Years, y = -1*`SPEI-6`, group = ID)) +
   ggplot2::geom_line(alpha = 0.1) +
-  ggplot2::geom_hline(yintercept = 1.5, linetype = 'dashed', color = 'red', size = 1.1) +
+  ggplot2::geom_hline(yintercept = -1.5, linetype = 'dashed', color = 'red', size = 1.1) +
+  ggplot2::ylab('SPEI-6') +
   ggplot2::theme_minimal() +
   ggplot2::theme(legend.position = 'none',
                  axis.text       = element_text(family = 'serif'),
@@ -304,9 +308,10 @@ gg_ts_AS <- idx_ts_msk_dfm |>
   dplyr::mutate(Years = as.numeric(gsub('spei-6_', '', Years)),
                 ID = paste0(x, '-', y)) |>
   base::as.data.frame() |>
-  ggplot2::ggplot(aes(x = Years, y = `SPEI-6`, group = ID)) +
+  ggplot2::ggplot(aes(x = Years, y = -1*`SPEI-6`, group = ID)) +
   ggplot2::geom_line(alpha = 0.1) +
-  ggplot2::geom_hline(yintercept = 1.5, linetype = 'dashed', color = 'red', size = 1.1) +
+  ggplot2::geom_hline(yintercept = -1.5, linetype = 'dashed', color = 'red', size = 1.1) +
+  ggplot2::ylab('SPEI-6') +
   ggplot2::theme_minimal() +
   ggplot2::theme(legend.position = 'none',
                  axis.text       = element_text(family = 'serif'),
@@ -338,9 +343,10 @@ gg_ts_OC <- idx_ts_msk_dfm |>
   dplyr::mutate(Years = as.numeric(gsub('spei-6_', '', Years)),
                 ID = paste0(x, '-', y)) |>
   base::as.data.frame() |>
-  ggplot2::ggplot(aes(x = Years, y = `SPEI-6`, group = ID)) +
+  ggplot2::ggplot(aes(x = Years, y = -1*`SPEI-6`, group = ID)) +
   ggplot2::geom_line(alpha = 0.1) +
-  ggplot2::geom_hline(yintercept = 1.5, linetype = 'dashed', color = 'red', size = 1.1) +
+  ggplot2::geom_hline(yintercept = -1.5, linetype = 'dashed', color = 'red', size = 1.1) +
+  ggplot2::ylab('SPEI-6') +
   ggplot2::theme_minimal() +
   ggplot2::theme(legend.position = 'none',
                  axis.text       = element_text(family = 'serif'),
