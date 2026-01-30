@@ -1,6 +1,6 @@
 # agroclimExtremes
 
-A collection of **R workflows and interactive mapping scripts** to compute agroclimatic extremes and explore their spatial patterns in agricultural areas (e.g., extreme drought clusters).
+**R workflow** associated to the manuscript "Global hotspots of co-occurring extreme droughts in agriculture". It contains the R scripts ordered ordered by step to compute extreme agricultural droughts and their spatial dependence over agricultural production areas worldwide at 0.25° resolution.
 
 > **Status:** research code (intended for reproducible analysis accompanying a manuscript / report).  
 > **License:** GPL-3.0
