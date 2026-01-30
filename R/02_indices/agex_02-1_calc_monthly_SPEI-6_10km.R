@@ -1,11 +1,13 @@
-# ------------------------------------------ #
-# Calculate monthly SPEI-6 at 10 km
-# By: Harold Achicanoy & Cesar Saavedra
+# --------------------------------------------------------------- #
+# Global hotspots of co-occurring extreme droughts in agriculture
+# Calculate monthly SPEI-6 at 0.1°
+# By: Harold Achicanoy, Cesar Saavedra
 # WUR & ABC
-# Feb. 2024
-# ------------------------------------------ #
+# Created in February 2024
+# Modified in January 2026
+# --------------------------------------------------------------- #
 
-# R options and packages loading
+# R options and user-defined functions
 options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
 suppressMessages(pacman::p_load(terra,SPEI))
