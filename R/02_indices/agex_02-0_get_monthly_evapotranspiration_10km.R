@@ -1,11 +1,13 @@
-# ------------------------------------------ #
-# FAO-Penman-Monteith Evapotranspiration at 10 km
-# By: Cesar Saavedra & Harold Achicanoy
-# ABC
-# Feb. 2024
-# ------------------------------------------ #
+# --------------------------------------------------------------- #
+# Global hotspots of co-occurring extreme droughts in agriculture
+# FAO-Penman-Monteith Evapotranspiration at 0.1°
+# By: Harold Achicanoy, Cesar Saavedra
+# WUR & ABC
+# Created in February 2024
+# Modified in January 2026
+# --------------------------------------------------------------- #
 
-# R options and packages loading
+# R options and user-defined functions
 options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
 suppressMessages(pacman::p_load(tidyverse,terra,gtools,lubridate,geodata))
@@ -73,13 +75,13 @@ calc_ET0 <- function(yr, mn){
     }
     elv <- terra::rast(lst)
     # calculate ET constants 
-    p <- (101.3)*((293-0.0065*elv)/(293))^5.26   # Presion
-    cps <- ((1.013*10^-3)*p)/(0.622*2.45)        # Constante psicrometrica
-    etmx <- 0.6108*exp((17.27*tmx)/(tmx+237.3))  # Presion media de vapor de la saturacion
-    etmn <- 0.6108*exp((17.27*tmn)/(tmn+237.3))  # Presion media de vapor de la saturacion
-    es <- (etmx+etmn)/2                          # Presion media de vapor de la saturacion
-    Dlt <- (4098*(0.6108*(exp((17.27*tmean)/(tmean+237.3)))))/((tmean+237.3)^2) # Delta/Pendiente de la curva de presion de saturacion de vapor
-    ea <- 0.6108*(exp((17.27*dp)/(dp+237.3)))    # Presion real de vapor derivada del punto de rocio
+    p <- (101.3)*((293-0.0065*elv)/(293))^5.26   # Pressure
+    cps <- ((1.013*10^-3)*p)/(0.622*2.45)        # Psychrometric constant
+    etmx <- 0.6108*exp((17.27*tmx)/(tmx+237.3))  # Mean saturation vapor pressure
+    etmn <- 0.6108*exp((17.27*tmn)/(tmn+237.3))  # Mean saturation vapor pressure
+    es <- (etmx+etmn)/2                          # Mean saturation vapor pressure
+    Dlt <- (4098*(0.6108*(exp((17.27*tmean)/(tmean+237.3)))))/((tmean+237.3)^2) # Delta/Slope of the vapor saturation pressure curve
+    ea <- 0.6108*(exp((17.27*dp)/(dp+237.3)))    # Actual vapor pressure derived from the dew point
     # Evapotranspiration function
     ET_0_idx <- function(Dlt, sr, cps, tmean, ws_2m, es){
       et_0 <- ((0.408*Dlt*sr)+(cps*(900/(tmean+273))*ws_2m*es))/(Dlt+(cps*(1+(0.34*ws_2m))))
@@ -104,11 +106,11 @@ stp <- stp %>%
   dplyr::arrange(yrs, mns) %>%
   base::as.data.frame()
 tx_pth <- paste0(ddir,'/1.Data/AgERA5/2m_temperature-24_hour_maximum') # Maximum temperature
-tm_pth <- paste0(ddir,'/1.Data/AgERA5/2m_temperature-24_hour_minimum') # Minimun temperature
+tm_pth <- paste0(ddir,'/1.Data/AgERA5/2m_temperature-24_hour_minimum') # Minimum temperature
 tav_pth <- paste0(ddir,'/1.Data/AgERA5/2m_temperature-24_hour_mean')   # Mean temperature
 sr_pth <- paste0(ddir,'/1.Data/AgERA5/solar_radiation_flux')           # Solar radiation
 ws_pth <- paste0(ddir,'/1.Data/AgERA5/10m_wind_speed')                 # Wind speed
-dp_pth <- paste0(ddir,'/1.Data/AgERA5/2m_dewpoint_temperature')        # Dewpoint temperature
+dp_pth <- paste0(ddir,'/1.Data/AgERA5/2m_dewpoint_temperature')        # Dew point temperature
 
 out_dir <- paste0(root,'/agex_raw_data')
 # loop for each year and month
