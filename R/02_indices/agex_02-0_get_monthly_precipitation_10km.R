@@ -1,6 +1,6 @@
 # --------------------------------------------------------------- #
 # Global hotspots of co-occurring extreme droughts in agriculture
-# Monthly precipitation at at 0.1°
+# Monthly precipitation at 0.1°
 # By: Harold Achicanoy
 # WUR & ABC
 # Created in February 2024
