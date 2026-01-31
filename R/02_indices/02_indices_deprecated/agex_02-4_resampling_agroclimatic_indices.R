@@ -1,11 +1,13 @@
-## ------------------------------------------ ##
-## Resampling agro-climatic indices at 25 km
-## By: Harold Achicanoy
-## WUR & ABC
-## Dec. 2023
-## ------------------------------------------ ##
+# --------------------------------------------------------------- #
+# Global hotspots of co-occurring extreme droughts in agriculture
+# Resampling monthly SPEI-6 at 0.25°
+# By: Harold Achicanoy
+# WUR & ABC
+# Created in February 2024
+# Modified in January 2026
+# --------------------------------------------------------------- #
 
-# R options and packages loading
+# R options and user-defined functions
 options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
 suppressMessages(pacman::p_load(terra,lubridate))
@@ -55,9 +57,4 @@ resampling_indices <- function(index = 'spei-6'){
   
 }
 
-# ------------------------------------------ #
-
-resampling_indices(index = 'cdd')    # Maximum number of consecutive dry days
 resampling_indices(index = 'spei-6') # SPEI-6
-
-# ------------------------------------------ #

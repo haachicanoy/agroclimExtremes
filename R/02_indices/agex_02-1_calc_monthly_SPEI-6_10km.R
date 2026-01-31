@@ -21,7 +21,7 @@ blc_fls <- list.files(path = paste0(root,'/agex_raw_data/monthly_balance'), patt
 nms_fls <- gsub('.tif','', gsub('bal-', '', basename(blc_fls)))
 
 # Out files
-out_pth <- paste0(root,'/agex_raw_data/monthly_spei')
+out_pth <- paste0(root,'/agex_raw_data/monthly_spei-6_10km')
 out_fls <- paste0(out_pth,'/spei-',scl,'_',nms_fls,'.tif')
 
 # Load water balance files

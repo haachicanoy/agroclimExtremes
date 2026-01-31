@@ -1,36 +1,35 @@
-# ------------------------------------------ #
-# Get extreme SPEI value within growing season
-# By: Harold Achicanoy
+# --------------------------------------------------------------- #
+# Global hotspots of co-occurring extreme droughts in agriculture
+# Get extreme SPEI-6 value within growing season 0.1°
+# By: Harold Achicanoy, Cesar Saavedra
 # WUR & ABC
-# Dec. 2023
-# ------------------------------------------ #
+# Created in February 2024
+# Modified in January 2026
+# --------------------------------------------------------------- #
 
-# R options and packages loading
+# R options and user-defined functions
 options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
 suppressMessages(pacman::p_load(terra,lubridate))
-
-# Root directory
-root <- '//CATALOGUE/AgroclimExtremes'
-
-# Source agro-climatic indices functions
 grep2 <- Vectorize(FUN = grep, vectorize.args = 'pattern')
-# Find minimum
 fmin <- function(x){
   x[is.infinite(x)] <- NA
   min(x)
-}
+} # Find minimum
+
+# Root directory
+root <- '//CATALOGUE/AgroclimExtremes'
 
 # Spatial resolution
 res <- 25
 
 # SPEI files
-fls <- list.files(path = paste0(root,'/agex_raw_data/monthly_spei_',res,'km'), pattern = '.tif$', full.names = T)
+fls <- list.files(path = paste0(root,'/agex_raw_data/monthly_spei-6_',res,'km'), pattern = '.tif$', full.names = T)
 fls <- fls[-(1:5)]
 
-# ------------------------------------------ #
+# --------------------------------------------------------------- #
 # One season
-# ------------------------------------------ #
+# --------------------------------------------------------------- #
 
 # There are two possibilities. One-year growing season which indicates that
 # start and ending dates are within the same year. Two-years growing season
@@ -55,7 +54,7 @@ lapply(X = yrs, FUN = function(yr){
   fls_flt <- fls[grep(pattern = paste0('_',yr,'-'), x = fls)] # Files filtered per year
   Spei <- terra::rast(fls_flt); gc(T)
   mxSpei <- terra::rapp(x = Spei, first = s1_ini, last = s1_end, fun = fmin); gc(T)
-  mxSpei <- -1 * mxSpei
+  mxSpei <- -1 * mxSpei # We inverted the values to apply the extreme dependence method (which requires maximums)
   names(mxSpei) <- paste0('spei-6_',yr)
   outfile <- paste0(root,'/agex_indices/agex_spei-6/agex_spei-6_intermediate_',res,'km/one_s1_y1_spei-6_',yr,'.tif')
   dir.create(dirname(outfile),F,T)
@@ -107,9 +106,9 @@ lapply(X = yrs, FUN = function(yr){
   terra::writeRaster(x = mxSpei, filename = outfile, overwrite = T)
 })
 
-# ------------------------------------------ #
+# --------------------------------------------------------------- #
 # Two seasons
-# ------------------------------------------ #
+# --------------------------------------------------------------- #
 
 # There are two possibilities. One-year growing season which indicates that
 # start and ending dates are within the same year. Two-years growing season
@@ -259,16 +258,3 @@ lapply(X = yrs, FUN = function(yr){
   dir.create(dirname(outfile),F,T)
   terra::writeRaster(x = mxSpei, filename = outfile, overwrite = T)
 })
-
-# # Creating raster stack files
-# index  <- 'spei-6'
-# gs     <- 'two'
-# season <- 2
-# res    <- 25
-# pth    <- paste0(root,'/agex_indices/agex_',index,'/agex_',index,'_',res,'km')
-# 
-# fls <- list.files(path = pth,
-#                   pattern = paste0(gs,'_s',season,'_',index,'_*.*.tif$'),
-#                   full.names = T)
-# r <- terra::rast(fls)
-# terra::writeRaster(x = r, filename = paste0(pth,'/',gs,'_s',season,'_',index,'_25km.tif'), overwrite = T)
