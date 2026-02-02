@@ -1,19 +1,19 @@
-# ------------------------------------------ #
-# Description of extreme weather clusters
+# --------------------------------------------------------------- #
+# Global hotspots of co-occurring extreme droughts in agriculture
+# Merge extreme clusters from one and two growing seasons
 # By: Harold Achicanoy
 # WUR & ABC
-# Oct 2024
-# ------------------------------------------ #
+# Created in October 2024
+# Modified in February 2026
+# --------------------------------------------------------------- #
 
-## R options and packages loading ----
+# R options and user-defined functions ----
 options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
 suppressMessages(pacman::p_load(terra,geodata,NbClust,entropy,scales,dplyr,
                                 ggplot2,RColorBrewer,landscapemetrics,
                                 exactextractr,hrbrthemes,trend,quantreg,
                                 OutliersO3,MetBrewer,extrafont))
-
-## Relevant functions ----
 list.files2 <- Vectorize(FUN = list.files, vectorize.args = 'path')
 grep2 <- Vectorize(FUN = grep, vectorize.args = 'pattern')
 get_trend <- function(x){
@@ -37,11 +37,11 @@ getmode <- function(v) {
   uniqv[which.max(tabulate(match(v, uniqv)))]
 }
 
-## Key arguments ----
+# Key arguments ----
 root   <- '//CATALOGUE/AgroclimExtremes'
 index  <- 'spei-6'
 
-## Extreme weather clusters ----
+# Extreme weather clusters ----
 agex_sgn_cln <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
 names(agex_sgn_cln) <- 'extreme_cluster'
 # Extreme weather clusters by growing seasons
@@ -60,7 +60,7 @@ crds_sgn_cln$growing_seasons <- aux$growing_seasons; rm(aux, agex_sgn_gs)
 wrl <- rnaturalearth::ne_countries(scale = 'large', returnclass = 'sv')
 wrl <- wrl[,c('adm0_iso','name_en','continent','subregion')]
 
-## Countries collaboration ----
+# Countries collaboration ----
 # Countries coverage across extreme drought clusters
 out <- paste0(root,'/agex_results/agex_country_collaborations.csv')
 if(!file.exists(out)){
@@ -88,8 +88,7 @@ if(!file.exists(out)){
                       countries_count = length(unq_geos[unq_geos$extreme_cluster == i,'adm0_iso']),
                       isos = paste0(unq_geos[unq_geos$extreme_cluster == i,'adm0_iso'], collapse = ','),
                       countries = paste0(unq_geos[unq_geos$extreme_cluster == i,'name_en'], collapse = ','),
-                      continents = paste0(unique(unq_geos[unq_geos$extreme_cluster == i,'continent']), collapse = ',') # ,
-                      # regions = paste0(unique(unq_geos[unq_geos$extreme_cluster == i,'subregion']), collapse = ',')
+                      continents = paste0(unique(unq_geos[unq_geos$extreme_cluster == i,'continent']), collapse = ',')
     )
     return(smm)
   }) |> dplyr::bind_rows() |>
@@ -105,7 +104,7 @@ agex_area <- terra::cellSize(x = agex_sgn_cln, unit = 'km') |> terra::mask(mask 
 area_dfm <- terra::zonal(x = agex_area, z = agex_sgn_cln, fun = 'sum') |> base::as.data.frame()
 collaborations <- dplyr::left_join(x = collaborations, y = area_dfm, by = 'extreme_cluster'); rm(area_dfm, agex_area)
 
-## Clusters quality ----
+# Clusters quality ----
 # They are computed to provide a quality control of the produced clusters
 # Metric: Cohesion index
 # Meaning:
@@ -146,7 +145,7 @@ if(!file.exists(outfile)){
   qlt_mtrcs <- utils::read.csv(outfile)
 }; rm(outfile)
 
-## Crop classes diversity ----
+# Crop classes diversity ----
 # Metric: Shannon diversity index
 # Meaning: High entropy means high variation of food/non-food classes
 outfile <- paste0(root,'/agex_results/agex_vulnerability/crop_classes_diversity.tif')
@@ -165,7 +164,7 @@ if(!file.exists(outfile)){
   crp_ntp <- terra::rast(outfile)
 }; rm(outfile)
 
-## Arable lands ----
+# Arable lands ----
 outfile <- paste0(root,'/agex_results/agex_vulnerability/harvested_area_total.tif')
 if(!file.exists(outfile)){
   dir.create(path = dirname(outfile), F, T)
@@ -183,14 +182,14 @@ if(!file.exists(outfile)){
   hrvstd_area <- terra::rast(outfile)
 }; rm(outfile)
 
-## Agricultural economic value ----
+# Agricultural economic value ----
 # Metric: Value of production
 # Meaning: High value of production means high economic value from agriculture
 total_vop <- terra::rast(paste0(root,'/agex_raw_data/agex_spam2010V2r0_global_V_agg_VP_CROP_A.tif')); names(total_vop) <- 'total_vop'
 food_vop  <- terra::rast(paste0(root,'/agex_raw_data/agex_spam2010V2r0_global_V_agg_VP_FOOD_A.tif')); names(food_vop) <- 'food_vop'
 nonf_vop  <- terra::rast(paste0(root,'/agex_raw_data/agex_spam2010V2r0_global_V_agg_VP_NONF_A.tif')); names(nonf_vop) <- 'non-food_vop'
 
-## Livestock diversity ----
+# Livestock diversity ----
 # Metric: Livestock equivalent units
 # Meaning: grazing equivalent of one adult dairy cow producing 3 000 kg of milk
 # annually, without additional concentrated foodstuffs
@@ -244,13 +243,13 @@ if(!file.exists(outfile)){
   lvs_ntp <- terra::rast(outfile)
 }; rm(outfile)
 
-## Exposed population ----
+# Exposed population ----
 # Metric: Population total
 # Meaning: number of people per pixel
 pop <- terra::rast(paste0(root,'/agex_raw_data/gpw_v4_population_count_rev11_2020_15_min.tif'))
 names(pop) <- 'total_population'
 
-## Index severity ----
+# Index severity ----
 # Metric: SPEI-6 trend for 90th percentile. We also computed the number of years when SPEI < -1.5
 # For two-growing-seasons pixels we computed the average of the trends
 # Meaning: extreme drought trend over time
@@ -290,11 +289,6 @@ if(!file.exists(outfile)){
 } else {
   idx_range <- terra::rast(outfile)
 }; rm(outfile)
-
-# # Trend
-# idx_one_s1_slp <- terra::app(x = idx_one_s1, fun = function(i, ff) ff(i), cores = 20, ff = get_trend); names(idx_one_s1_slp) <- 'SPEI-6_slope'
-# idx_two_s1_slp <- terra::app(x = idx_two_s1, fun = function(i, ff) ff(i), cores = 20, ff = get_trend); names(idx_two_s1_slp) <- 'SPEI-6_slope'
-# idx_two_s2_slp <- terra::app(x = idx_two_s2, fun = function(i, ff) ff(i), cores = 20, ff = get_trend); names(idx_two_s2_slp) <- 'SPEI-6_slope'
 
 # Extreme trend
 outfile <- paste0(root,'/agex_results/agex_vulnerability/SPEI-6_extreme_trend.tif')
@@ -337,7 +331,7 @@ if(!file.exists(outfile)){
 # Transform extreme drought clusters into shapefile
 agex_sgn_poly <- terra::as.polygons(x = agex_sgn_cln)
 
-## Save all metrics ----
+# Save all metrics ----
 rst_mtrcs <- cbind(
   terra::zonal(x = pop, z = agex_sgn_poly, fun = 'sum', na.rm = T),
   terra::zonal(x = hrvstd_area, z = agex_sgn_poly, fun = 'sum', na.rm = T),
