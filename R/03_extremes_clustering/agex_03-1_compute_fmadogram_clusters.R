@@ -1,11 +1,13 @@
-## ------------------------------------------ ##
-## Compute F-madogram distances
-## By: Harold Achicanoy
-## WUR & ABC
-## May 2024
-## ------------------------------------------ ##
+# --------------------------------------------------------------- #
+# Global hotspots of co-occurring extreme droughts in agriculture
+# Compute F-madogram distances
+# By: Harold Achicanoy
+# WUR & ABC
+# Created in May 2024
+# Modified in February 2026
+# --------------------------------------------------------------- #
 
-## R options and packages loading
+# R options and user-defined functions
 options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
 suppressMessages(pacman::p_load(terra, geodata, Kendall, tidyverse, psych,
@@ -13,36 +15,24 @@ suppressMessages(pacman::p_load(terra, geodata, Kendall, tidyverse, psych,
                                 rnaturalearth, RColorBrewer, MetBrewer,
                                 fastcluster, eurostat, giscoR, parallelDist))
 
-## Key arguments
+# Key arguments
 root   <- '//CATALOGUE/AgroclimExtremes'
 yrs    <- 1980:2022
 index  <- 'spei-6'
 gs     <- 'one'
 season <- 1
 
-## List and load files
+# List and load files
 fls <- list.files(path = paste0(root,'/agex_indices/agex_',index,'/agex_',index,'_25km'), pattern = paste0(gs,'_s',season,'_',index,'_'), full.names = T)
-# Leave it open to compute for 10 km resolution
-# fls <- list.files(path = paste0(root,'/agroclimExtremes/agex_indices/agex_',index,'/agex_',index,'_10km'), pattern = paste0(gs,'_s',season,'_',index,'_'), full.names = T)
 idx_roi <- terra::rast(fls)
 
-# # Country level
-# roi <- geodata::gadm(country = 'AUS', level = 0, path = tempdir(), version = 'latest')
-# # Continental level
-# roi <- terra::vect(paste0(root,'/agroclimExtremes/agex_raw_data/agex_africa_shape.gpkg'))
-# roi <- eurostat::get_eurostat_geospatial(output_class = 'sf', resolution = '60', year = '2016', crs = '4326')
-# roi <- terra::vect(roi)
-# idx_roi <- terra::crop(x = idx, y = terra::ext(roi))
-# idx_roi <- terra::mask(x = idx_roi, mask = roi)
+# --------------------------------------------------------------- #
+# Mann-Kendall test to evaluate time series trends. If so, remove
+# trends by applying loess regression.
+# --------------------------------------------------------------- #
 
-# Maybe it is important to show a map of trends, positive and negative significant trends
-
-## Final index: applying transformations
 transformations <- function(x){
   if(!all(is.na(x))){
-    ## Remove NA and -Inf values
-    # x[is.na(x)] <- 0
-    # x[is.infinite(x)] <- 0
     # Scale the time series
     x_scl <- scale(x)
     # Mann-Kendall test for evaluating trend significance
@@ -60,15 +50,16 @@ transformations <- function(x){
   }
   return(x_ntrd)
 }
-
 idx_roi_fnl <- terra::app(x = idx_roi, fun = function(i, ff) ff(i), cores = 20, ff = transformations)
 names(idx_roi_fnl) <- names(idx_roi); gc(T)
 
-## Transform raster into a data.frame of stationary processes
+# Transform raster into a data.frame of stationary processes
 idx_roi_ntrd <- terra::as.data.frame(x = idx_roi_fnl, xy = T, cell = T, na.rm = T)
 x <- t(idx_roi_ntrd[,4:ncol(idx_roi_ntrd)]); gc(T)
 
-## Compute F-madogram distance
+# --------------------------------------------------------------- #
+# Compute F-madogram distance
+# --------------------------------------------------------------- #
 get_fmado_dist <- function(x){
   Nnb <- ncol(x)
   Tnb <- nrow(x)
@@ -82,10 +73,10 @@ get_fmado_dist <- function(x){
     Femp <- ecdf(x.vec)(x.vec)
     V[,p] <- Femp
   }
-  # DD_fmado = dist(t(V), method = "manhattan", diag = TRUE, upper = TRUE)/(2*Tnb)
   DD_fmado <- parallelDist::parDist(x = t(V), method = 'manhattan', diag = F, upper = F)/(2*Tnb)
   return(DD_fmado)
 }
+
 # Trim distribution of F-madogram distances greater than 1/6
 cap_fmado_dist <- function(DD_fmado){
   DD_fmado_adj <- pmin(DD_fmado, rep(1/6, length(DD_fmado)))
@@ -97,14 +88,13 @@ cap_fmado_dist <- function(DD_fmado){
 ## Obtain distance matrices
 fmado_dist <- get_fmado_dist(x); gc(T)          # F-madogram distances
 fmado_dist <- cap_fmado_dist(fmado_dist); gc(T) # Truncated F-madogram distances
-# saveRDS(object = fmado_dist, file = paste0(root,'/agroclimExtremes/agex_results/WORLD_',index,'_',gs,'_s',season,'_fmado_distance.rds'))
-eucld_dist <- parallelDist::parDist(x = t(x),   # Euclidean distances matrix
-                                    method = 'euclidean',
-                                    diag = T, upper = T); gc(T)
+# eucld_dist <- parallelDist::parDist(x = t(x),   # Euclidean distances matrix
+#                                     method = 'euclidean',
+#                                     diag = T, upper = T); gc(T)
 
 # Hierarchical clustering for distance matrices
 fmado_hcl <- fastcluster::hclust(fmado_dist, method = 'ward.D2') # F-madogram
-eucld_hcl <- fastcluster::hclust(eucld_dist, method = 'ward.D2') # Euclidean
+# eucld_hcl <- fastcluster::hclust(eucld_dist, method = 'ward.D2') # Euclidean
 gc(T)
 
 # Query data.frame
@@ -118,7 +108,7 @@ source('https://raw.githubusercontent.com/haachicanoy/agroclimExtremes/main/R/03
 
 # 4. Execute the hierarchical clustering with that K-number
 qry$fmado_cluster <- cutree(tree = fmado_hcl, k = optimal_k)
-qry$eucld_cluster <- cutree(tree = eucld_hcl, k = optimal_k)
+# qry$eucld_cluster <- cutree(tree = eucld_hcl, k = optimal_k)
 
 # Raster template
 tmp <- idx_roi_fnl[[1]]
@@ -126,7 +116,7 @@ terra::values(tmp) <- NA
 
 # Assign clusters to pixels
 fmado_r <- tmp; fmado_r[qry$cell] <- qry$fmado_cluster; plot(fmado_r)
-eucld_r <- tmp; eucld_r[qry$cell] <- qry$eucld_cluster; plot(eucld_r)
+# eucld_r <- tmp; eucld_r[qry$cell] <- qry$eucld_cluster; plot(eucld_r)
 
 terra::writeRaster(x = fmado_r, filename = paste0(root,'/agex_results/agex_results_clusters/agex_global_',index,'_',gs,'_s',season,'_fmadogram_k',optimal_k,'.tif'), overwrite = T)
-terra::writeRaster(x = eucld_r, filename = paste0(root,'/agex_results/agex_results_clusters/agex_global_',index,'_',gs,'_s',season,'_euclidean_k',optimal_k,'.tif'), overwrite = T)
+# terra::writeRaster(x = eucld_r, filename = paste0(root,'/agex_results/agex_results_clusters/agex_global_',index,'_',gs,'_s',season,'_euclidean_k',optimal_k,'.tif'), overwrite = T)
