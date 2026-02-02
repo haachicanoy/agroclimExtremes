@@ -1,16 +1,18 @@
-## ------------------------------------------ ##
-## Merge extreme clusters from one and two growing seasons
-## By: Harold Achicanoy
-## WUR & ABC
-## May 2024
-## ------------------------------------------ ##
+# --------------------------------------------------------------- #
+# Global hotspots of co-occurring extreme droughts in agriculture
+# Merge extreme clusters from one and two growing seasons
+# By: Harold Achicanoy
+# WUR & ABC
+# Created in May 2024
+# Modified in February 2026
+# --------------------------------------------------------------- #
 
-## R options and packages loading
+# R options and user-defined functions
 options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
 suppressMessages(pacman::p_load(terra, dplyr))
 
-## Key arguments
+# Key arguments
 root   <- '//CATALOGUE/AgroclimExtremes'
 index  <- 'spei-6'
 
