@@ -1,15 +1,16 @@
-# ------------------------------------------ #
-# Cleaning GS1 extreme weather clusters outliers
+# --------------------------------------------------------------- #
+# Global hotspots of co-occurring extreme droughts in agriculture
+# Cleaning outliers in places with one growing season
 # By: Harold Achicanoy
 # WUR & ABC
-# May 2024
-# ------------------------------------------ #
+# Created in May 2024
+# Modified in February 2026
+# --------------------------------------------------------------- #
 
-# R options and packages loading
+# R options and user-defined functions
 options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
 suppressMessages(pacman::p_load(terra,tibble,OutliersO3))
-
 list.files2 <- Vectorize(FUN = list.files, vectorize.args = 'path')
 grep2 <- Vectorize(FUN = grep, vectorize.args = 'pattern')
 getmode <- function(v) {

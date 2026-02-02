@@ -1,11 +1,13 @@
-## ------------------------------------------ ##
-## Combine extreme clusters of places with two growing seasons
-## By: Harold Achicanoy
-## WUR & ABC
-## May 2024
-## ------------------------------------------ ##
+# --------------------------------------------------------------- #
+# Global hotspots of co-occurring extreme droughts in agriculture
+# Combine extreme clusters of places with two growing seasons
+# By: Harold Achicanoy
+# WUR & ABC
+# Created in May 2024
+# Modified in February 2026
+# --------------------------------------------------------------- #
 
-## R options and packages loading
+# R options and user-defined functions
 options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
 suppressMessages(pacman::p_load(terra, geodata, Kendall, tidyverse, psych,
@@ -13,7 +15,6 @@ suppressMessages(pacman::p_load(terra, geodata, Kendall, tidyverse, psych,
                                 rnaturalearth, RColorBrewer, MetBrewer,
                                 fastcluster, eurostat, giscoR,parallelDist,
                                 OutliersO3))
-
 getmode <- function(v) {
   uniqv <- unique(v)
   uniqv[which.max(tabulate(match(v, uniqv)))]
