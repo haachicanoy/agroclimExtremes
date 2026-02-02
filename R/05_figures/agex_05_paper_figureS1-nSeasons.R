@@ -1,6 +1,6 @@
 # --------------------------------------------------------------- #
 # Global hotspots of co-occurring extreme droughts in agriculture
-# Figure S1
+# Figure S1: number of growing seasons map
 # By: Harold Achicanoy
 # WUR & ABC
 # Created in 2025
