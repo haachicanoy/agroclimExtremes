@@ -1,12 +1,21 @@
+# --------------------------------------------------------------- #
+# Global hotspots of co-occurring extreme droughts in agriculture
+# Figure S2: clusters characterization
+# By: Harold Achicanoy
+# WUR & ABC
+# Created in 2025
+# Modified in February 2026
+# --------------------------------------------------------------- #
+
 options(warn = -1, scipen = 999)
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(terra,MetBrewer,sf,rnaturalearth,tidyverse,ggpubr,tseries,biscale,pals,cowplot,gridExtra,grid))
 
-## Setup arguments ----
+# Setup arguments ----
 root   <- '//CATALOGUE/AgroclimExtremes'
 index  <- 'spei-6'
 
-## Extreme drought clusters ----
+# Extreme drought clusters ----
 # Categorical
 agex_sgn <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
 names(agex_sgn) <- 'extreme_cluster'
@@ -23,7 +32,7 @@ names(agex_sgn_num) <- 'extreme_cluster'
 # Metrics
 agex_sgn_metrics <- utils::read.csv(paste0(root,'/agex_results/agex_all_metrics.csv'))
 
-## Shapefiles ----
+# Shapefiles ----
 # Continent shapefiles
 afr <- rnaturalearth::ne_countries(scale = 'large', continent = 'africa', returnclass = 'sv')
 eur <- rnaturalearth::ne_countries(scale = 'large', continent = 'europe', returnclass = 'sv')
@@ -42,7 +51,7 @@ sam <- terra::aggregate(sam); sam$Continent <- 'South America'
 wrl <- rbind(afr, eur, asi, oce, nam, sam)
 rm(afr, eur, asi, oce, nam, sam)
 
-## Number of countries spanning clusters ----
+# Number of countries spanning clusters ----
 # Number of countries per cluster
 countries_per_cluster <- agex_sgn_num
 countries_per_cluster <- terra::classify(x = countries_per_cluster, as.matrix(agex_sgn_metrics[,c('extreme_cluster','countries_count')]))
@@ -62,7 +71,7 @@ gg1 <- ncountries |>
                  axis.text.y     = element_text(size = 15, colour = 'black'),
                  axis.title      = element_text(size = 17, colour = 'black', face = 'plain', family = 'serif'))
 
-## Drought intensification ----
+# Drought intensification ----
 # Index characterization: extreme trend
 drought_trend <- terra::rast(paste0(root,'/agex_results/agex_vulnerability/SPEI-6_extreme_trend.tif'))
 drought_trend <- -1 * drought_trend # For getting SPEI original units
@@ -82,7 +91,7 @@ gg2 <- intensification |>
                  axis.text.y     = element_text(size = 15, colour = 'black'),
                  axis.title      = element_text(size = 17, colour = 'black', face = 'plain', family = 'serif'))
 
-## Drought severity ----
+# Drought severity ----
 # SPEI-6 time series by growing season
 spei6_one_ts <- terra::rast('//CATALOGUE/AgroclimExtremes/agex_indices/agex_spei-6/agex_spei-6_25km/one_s1_spei-6_25km.tif')
 spei6_one_ts <- -1 * spei6_one_ts
@@ -228,4 +237,4 @@ fg_03 <- ggpubr::annotate_figure(gg3,
                                    family = 'serif'
                                  ))
 fig2 <- gridExtra::grid.arrange(fg_01, fg_02, fg_03, layout_matrix = lyt)
-ggplot2::ggsave(filename = paste0(root,'/agex_results/agex_figures/Figure2_paper1-cluster_characterization.png'), plot = fig2, device = 'png', width = 12, height = 10, units = 'in', dpi = 350)
+ggplot2::ggsave(filename = paste0(root,'/agex_results/agex_figures/FigureS2-agex-clusters_characterization.png'), plot = fig2, device = 'png', width = 12, height = 10, units = 'in', dpi = 350)
