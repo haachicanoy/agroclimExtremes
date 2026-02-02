@@ -1,14 +1,17 @@
-## ------------------------------------------ ##
-## Find optimal number of clusters
-## By: Harold Achicanoy
-## WUR & ABC
-## Feb. 2024
-## ------------------------------------------ ##
+# --------------------------------------------------------------- #
+# Global hotspots of co-occurring extreme droughts in agriculture
+# Find optimal number of clusters
+# By: Harold Achicanoy
+# WUR & ABC
+# Created in February 2024
+# Modified in February 2026
+# --------------------------------------------------------------- #
 
-## R options and packages loading
+# R options and user-defined functions
+options(warn = -1, scipen = 999)
 suppressMessages(pacman::p_load(cluster,future,furrr))
 
-# Sample a number of pixels
+# Sample a number of pixels across the world
 set.seed(1245)
 prc <- ifelse(gs == 'one', 0.03, 0.03)
 smp <- sample(x = idx_roi_ntrd$cell, size = prc * dim(idx_roi_ntrd)[1], replace = F)
