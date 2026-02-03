@@ -1,3 +1,16 @@
+# --------------------------------------------------------------- #
+# Global hotspots of co-occurring extreme droughts in agriculture
+# Figure 4: Crop composition within drought hotspots
+# Table S4: Median crop distribution within diversity hotspots by continent
+# Figure 5: Livestock unit distribution within drought hotspots
+# Table S5: Median livestock unit distribution within economic hotspots by continent
+# By: Harold Achicanoy
+# WUR & ABC
+# Created in 2025
+# Modified in February 2026
+# --------------------------------------------------------------- #
+
+# R options and user-defined functions ----
 options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
 suppressMessages(pacman::p_load(terra,corrplot,MetBrewer,sf,rnaturalearth,tidyverse,ggpubr,tseries,biscale,pals,cowplot,gridExtra,grid))
@@ -18,11 +31,11 @@ capitalize_first_word <- function(text_string) {
   paste0(first_letter, rest_of_string)
 }
 
-## Setup arguments ----
+# Setup arguments ----
 root   <- '//CATALOGUE/AgroclimExtremes'
 index  <- 'spei-6'
 
-## Extreme drought clusters ----
+# Extreme drought clusters ----
 # Categorical
 agex_sgn <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
 names(agex_sgn) <- 'extreme_cluster'
@@ -39,7 +52,7 @@ names(agex_sgn_num) <- 'extreme_cluster'
 # Metrics
 agex_sgn_metrics <- utils::read.csv(paste0(root,'/agex_results/agex_all_metrics.csv'))
 
-## Shapefiles ----
+# Shapefiles ----
 afr <- rnaturalearth::ne_countries(scale = 'large', continent = 'africa', returnclass = 'sv')
 eur <- rnaturalearth::ne_countries(scale = 'large', continent = 'europe', returnclass = 'sv')
 asi <- rnaturalearth::ne_countries(scale = 'large', continent = 'asia', returnclass = 'sv')
@@ -55,7 +68,7 @@ sam <- terra::aggregate(sam); sam$Continent <- 'South America'
 wrl <- rbind(afr, eur, asi, oce, nam, sam)
 rm(afr, eur, asi, oce, nam, sam)
 
-## Crops and livestock diversity ----
+# Crops and livestock diversity ----
 if (!exists('intensification_vs_cropdiversity')) {
   # Crop classes diversity
   crp_diversity <- terra::rast(paste0(root,'/agex_results/agex_vulnerability/crop_classes_diversity_25km.tif'))
@@ -142,7 +155,7 @@ if (!exists('intensification_vs_lvstdiversity')) {
 names(intensification_vs_lvstdiversity)[2] <- 'Drought_vs_LivestockDiversity'
 intensification_vs_lvstdiversity$extreme_cluster <- as.integer(intensification_vs_lvstdiversity$extreme_cluster)
 
-## Crops and livestock economic value ----
+# Crops and livestock economic value ----
 if (!exists('intensification_vs_cropvop')) {
   # Crop VOP
   crp_vop <- terra::rast(paste0(root,'/agex_results/agex_vulnerability/food_vop.tif'))
@@ -229,7 +242,6 @@ if (!exists('intensification_vs_lvstunits')) {
 names(intensification_vs_lvstunits)[2] <- 'Drought_vs_LivestockUnits'
 intensification_vs_lvstunits$extreme_cluster <- as.integer(intensification_vs_lvstunits$extreme_cluster)
 
-# hotspot_categories <- c('3-3','3-4','4-3','4-4')
 hotspot_categories <- c('4-4')
 
 intensification_vs_cropdiversity |> dplyr::filter(Drought_vs_CropDiversity %in% hotspot_categories)
@@ -246,6 +258,7 @@ rm(intensification_vs_cropdiversity, intensification_vs_lvstdiversity, intensifi
 
 View(agex_sgn_metrics)
 
+# Hotspots counts and overlap ----
 # Food security hotspots
 table((agex_sgn_metrics$Drought_vs_CropDiversity == '4-4') +
         (agex_sgn_metrics$Drought_vs_LivestockDiversity == '4-4'))
@@ -262,9 +275,6 @@ length(verify)
 continent_subdata <- agex_sgn_metrics[verify,]
 continent_subdata[grep(pattern = '4-|3-', x = continent_subdata$Drought_vs_CropDiversity),] |> dim()
 
-# sum(continent_subdata$Drought_vs_CropDiversity == '4-4')
-# continent_subdata[continent_subdata$Drought_vs_CropDiversity == '4-4',]
-
 sum(continent_subdata$Drought_vs_LivestockDiversity == '4-4')
 continent_subdata[continent_subdata$Drought_vs_LivestockDiversity == '4-4',]
 
@@ -272,21 +282,6 @@ table((continent_subdata$Drought_vs_CropDiversity == '4-4') +
         (continent_subdata$Drought_vs_LivestockDiversity == '4-4'))
 table((continent_subdata$Drought_vs_CropVoP == '4-4') +
         (continent_subdata$Drought_vs_LivestockUnits == '4-4'))
-
-
-sum(mtch > 0)
-table(mtch)[-1] |> barplot()
-
-agex_sgn_metrics[,sapply(agex_sgn_metrics, is.numeric)] |>
-  cor(use = 'pairwise.complete.obs', method = 'spearman') |>
-  corrplot::corrplot()
-
-agex_sgn_metrics |>
-  # dplyr::filter(Drought_vs_CropVoP %in% hotspot_categories) |>
-  ggplot2::ggplot(aes(x = harvested_area_average, y = -1 * `SPEI.6_average`)) +
-  ggplot2::geom_point() +
-  ggplot2::stat_smooth() +
-  ggplot2::theme_minimal()
 
 # Crop counts
 crop_fls <- list.files(path = file.path(root,'agex_raw_data'), pattern = '*count_10km.tif$', full.names = T)
@@ -332,6 +327,9 @@ Threatened_CropDiversity$Statistics <- NULL
 tcd <- Threatened_CropDiversity |> tidyr::pivot_wider(names_from = 'Crop', values_from = Value) |> base::as.data.frame()
 tcd <- dplyr::left_join(x = agex_sgn_metrics[agex_sgn_metrics$Drought_vs_CropDiversity == '4-4',c('extreme_cluster','growing_seasons','countries_count','isos','countries','continents')], y = tcd, by = 'extreme_cluster')
 
+# --------------------------------------------------------------- #
+# Figure 4
+# --------------------------------------------------------------- #
 gg1 <- dplyr::left_join(x = Threatened_CropDiversity,
                  y = agex_sgn_metrics[agex_sgn_metrics$Drought_vs_CropDiversity == '4-4',c('extreme_cluster','growing_seasons','countries_count','isos','countries','continents')],
                  by = 'extreme_cluster') |>
@@ -361,6 +359,7 @@ gg1 <- dplyr::left_join(x = Threatened_CropDiversity,
                  axis.title      = element_text(size = 19, colour = 'black', face = 'plain', family = 'serif'))
 ggplot2::ggsave(filename = paste0(root,'/agex_results/agex_figures/Figure4_paper1-crop_diversity_exposure.png'), plot = gg1, device = 'png', width = 11, height = 8, units = 'in', dpi = 350)
 
+# Table S4
 dplyr::left_join(x = Threatened_CropDiversity,
                  y = agex_sgn_metrics[agex_sgn_metrics$Drought_vs_CropDiversity == '4-4',c('extreme_cluster','growing_seasons','countries_count','isos','countries','continents')],
                  by = 'extreme_cluster') |>
@@ -376,27 +375,8 @@ dplyr::left_join(x = Threatened_CropDiversity,
   base::as.data.frame() |>
   write.csv(x = _, file = 'D:/median_number_crops_in_hotspots.csv', row.names = F)
 
-# dplyr::left_join(x = Threatened_CropDiversity,
-#                  y = agex_sgn_metrics[agex_sgn_metrics$Drought_vs_CropDiversity == '4-4',c('extreme_cluster','growing_seasons','countries_count','isos','countries','continents')],
-#                  by = 'extreme_cluster') |>
-#   dplyr::filter(continents != 'Asia,Europe') |>
-#   dplyr::mutate(extreme_cluster = as.character(extreme_cluster)) |>
-#   ggplot2::ggplot(aes(x = reorder(extreme_cluster, Value), y = Value, fill = Crop)) +
-#   ggplot2::geom_bar(stat = 'identity') +
-#   ggplot2::xlab('') +
-#   ggplot2::ylab('Median number of crop by class') +
-#   ggplot2::coord_flip() +
-#   ggplot2::theme_minimal() +
-#   ggplot2::facet_wrap(~continents, ncol = 1, scales = 'free_y') +
-#   ggplot2::theme(legend.position = 'bottom',
-#                  legend.title    = element_blank(),
-#                  axis.text       = element_text(size = 19, family = 'serif'),
-#                  axis.text.x     = element_text(size = 19, colour = 'black'),
-#                  axis.text.y     = element_text(size = 19, colour = 'black'),
-#                  axis.title.x    = element_text(size = 19, colour = 'black'),
-#                  strip.text      = element_text(size = 19, colour = 'black', family = 'serif'),
-#                  legend.text     = element_text(size = 15, family = 'serif'),
-#                  axis.title      = element_text(size = 19, colour = 'black', face = 'plain', family = 'serif'))
+# --------------------------------------------------------------- #
+# --------------------------------------------------------------- #
 
 Threatened_LivestockUnits <- agex_sgn_metrics |>
   dplyr::filter(Drought_vs_LivestockUnits == '4-4') |>
@@ -433,6 +413,9 @@ Threatened_LivestockUnits$Statistics <- NULL
 tlu <- Threatened_LivestockUnits |> tidyr::pivot_wider(names_from = 'Animal', values_from = Value) |> base::as.data.frame()
 tlu <- dplyr::left_join(x = agex_sgn_metrics[agex_sgn_metrics$Drought_vs_LivestockUnits == '4-4',c('extreme_cluster','growing_seasons','countries_count','isos','countries','continents')], y = tlu, by = 'extreme_cluster')
 
+# --------------------------------------------------------------- #
+# Figure 5
+# --------------------------------------------------------------- #
 gg2 <- dplyr::left_join(x = Threatened_LivestockUnits,
                  y = agex_sgn_metrics[agex_sgn_metrics$Drought_vs_LivestockUnits == '4-4',c('extreme_cluster','growing_seasons','countries_count','isos','countries','continents')],
                  by = 'extreme_cluster') |>
@@ -459,6 +442,9 @@ gg2 <- dplyr::left_join(x = Threatened_LivestockUnits,
                  axis.title      = element_text(size = 19, colour = 'black', face = 'plain', family = 'serif'))
 ggplot2::ggsave(filename = paste0(root,'/agex_results/agex_figures/Figure4_paper1-livestock_units_exposure.png'), plot = gg2, device = 'png', width = 11, height = 8, units = 'in', dpi = 350)
 
+# --------------------------------------------------------------- #
+# Table S5
+# --------------------------------------------------------------- #
 dplyr::left_join(x = Threatened_LivestockUnits,
                  y = agex_sgn_metrics[agex_sgn_metrics$Drought_vs_LivestockUnits == '4-4',c('extreme_cluster','growing_seasons','countries_count','isos','countries','continents')],
                  by = 'extreme_cluster') |>
@@ -471,135 +457,18 @@ dplyr::left_join(x = Threatened_LivestockUnits,
   base::as.data.frame() |>
   write.csv(x = _, file = 'D:/median_number_LSU_in_hotspots.csv', row.names = F)
 
-# dplyr::left_join(x = Threatened_LivestockUnits,
-#                  y = agex_sgn_metrics[agex_sgn_metrics$Drought_vs_LivestockUnits == '4-4',c('extreme_cluster','growing_seasons','countries_count','isos','countries','continents')],
-#                  by = 'extreme_cluster') |>
-#   dplyr::filter(continents != 'Asia,Europe') |>
-#   dplyr::mutate(extreme_cluster = as.character(extreme_cluster)) |>
-#   ggplot2::ggplot(aes(x = reorder(extreme_cluster, Value), y = Value, fill = Animal)) +
-#   ggplot2::geom_bar(stat = 'identity') +
-#   ggplot2::xlab('') +
-#   ggplot2::ylab('Number of Livestock Units') +
-#   ggplot2::coord_flip() +
-#   ggplot2::theme_minimal() +
-#   ggplot2::facet_wrap(~continents, ncol = 1, scales = 'free_y') +
-#   ggplot2::theme(legend.position = 'bottom',
-#                  legend.title    = element_blank(),
-#                  axis.text       = element_text(family = 'serif'),
-#                  axis.text.x     = element_text(size = 15, colour = 'black'),
-#                  axis.text.y     = element_text(size = 15, colour = 'black'),
-#                  strip.text      = element_text(size = 15, colour = 'black', family = 'serif'),
-#                  legend.text     = element_text(size = 12, family = 'serif'),
-#                  axis.title      = element_text(size = 17, colour = 'black', face = 'plain', family = 'serif'))
-
-crop_vop <- terra::rast(c(paste0(root,'/agex_raw_data/agex_spam2010V2r0_global_V_agg_VP_FOOD_A.tif'),
-                          paste0(root,'/agex_raw_data/agex_spam2010v2r0_global_V_agg_VP_NONF_A.tif')))
-names(crop_vop) <- c('Food','Non_food')
-
-Threatened_CropVoP <- agex_sgn_metrics |>
-  dplyr::filter(Drought_vs_CropVoP == '4-4') |>
-  dplyr::pull(extreme_cluster) |>
-  purrr::map(.f = function(xtr_clus) {
-    
-    # Extreme cluster of interest
-    aux <- agex_sgn
-    aux <- (aux == xtr_clus) * 1
-    aux <- terra::classify(x = aux, cbind(0, NA))
-    crd <- terra::as.data.frame(aux, xy = T, na.rm = T)
-    xtd <- terra::ext(c(min(crd$x), max(crd$x), min(crd$y), max(crd$y))); rm(crd)
-    aux <- terra::crop(x = aux, y = xtd)
-    vct <- terra::as.polygons(aux); rm(aux,crd,xtd)
-    
-    cropvop <- crop_vop
-    cropvop <- cropvop |> terra::crop(terra::ext(vct)) |> terra::mask(vct)
-    
-    vop_tbl <- summary(cropvop) |>
-      as.data.frame() |>
-      tidyr::separate(Freq, into = c('Statistics','Value'), sep = ':') |>
-      dplyr::select(Var2, Statistics, Value) |>
-      dplyr::filter(Statistics == 'Median ') |>
-      dplyr::mutate(Value = as.numeric(Value),
-                    Value = round(Value, 0))
-    names(vop_tbl)[1] <- 'Type'
-    vop_tbl$extreme_cluster <- xtr_clus
-    
-    return(vop_tbl)
-    
-  }) |> dplyr::bind_rows()
-
-Threatened_LivestockUnits <- agex_sgn_metrics |>
-  dplyr::filter(Drought_vs_LivestockUnits == '4-4') |>
-  dplyr::pull(extreme_cluster) |>
-  purrr::map(.f = function(xtr_clus) {
-    
-    # Extreme cluster of interest
-    aux <- agex_sgn
-    aux <- (aux == xtr_clus) * 1
-    aux <- terra::classify(x = aux, cbind(0, NA))
-    crd <- terra::as.data.frame(aux, xy = T, na.rm = T)
-    xtd <- terra::ext(c(min(crd$x), max(crd$x), min(crd$y), max(crd$y))); rm(crd)
-    aux <- terra::crop(x = aux, y = xtd)
-    vct <- terra::as.polygons(aux); rm(aux,crd,xtd)
-    
-    livestock_units <- lsu
-    livestock_units <- livestock_units |> terra::crop(terra::ext(vct)) |> terra::mask(vct)
-    
-    animals_count <- summary(livestock_units) |>
-      as.data.frame() |>
-      tidyr::separate(Freq, into = c('Statistics','Value'), sep = ':') |>
-      dplyr::select(Var2, Statistics, Value) |>
-      dplyr::filter(Statistics == 'Median ') |>
-      dplyr::mutate(Value = as.numeric(Value),
-                    Value = round(Value, 0))
-    names(animals_count)[1] <- 'Animal'
-    animals_count$extreme_cluster <- xtr_clus
-    
-    return(animals_count)
-    
-  }) |> dplyr::bind_rows()
-
-Threatened_CropVoP$Statistics <- NULL
-tcv <- Threatened_CropVoP |> tidyr::pivot_wider(names_from = 'Type', values_from = Value) |> base::as.data.frame()
-tcv <- dplyr::left_join(x = agex_sgn_metrics[agex_sgn_metrics$Drought_vs_CropVoP == '4-4',c('extreme_cluster','growing_seasons','countries_count','isos','countries','continents')], y = tcv, by = 'extreme_cluster')
-
-gg3 <- dplyr::left_join(x = Threatened_CropVoP,
-                        y = agex_sgn_metrics[agex_sgn_metrics$Drought_vs_CropVoP == '4-4',c('extreme_cluster','growing_seasons','countries_count','isos','countries','continents')],
-                        by = 'extreme_cluster') |>
-  dplyr::group_by(Type, continents) |>
-  dplyr::summarise(Value = median(Value)) |>
-  dplyr::ungroup() |>
-  base::as.data.frame() |>
-  dplyr::mutate(Type = trimws(Type, which = 'left'),
-                Type = gsub(pattern = '\\_|\\.', replacement = ' ', x = Type)) |>
-  ggplot2::ggplot(aes(x = reorder(continents, Value), y = Value, fill = Type)) +
-  ggplot2::geom_bar(stat = 'identity') +
-  ggplot2::xlab('') +
-  ggplot2::ylab('Crop type VoP median') +
-  ggplot2::coord_flip() +
-  ggplot2::theme_minimal() +
-  ggplot2::scale_fill_manual(values = MetBrewer::met.brewer(name = 'Signac', n = 2)) + # Archambault
-  ggplot2::theme(legend.position = 'bottom',
-                 legend.title    = element_blank(),
-                 axis.text       = element_text(size = 19, family = 'serif'),
-                 axis.text.x     = element_text(size = 19, colour = 'black'),
-                 axis.text.y     = element_text(size = 19, colour = 'black'),
-                 axis.title.x    = element_text(size = 19, colour = 'black'),
-                 legend.text     = element_text(size = 15, family = 'serif'),
-                 axis.title      = element_text(size = 19, colour = 'black', face = 'plain', family = 'serif'))
-ggplot2::ggsave(filename = paste0(root,'/agex_results/agex_figures/Figure4_paper1-livestock_units_exposure.png'), plot = gg2, device = 'png', width = 11, height = 8, units = 'in', dpi = 350)
-
-agex_sgn_metrics |>
-  dplyr::select(continents, area, total_population) |>
-  dplyr::group_by(continents) |>
-  dplyr::summarise(nclusters = n(),
-                   area_avg    = mean(area),
-                   pop_avg     = mean(total_population),
-                   area_sd     = sd(area, na.rm = T),
-                   pop_sd      = sd(total_population, na.rm = T)) |>
-  dplyr::filter(continents %in% c('North America','South America','Africa','Europe','Asia','Oceania')) |>
-  base::as.data.frame() |>
-  View()
-
-agex_sgn_metrics |>
-  dplyr::filter(Drought_vs_CropVoP == '4-4' | Drought_vs_LivestockUnits == '4-4') |>
-  write.csv(x = _, file = 'D:/OneDrive - CGIAR/PhD/papers/paper1/submission/Achicanoy_et_al-SM-Exposure_hotspots.csv', row.names = F)
+# agex_sgn_metrics |>
+#   dplyr::select(continents, area, total_population) |>
+#   dplyr::group_by(continents) |>
+#   dplyr::summarise(nclusters = n(),
+#                    area_avg    = mean(area),
+#                    pop_avg     = mean(total_population),
+#                    area_sd     = sd(area, na.rm = T),
+#                    pop_sd      = sd(total_population, na.rm = T)) |>
+#   dplyr::filter(continents %in% c('North America','South America','Africa','Europe','Asia','Oceania')) |>
+#   base::as.data.frame() |>
+#   View()
+# 
+# agex_sgn_metrics |>
+#   dplyr::filter(Drought_vs_CropVoP == '4-4' | Drought_vs_LivestockUnits == '4-4') |>
+#   write.csv(x = _, file = 'D:/OneDrive - CGIAR/PhD/papers/paper1/submission/Achicanoy_et_al-SM-Exposure_hotspots.csv', row.names = F)

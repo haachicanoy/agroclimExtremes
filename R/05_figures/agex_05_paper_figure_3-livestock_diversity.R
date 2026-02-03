@@ -1,11 +1,13 @@
-## ------------------------------------------ ##
-## Paper figure 3: crop diversity vs drought intensification
-## By: Harold Achicanoy
-## WUR & ABC
-## Sep 2025
-## ------------------------------------------ ##
+# --------------------------------------------------------------- #
+# Global hotspots of co-occurring extreme droughts in agriculture
+# Figure 3: LSU diversity vs drought intensification
+# By: Harold Achicanoy
+# WUR & ABC
+# Created in September 2025
+# Modified in February 2026
+# --------------------------------------------------------------- #
 
-## R options and packages loading ----
+# R options and user-defined functions ----
 options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
 suppressMessages(pacman::p_load(terra,MetBrewer,sf,rnaturalearth,tidyverse,ggpubr,tseries,biscale,pals,cowplot,gridExtra,grid))
@@ -18,7 +20,7 @@ extrafont::fonts()
 # Functions
 make_maps_legend <- function(dims = 4,
                              xlabl = 'Drought trend severity',
-                             ylabl = 'Crop classes diversity',
+                             ylabl = 'Livestock species diversity',
                              xbrks = c('Negative','Low','Medium','High'),
                              ybrks = c('Very low','Low','Medium','High'),
                              palette = 'GrPink2',
@@ -45,11 +47,11 @@ make_maps_legend <- function(dims = 4,
   return(legend)
 }
 
-## Setup arguments ----
+# Setup arguments ----
 root   <- '//CATALOGUE/AgroclimExtremes'
 index  <- 'spei-6'
 
-## Extreme drought clusters ----
+# Extreme drought clusters ----
 # Categorical
 agex_sgn <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
 names(agex_sgn) <- 'extreme_cluster'
@@ -66,7 +68,7 @@ names(agex_sgn_num) <- 'extreme_cluster'
 # Metrics
 agex_sgn_metrics <- utils::read.csv(paste0(root,'/agex_results/agex_all_metrics.csv'))
 
-## Shapefiles ----
+# Shapefiles ----
 # Continent shapefiles. Some of them cropped
 afr <- rnaturalearth::ne_countries(scale = 'large', continent = 'africa', returnclass = 'sv')
 eur <- rnaturalearth::ne_countries(scale = 'large', continent = 'europe', returnclass = 'sv')
@@ -81,11 +83,11 @@ sam <- rnaturalearth::ne_countries(scale = 'large', continent = 'south america',
 # Put them all together
 shp <- list(nam, sam, afr, eur, asi, oce); rm(nam, sam, afr, eur, asi, oce)
 
-## Figure 3 ----
-# Bivariate map of SPEI severity vs crop classes diversity (agriculture exposure)
+# Figure 3 ----
+# Bivariate map of SPEI severity vs livestock units diversity (livestock exposure)
 
 # Crop classes diversity
-crp_diversity <- terra::rast(paste0(root,'/agex_results/agex_vulnerability/crop_classes_diversity_25km.tif'))
+lsu_diversity <- terra::rast(paste0(root,'/agex_results/agex_vulnerability/lsu_diversity_25km.tif'))
 
 # Index characterization: extreme trend
 idx_sxt <- terra::rast(paste0(root,'/agex_results/agex_vulnerability/SPEI-6_extreme_trend.tif'))
@@ -93,37 +95,37 @@ idx_sxt <- terra::rast(paste0(root,'/agex_results/agex_vulnerability/SPEI-6_extr
 # Zonal statistics per extreme drought cluster (mean)
 agex_sgn_extreme_trend <- terra::zonal(x = idx_sxt, z = agex_sgn_num, fun = 'mean', na.rm = T, as.raster = T)
 metrics1 <- terra::zonal(x = idx_sxt, z = agex_sgn_num, fun = 'mean', na.rm = T)
-agex_sgn_crp_diversity <- terra::zonal(x = crp_diversity, z = agex_sgn_num, fun = 'mean', na.rm = T, as.raster = T)
-metrics2 <- terra::zonal(x = crp_diversity, z = agex_sgn_num, fun = 'mean', na.rm = T)
+agex_sgn_lsu_diversity <- terra::zonal(x = lsu_diversity, z = agex_sgn_num, fun = 'mean', na.rm = T, as.raster = T)
+metrics2 <- terra::zonal(x = lsu_diversity, z = agex_sgn_num, fun = 'mean', na.rm = T)
 metrics <- dplyr::left_join(x = metrics1, y = metrics2, by = 'extreme_cluster'); rm(metrics1, metrics2)
 
 # Merge data.frames
-agex_sgn_severity_vs_crops <- terra::as.data.frame(x = c(agex_sgn, agex_sgn_extreme_trend, agex_sgn_crp_diversity), xy = T, cell = T)
-rm(agex_sgn_extreme_trend, agex_sgn_crp_diversity)
+agex_sgn_severity_vs_lvst <- terra::as.data.frame(x = c(agex_sgn, agex_sgn_extreme_trend, agex_sgn_lsu_diversity), xy = T, cell = T)
+rm(agex_sgn_extreme_trend, agex_sgn_lsu_diversity)
 
 # Produce bivariate maps
 # Define severity and diversity quantiles
 severity_brks <- quantile(x = metrics$`SPEI-6_slope_95th`, probs = seq(0,1,1/4))
 severity_brks[1] <- terra::as.data.frame(idx_sxt) |> min()
 severity_brks[5] <- terra::as.data.frame(idx_sxt) |> max()
-diversity_brks <- quantile(x = metrics$crop_classes_diversity, probs = seq(0,1,1/4))
-diversity_brks[1] <- terra::as.data.frame(crp_diversity)|> min()
-diversity_brks[5] <- terra::as.data.frame(crp_diversity)|> max()
+diversity_brks <- quantile(x = metrics$livestock_units_diversity, probs = seq(0,1,1/4))
+diversity_brks[1] <- terra::as.data.frame(lsu_diversity)|> min()
+diversity_brks[5] <- terra::as.data.frame(lsu_diversity)|> max()
 # Create categories
-agex_sgn_severity_vs_crops$Severity_class <- cut(x = agex_sgn_severity_vs_crops$`SPEI-6_slope_95th`, breaks = severity_brks) |> as.numeric() |> as.character()
-agex_sgn_severity_vs_crops$Diversity_class <- cut(x = agex_sgn_severity_vs_crops$crop_classes_diversity, breaks = diversity_brks) |> as.numeric() |> as.character()
+agex_sgn_severity_vs_lvst$Severity_class <- cut(x = agex_sgn_severity_vs_lvst$`SPEI-6_slope_95th`, breaks = severity_brks) |> as.numeric() |> as.character()
+agex_sgn_severity_vs_lvst$Diversity_class <- cut(x = agex_sgn_severity_vs_lvst$livestock_units_diversity, breaks = diversity_brks) |> as.numeric() |> as.character()
 # Create bivariate categories
-agex_sgn_severity_vs_crops$bi_class <- paste0(agex_sgn_severity_vs_crops$Severity_class,'-',agex_sgn_severity_vs_crops$Diversity_class)
-agex_sgn_severity_vs_crops <- agex_sgn_severity_vs_crops[,c('cell','x','y','extreme_cluster','SPEI-6_slope_95th','crop_classes_diversity','bi_class')]
+agex_sgn_severity_vs_lvst$bi_class <- paste0(agex_sgn_severity_vs_lvst$Severity_class,'-',agex_sgn_severity_vs_lvst$Diversity_class)
+agex_sgn_severity_vs_lvst <- agex_sgn_severity_vs_lvst[,c('cell','x','y','extreme_cluster','SPEI-6_slope_95th','livestock_units_diversity','bi_class')]
 # Define color palette for bivariate categories
-colours <- data.frame(bi_class = sort(unique(agex_sgn_severity_vs_crops$bi_class)))
+colours <- data.frame(bi_class = sort(unique(agex_sgn_severity_vs_lvst$bi_class)))
 colours$category <- 1:nrow(colours)
-agex_sgn_severity_vs_crops <- dplyr::left_join(x = agex_sgn_severity_vs_crops, y = colours, by = 'bi_class')
+agex_sgn_severity_vs_lvst <- dplyr::left_join(x = agex_sgn_severity_vs_lvst, y = colours, by = 'bi_class')
 
 # Create auxiliary raster of bivariate categories
 aux <- agex_sgn
 terra::values(aux) <- NA
-aux[agex_sgn_severity_vs_crops$cell] <- agex_sgn_severity_vs_crops$category
+aux[agex_sgn_severity_vs_lvst$cell] <- agex_sgn_severity_vs_lvst$category
 names(aux) <- 'category'
 
 # Create a list of maps (per continent)
@@ -144,10 +146,10 @@ for(i in 1:length(shp)){
   
 }; rm(i,aux_dfm)
 
-### Legend ----
+# Legend ----
 fig7_leg <- make_maps_legend(dims = 4,
                              xlabl = 'Extreme drought\nintensification',
-                             ylabl = 'Crop diversity',
+                             ylabl = 'Livestock species\ndiversity',
                              xbrks = c('Negative','Low','Medium','High'),
                              ybrks = c('Very low','Low','Medium','High'),
                              palette = 'GrPink2',
@@ -160,7 +162,7 @@ ggm_EU <- ggm[[4]]
 ggm_AS <- ggm[[5]]
 ggm_OC <- ggm[[6]]
 
-## Full figure ----
+# Full figure ----
 layout <- matrix(c(1:6,7,7), nrow = 4, ncol = 2, byrow = T)
 
 fg_01 <- ggpubr::annotate_figure(ggm_NA,
@@ -212,7 +214,7 @@ fig3 <- gridExtra::grid.arrange(fg_01, fg_02,
                                 fg_05, fg_06,
                                 fg_07,
                                 layout_matrix = layout)
-ggplot2::ggsave(filename = paste0(root,'/agex_results/agex_figures/Figure3_paper1-crop_diversity_cleaned.png'), plot = fig3, device = 'png', width = 10, height = 12.5, units = 'in', dpi = 350)
+ggplot2::ggsave(filename = paste0(root,'/agex_results/agex_figures/Figure3-agex-livestock_diversity.png'), plot = fig3, device = 'png', width = 10, height = 12.5, units = 'in', dpi = 350)
 rm(ggm,
    ggm_NA,ggm_SA,ggm_AF,ggm_EU,ggm_AS,ggm_OC,
    gg_ts_NA,gg_ts_SA,gg_ts_AF,gg_ts_EU,gg_ts_AS,gg_ts_OC,
