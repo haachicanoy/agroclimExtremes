@@ -1,11 +1,13 @@
-## ------------------------------------------ ##
-## Paper figure 5: livestock units (LSU) vs drought intensification
-## By: Harold Achicanoy
-## WUR & ABC
-## Sep 2025
-## ------------------------------------------ ##
+# --------------------------------------------------------------- #
+# Global hotspots of co-occurring extreme droughts in agriculture
+# Figure S4: livestock units (LSU) vs drought intensification
+# By: Harold Achicanoy
+# WUR & ABC
+# Created in September 2025
+# Modified in February 2026
+# --------------------------------------------------------------- #
 
-## R options and packages loading ----
+# R options and user-defined functions ----
 options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
 suppressMessages(pacman::p_load(terra,MetBrewer,sf,rnaturalearth,tidyverse,ggpubr,tseries,biscale,pals,cowplot,gridExtra,grid))
@@ -45,11 +47,11 @@ make_maps_legend <- function(dims = 4,
   return(legend)
 }
 
-## Setup arguments ----
+# Setup arguments ----
 root   <- '//CATALOGUE/AgroclimExtremes'
 index  <- 'spei-6'
 
-## Extreme drought clusters ----
+# Extreme drought clusters ----
 # Categorical
 agex_sgn <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
 names(agex_sgn) <- 'extreme_cluster'
@@ -66,7 +68,7 @@ names(agex_sgn_num) <- 'extreme_cluster'
 # Metrics
 agex_sgn_metrics <- utils::read.csv(paste0(root,'/agex_results/agex_all_metrics.csv'))
 
-## Shapefiles ----
+# Shapefiles ----
 # Continent shapefiles. Some of them cropped
 afr <- rnaturalearth::ne_countries(scale = 'large', continent = 'africa', returnclass = 'sv')
 eur <- rnaturalearth::ne_countries(scale = 'large', continent = 'europe', returnclass = 'sv')
@@ -81,7 +83,7 @@ sam <- rnaturalearth::ne_countries(scale = 'large', continent = 'south america',
 # Put them all together
 shp <- list(nam, sam, afr, eur, asi, oce); rm(nam, sam, afr, eur, asi, oce)
 
-## Figure 5 ----
+# Figure S4 ----
 # Bivariate map of SPEI severity vs livestock equivalent units (livestock exposure)
 
 # Livestock equivalent units
@@ -144,7 +146,7 @@ for(i in 1:length(shp)){
   
 }; rm(i,aux_dfm)
 
-### Legend ----
+# Legend ----
 fig7_leg <- make_maps_legend(dims = 4,
                              xlabl = 'Extreme drought\nintensification',
                              ylabl = 'Livestock units',
@@ -160,7 +162,7 @@ ggm_EU <- ggm[[4]]
 ggm_AS <- ggm[[5]]
 ggm_OC <- ggm[[6]]
 
-## Full figure ----
+# Full figure ----
 layout <- matrix(c(1:6,7,7), nrow = 4, ncol = 2, byrow = TRUE)
 
 fg_01 <- ggpubr::annotate_figure(ggm_NA,
@@ -212,7 +214,7 @@ fig5 <- gridExtra::grid.arrange(fg_01, fg_02,
                                 fg_05, fg_06,
                                 fg_07,
                                 layout_matrix = layout)
-ggplot2::ggsave(filename = paste0(root,'/agex_results/agex_figures/Figure5_paper1-livestock_units_cleaned.png'), plot = fig5, device = 'png', width = 10, height = 12.5, units = 'in', dpi = 350)
+ggplot2::ggsave(filename = paste0(root,'/agex_results/agex_figures/FigureS4-agex-total_livestock_units.png'), plot = fig5, device = 'png', width = 10, height = 12.5, units = 'in', dpi = 350)
 rm(ggm,
    ggm_NA,ggm_SA,ggm_AF,ggm_EU,ggm_AS,ggm_OC,
    gg_ts_NA,gg_ts_SA,gg_ts_AF,gg_ts_EU,gg_ts_AS,gg_ts_OC,
