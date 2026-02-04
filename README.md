@@ -72,7 +72,7 @@ pacman::p_load(tidyverse,sf,terra,leaflet,shiny)
 If you use this code in academic work, please cite the associated manuscript / software record.
 
 **Suggested citation (update as needed):**
-> Achicanoy, H.; Ramirez Villegas, J.; Meuwissen, M.; Dalhaus, T. *Global hotspots of co-occurring extreme droughts in agriculture*.
+> Achicanoy, H.; Ramirez Villegas, J.; Meuwissen, M.; Mehrabi, Z.; Dalhaus, T. *Global hotspots of co-occurring extreme droughts in agriculture*.
 
 ---
 
