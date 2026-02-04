@@ -1,28 +1,30 @@
-## ------------------------------------------ ##
-## Supplementary material
-## By: Harold Achicanoy
-## WUR & ABC
-## May 2024
-## ------------------------------------------ ##
+# --------------------------------------------------------------- #
+# Global hotspots of co-occurring extreme droughts in agriculture
+# Get agriculture statistics for all metrics
+# By: Harold Achicanoy
+# WUR & ABC
+# Created in May 2024
+# Modified in February 2026
+# --------------------------------------------------------------- #
 
-## R options and packages loading ----
+# R options and packages loading ----
 options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
 suppressMessages(pacman::p_load(terra,dplyr,stringr,tidyr,pivottabler,data.table,openxlsx))
 
 grep2 <- Vectorize(FUN = grep, vectorize.args = 'pattern')
 
-## Setup arguments ----
+# Setup arguments ----
 root   <- '//CATALOGUE/AgroclimExtremes'
 index  <- 'spei-6'
 
-## Extreme drought clusters ----
+# Extreme drought clusters ----
 agex_sgn <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
 names(agex_sgn) <- 'extreme_cluster'
 
 agex_sgn_poly <- terra::vect(paste0(root,'/agex_results/agex_results_clusters/vct_agex_global_spei-6.gpkg'))
 
-## Arable lands ----
+# Arable lands ----
 # Cropland areas from MapSPAM 2010
 crops_fls <- list.files(path = paste0(root,'/agex_raw_data/croplands/spam2010'), pattern = '_A.tif', full.names = T)
 
@@ -113,7 +115,7 @@ pt$writeToExcelWorksheet(wb = wb, wsName = 'Data',
                          topRowNumber = 1, leftMostColumnNumber = 1, applyStyles = F)
 saveWorkbook(wb, file = paste0(root,'/agex_results/arable_land_statistics_per_crop.xlsx'), overwrite = T)
 
-## Livestock units ----
+# Livestock units ----
 # Load number of livestock equivalent units
 lsu <- terra::rast(paste0(root,'/agex_results/agex_vulnerability/lsu_individuals.tif'))
 
