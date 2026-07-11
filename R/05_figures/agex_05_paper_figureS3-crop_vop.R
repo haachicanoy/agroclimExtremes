@@ -9,8 +9,8 @@
 
 # R options and user-defined functions ----
 options(warn = -1, scipen = 999)
-suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
-suppressMessages(pacman::p_load(terra,MetBrewer,sf,rnaturalearth,tidyverse,ggpubr,tseries,biscale,pals,cowplot,gridExtra,grid))
+suppressMessages(if(!require(pacman)) {install.packages('pacman'); library(pacman)} else {library(pacman)})
+suppressMessages(pacman::p_load(terra,MetBrewer,sf,rnaturalearth,tidyverse,ggpubr,tseries,biscale,pals,cowplot,gridExtra,grid,extrafont,cols4all))
 
 # Activate Windows fonts
 extrafont::font_import()
@@ -30,7 +30,8 @@ make_maps_legend <- function(dims = 4,
   categories$y <- strsplit(x = categories$bi_class, split = '-') |> purrr::map(2) |> unlist() |> as.numeric()
   legend <- ggplot2::ggplot() +
     ggplot2::geom_tile(data = categories, mapping = ggplot2::aes(x = x, y = y, fill = bi_class)) +
-    biscale::bi_scale_fill(pal = palette, dim = dims) +
+    # biscale::bi_scale_fill(pal = palette, dim = dims) +
+    ggplot2::scale_fill_manual(values = colours$color) +
     ggplot2::theme_minimal() +
     ggplot2::coord_equal() +
     ggplot2::xlab(xlabl) +
@@ -120,6 +121,11 @@ agex_sgn_severity_vs_crops <- agex_sgn_severity_vs_crops[,c('cell','x','y','extr
 # Define color palette for bivariate categories
 colours <- data.frame(bi_class = sort(unique(agex_sgn_severity_vs_crops$bi_class)))
 colours$category <- 1:nrow(colours)
+cols4all::c4a(palette = "bivario.marigold_current", n = 4, m = 4)
+colours$color <- c("#FCF5B3", "#B8D0B5", "#72AAB3", "#1A85AD",
+                   "#FED589", "#B7B191", "#708C93", "#20668F",
+                   "#FCB45C", "#B2926E", "#696D74", "#214872",
+                   "#FA941F", "#AC744C", "#625258", "#1F2E57")
 agex_sgn_severity_vs_crops <- dplyr::left_join(x = agex_sgn_severity_vs_crops, y = colours, by = 'bi_class')
 
 # Create auxiliary raster of bivariate categories
@@ -139,10 +145,11 @@ for(i in 1:length(shp)){
   ggm[[i]] <- ggplot2::ggplot() +
     ggplot2::geom_tile(data = aux_dfm, aes(x, y, fill = bi_class)) +
     ggplot2::geom_sf(data = sf::st_as_sf(shp[[i]]), fill = NA) +
+    ggplot2::scale_fill_manual(values = colours$color) +
     ggplot2::coord_sf() +
     ggplot2::theme_void() +
-    ggplot2::theme(legend.position = 'none', legend.key.width = unit(1.3, 'cm')) +
-    biscale::bi_scale_fill(pal = 'GrPink2', dim = 4)
+    ggplot2::theme(legend.position = 'none', legend.key.width = unit(1.3, 'cm'))# +
+    # biscale::bi_scale_fill(pal = 'GrPink2', dim = 4)
   
 }; rm(i,aux_dfm)
 
@@ -214,7 +221,7 @@ fig3 <- gridExtra::grid.arrange(fg_01, fg_02,
                                 fg_05, fg_06,
                                 fg_07,
                                 layout_matrix = layout)
-ggplot2::ggsave(filename = paste0(root,'/agex_results/agex_figures/FigureS3-agex-crop_vop.png'), plot = fig3, device = 'png', width = 10, height = 12.5, units = 'in', dpi = 350)
+ggplot2::ggsave(filename = paste0(root,'/agex_results/agex_figures/FigureS3-agex-crop_vop__MRGLD-CRRNT.png'), plot = fig3, device = 'png', width = 10, height = 12.5, units = 'in', dpi = 350)
 rm(ggm,
    ggm_NA,ggm_SA,ggm_AF,ggm_EU,ggm_AS,ggm_OC,
    gg_ts_NA,gg_ts_SA,gg_ts_AF,gg_ts_EU,gg_ts_AS,gg_ts_OC,

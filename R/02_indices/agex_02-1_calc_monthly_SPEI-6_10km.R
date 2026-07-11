@@ -15,13 +15,14 @@ suppressMessages(pacman::p_load(terra,SPEI))
 # Root directory
 ddir <- '//CATALOGUE/WFP_ClimateRiskPr1'
 root <- '//CATALOGUE/AgroclimExtremes'
+scl  <- 6
 
 # List water balance files
 blc_fls <- list.files(path = paste0(root,'/agex_raw_data/monthly_balance'), pattern = '.tif$', full.names = T)
 nms_fls <- gsub('.tif','', gsub('bal-', '', basename(blc_fls)))
 
 # Out files
-out_pth <- paste0(root,'/agex_raw_data/monthly_spei-6_10km')
+out_pth <- paste0(root,'/agex_raw_data/monthly_spei-',scl,'_10km')
 out_fls <- paste0(out_pth,'/spei-',scl,'_',nms_fls,'.tif')
 
 # Load water balance files
@@ -34,7 +35,7 @@ calc_spei <- function(x){
 }
 
 # Calculate SPEI
-# Spei <- terra::app(x = blc, fun = calc_spei, cores = 20)
-Spei <- terra::app(x = blc, fun = function(i, ff) ff(i), cores = 20, ff = calc_spei)
+Spei <- terra::app(x = blc, fun = function(i, ff) ff(i), cores = 20, ff = calc_spei); gc(T)
 names(Spei) <- nms_fls
+dir.create(path = out_pth, F, T)
 terra::writeRaster(Spei, out_fls, overwrite = T)

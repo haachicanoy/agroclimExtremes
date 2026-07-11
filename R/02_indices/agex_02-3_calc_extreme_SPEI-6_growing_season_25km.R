@@ -1,6 +1,6 @@
 # --------------------------------------------------------------- #
 # Global hotspots of co-occurring extreme droughts in agriculture
-# Get extreme SPEI-6 value within growing season 0.1°
+# Get extreme SPEI-6 value within growing season 0.25°
 # By: Harold Achicanoy, Cesar Saavedra
 # WUR & ABC
 # Created in February 2024
@@ -10,7 +10,7 @@
 # R options and user-defined functions
 options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
-suppressMessages(pacman::p_load(terra,lubridate))
+suppressMessages(pacman::p_load(terra,lubridate,dplyr))
 grep2 <- Vectorize(FUN = grep, vectorize.args = 'pattern')
 fmin <- function(x){
   x[is.infinite(x)] <- NA
@@ -22,11 +22,25 @@ root <- '//CATALOGUE/AgroclimExtremes'
 
 # Spatial resolution
 res <- 25
+# Temporal scale
+scl <- 12
 
 # SPEI files
-fls <- list.files(path = paste0(root,'/agex_raw_data/monthly_spei-6_',res,'km'), pattern = '.tif$', full.names = T)
-fls <- fls[-(1:5)]
-
+fls <- list.files(path = paste0(root,'/agex_raw_data/monthly_spei-',scl,'_',res,'km'), pattern = '.tif$', full.names = T)
+# Removing missing layers due to SPEI computation
+fls <- if (scl == 3) {
+  fls[-(1:2)]
+} else {
+  if (scl == 6) {
+    fls[-(1:5)]
+  } else {
+    if (scl == 12) {
+      fls[-(1:11)]
+    } else {
+      stop("The time scale considered do not apply.\n")
+    }
+  }
+}
 # --------------------------------------------------------------- #
 # One season
 # --------------------------------------------------------------- #
@@ -55,8 +69,8 @@ lapply(X = yrs, FUN = function(yr){
   Spei <- terra::rast(fls_flt); gc(T)
   mxSpei <- terra::rapp(x = Spei, first = s1_ini, last = s1_end, fun = fmin); gc(T)
   mxSpei <- -1 * mxSpei # We inverted the values to apply the extreme dependence method (which requires maximums)
-  names(mxSpei) <- paste0('spei-6_',yr)
-  outfile <- paste0(root,'/agex_indices/agex_spei-6/agex_spei-6_intermediate_',res,'km/one_s1_y1_spei-6_',yr,'.tif')
+  names(mxSpei) <- paste0('spei-',scl,'_',yr)
+  outfile <- paste0(root,'/agex_indices/agex_spei-',scl,'/agex_spei-',scl,'_intermediate_',res,'km/one_s1_y1_spei-',scl,'_',yr,'.tif')
   dir.create(dirname(outfile),F,T)
   terra::writeRaster(x = mxSpei, filename = outfile, overwrite = T); gc(T)
   return('Done.\n')
@@ -83,8 +97,8 @@ lapply(X = yrs, FUN = function(yr){
     Spei <- terra::rast(fls_flt)
     mxSpei <- terra::rapp(x = Spei, first = s1_ini, last = s1_end+12, fun = fmin)
     mxSpei <- -1 * mxSpei
-    names(mxSpei) <- paste0('spei-6_',yr)
-    outfile <- paste0(root,'/agex_indices/agex_spei-6/agex_spei-6_intermediate_',res,'km/one_s1_y2_spei-6_',yr,'.tif')
+    names(mxSpei) <- paste0('spei-',scl,'_',yr)
+    outfile <- paste0(root,'/agex_indices/agex_spei-',scl,'/agex_spei-',scl,'_intermediate_',res,'km/one_s1_y2_spei-',scl,'_',yr,'.tif')
     dir.create(dirname(outfile),F,T)
     terra::writeRaster(x = mxSpei, filename = outfile, overwrite = T); gc(T)
     return('Done.\n')
@@ -95,13 +109,12 @@ lapply(X = yrs, FUN = function(yr){
 })
 
 # >>> Merging results of One-year and Two-years growing seasons
-# Maximum number of consecutive dry days
 yrs <- 1980:2022
 lapply(X = yrs, FUN = function(yr){
-  fls <- list.files(pattern = paste0('_',yr,'.tif$'), path = paste0(root,'/agex_indices/agex_spei-6/agex_spei-6_intermediate_',res,'km'), full.names = T)
+  fls <- list.files(pattern = paste0('_',yr,'.tif$'), path = paste0(root,'/agex_indices/agex_spei-',scl,'/agex_spei-',scl,'_intermediate_',res,'km'), full.names = T)
   mxSpei <- lapply(fls, terra::rast)
   mxSpei <- terra::merge(x = mxSpei[[1]], y = mxSpei[[2]])
-  outfile <- paste0(root,'/agex_indices/agex_spei-6/agex_spei-6_',res,'km/one_s1_spei-6_',yr,'.tif')
+  outfile <- paste0(root,'/agex_indices/agex_spei-',scl,'/agex_spei-',scl,'_',res,'km/one_s1_spei-',scl,'_',yr,'.tif')
   dir.create(dirname(outfile),F,T)
   terra::writeRaster(x = mxSpei, filename = outfile, overwrite = T)
 })
@@ -136,8 +149,8 @@ lapply(X = yrs, FUN = function(yr){
   Spei <- terra::rast(fls_flt); gc(T)
   mxSpei <- terra::rapp(x = Spei, first = s1_ini, last = s1_end, fun = fmin); gc(T)
   mxSpei <- -1 * mxSpei
-  names(mxSpei) <- paste0('spei-6_',yr)
-  outfile <- paste0(root,'/agex_indices/agex_spei-6/agex_spei-6_intermediate_',res,'km/two_s1_y1_spei-6_',yr,'.tif')
+  names(mxSpei) <- paste0('spei-',scl,'_',yr)
+  outfile <- paste0(root,'/agex_indices/agex_spei-',scl,'/agex_spei-',scl,'_intermediate_',res,'km/two_s1_y1_spei-',scl,'_',yr,'.tif')
   dir.create(dirname(outfile),F,T)
   terra::writeRaster(x = mxSpei, filename = outfile, overwrite = T); gc(T)
   return('Done.\n')
@@ -164,8 +177,8 @@ lapply(X = yrs, FUN = function(yr){
     Spei <- terra::rast(fls_flt)
     mxSpei <- terra::rapp(x = Spei, first = s1_ini, last = s1_end+12, fun = fmin)
     mxSpei <- -1 * mxSpei
-    names(mxSpei) <- paste0('spei-6_',yr)
-    outfile <- paste0(root,'/agex_indices/agex_spei-6/agex_spei-6_intermediate_',res,'km/two_s1_y2_spei-6_',yr,'.tif')
+    names(mxSpei) <- paste0('spei-',scl,'_',yr)
+    outfile <- paste0(root,'/agex_indices/agex_spei-',scl,'/agex_spei-',scl,'_intermediate_',res,'km/two_s1_y2_spei-',scl,'_',yr,'.tif')
     dir.create(dirname(outfile),F,T)
     terra::writeRaster(x = mxSpei, filename = outfile, overwrite = T); gc(T)
     return('Done.\n')
@@ -176,13 +189,12 @@ lapply(X = yrs, FUN = function(yr){
 })
 
 # >>> Merging results of One-year and Two-years growing seasons
-# Maximum SPEI within growing season
 yrs <- 1980:2022
 lapply(X = yrs, FUN = function(yr){
-  fls <- list.files(pattern = paste0('two_s1_y[0-9]_spei-6_',yr,'.tif'), path = paste0(root,'/agex_indices/agex_spei-6/agex_spei-6_intermediate_',res,'km'), full.names = T)
+  fls <- list.files(pattern = paste0('two_s1_y[0-9]_spei-',scl,'_',yr,'.tif'), path = paste0(root,'/agex_indices/agex_spei-',scl,'/agex_spei-',scl,'_intermediate_',res,'km'), full.names = T)
   mxSpei <- lapply(fls, terra::rast)
   mxSpei <- terra::merge(x = mxSpei[[1]], y = mxSpei[[2]])
-  outfile <- paste0(root,'/agex_indices/agex_spei-6/agex_spei-6_',res,'km/two_s1_spei-6_',yr,'.tif')
+  outfile <- paste0(root,'/agex_indices/agex_spei-',scl,'/agex_spei-',scl,'_',res,'km/two_s1_spei-',scl,'_',yr,'.tif')
   dir.create(dirname(outfile),F,T)
   terra::writeRaster(x = mxSpei, filename = outfile, overwrite = T)
 })
@@ -208,8 +220,8 @@ lapply(X = yrs, FUN = function(yr){
   Spei <- terra::rast(fls_flt); gc(T)
   mxSpei <- terra::rapp(x = Spei, first = s2_ini, last = s2_end, fun = fmin); gc(T)
   mxSpei <- -1 * mxSpei
-  names(mxSpei) <- paste0('spei-6_',yr)
-  outfile <- paste0(root,'/agex_indices/agex_spei-6/agex_spei-6_intermediate_',res,'km/two_s2_y1_spei-6_',yr,'.tif')
+  names(mxSpei) <- paste0('spei-',scl,'_',yr)
+  outfile <- paste0(root,'/agex_indices/agex_spei-',scl,'/agex_spei-',scl,'_intermediate_',res,'km/two_s2_y1_spei-',scl,'_',yr,'.tif')
   dir.create(dirname(outfile),F,T)
   terra::writeRaster(x = mxSpei, filename = outfile, overwrite = T); gc(T)
   return('Done.\n')
@@ -236,8 +248,8 @@ lapply(X = yrs, FUN = function(yr){
     Spei <- terra::rast(fls_flt)
     mxSpei <- terra::rapp(x = Spei, first = s2_ini, last = s2_end+12, fun = fmin)
     mxSpei <- -1 * mxSpei
-    names(mxSpei) <- paste0('spei-6_',yr)
-    outfile <- paste0(root,'/agex_indices/agex_spei-6/agex_spei-6_intermediate_',res,'km/two_s2_y2_spei-6_',yr,'.tif')
+    names(mxSpei) <- paste0('spei-',scl,'_',yr)
+    outfile <- paste0(root,'/agex_indices/agex_spei-',scl,'/agex_spei-',scl,'_intermediate_',res,'km/two_s2_y2_spei-',scl,'_',yr,'.tif')
     dir.create(dirname(outfile),F,T)
     terra::writeRaster(x = mxSpei, filename = outfile, overwrite = T); gc(T)
     return('Done.\n')
@@ -251,10 +263,10 @@ lapply(X = yrs, FUN = function(yr){
 # Maximum SPEI within growing season
 yrs <- 1980:2022
 lapply(X = yrs, FUN = function(yr){
-  fls <- list.files(pattern = paste0('two_s2_y[0-9]_spei-6_',yr,'.tif'), path = paste0(root,'/agex_indices/agex_spei-6/agex_spei-6_intermediate_',res,'km'), full.names = T)
+  fls <- list.files(pattern = paste0('two_s2_y[0-9]_spei-',scl,'_',yr,'.tif'), path = paste0(root,'/agex_indices/agex_spei-',scl,'/agex_spei-',scl,'_intermediate_',res,'km'), full.names = T)
   mxSpei <- lapply(fls, terra::rast)
   mxSpei <- terra::merge(x = mxSpei[[1]], y = mxSpei[[2]])
-  outfile <- paste0(root,'/agex_indices/agex_spei-6/agex_spei-6_',res,'km/two_s2_spei-6_',yr,'.tif')
+  outfile <- paste0(root,'/agex_indices/agex_spei-',scl,'/agex_spei-',scl,'_',res,'km/two_s2_spei-',scl,'_',yr,'.tif')
   dir.create(dirname(outfile),F,T)
   terra::writeRaster(x = mxSpei, filename = outfile, overwrite = T)
 })

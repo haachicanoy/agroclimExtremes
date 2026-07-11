@@ -18,9 +18,9 @@ suppressMessages(pacman::p_load(terra, geodata, Kendall, tidyverse, psych,
 # Key arguments
 root   <- '//CATALOGUE/AgroclimExtremes'
 yrs    <- 1980:2022
-index  <- 'spei-6'
-gs     <- 'one'
-season <- 1
+index  <- 'spei-12'
+gs     <- 'two'
+season <- 2
 
 # List and load files
 fls <- list.files(path = paste0(root,'/agex_indices/agex_',index,'/agex_',index,'_25km'), pattern = paste0(gs,'_s',season,'_',index,'_'), full.names = T)
@@ -98,7 +98,7 @@ fmado_hcl <- fastcluster::hclust(fmado_dist, method = 'ward.D2') # F-madogram
 gc(T)
 
 # Query data.frame
-qry <- idx_roi_ntrd[,c('cell','x','y')]
+qry <- idx_roi_ntrd[,c('cell','x','y')]; gc(T)
 
 # Optimal number of clusters
 # 1. Execute a PAM (Partition Around Medoids) algorithm with a sample of pixels
