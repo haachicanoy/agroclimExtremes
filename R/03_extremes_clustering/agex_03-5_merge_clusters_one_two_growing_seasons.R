@@ -14,10 +14,10 @@ suppressMessages(pacman::p_load(terra, dplyr))
 
 # Key arguments
 root   <- '//CATALOGUE/AgroclimExtremes'
-index  <- 'spei-6'
+index  <- 'spei-3'
 
-agex_sgn_gs1 <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_spei-6_one_s1_fmadogram_clean.tif'))
-agex_sgn_gs2 <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_spei-6_two_fmadogram_clean.tif'))
+agex_sgn_gs1 <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_',index,'_one_s1_fmadogram_clean.tif'))
+agex_sgn_gs2 <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_',index,'_two_fmadogram_clean.tif'))
 
 combined <- c(agex_sgn_gs1, agex_sgn_gs2) |>
   terra::as.data.frame(xy = T, cell = T)
@@ -33,17 +33,17 @@ agex_sgn <- agex_sgn_gs1
 terra::values(agex_sgn) <- NA
 agex_sgn[combined$cell] <- combined$extreme_cluster
 
-# Manual cleaning
-aux <- agex_sgn
-aux[aux != 275] <- NA
-aux_dfm <- terra::as.data.frame(aux, xy = T, cell = T)
-aux_dfm$extreme_cluster[(nrow(aux_dfm)-1):nrow(aux_dfm)] <- NA
-agex_sgn[aux_dfm$cell[is.na(aux_dfm$extreme_cluster)]] <- NA
+# # Manual cleaning
+# aux <- agex_sgn
+# aux[aux != 275] <- NA
+# aux_dfm <- terra::as.data.frame(aux, xy = T, cell = T)
+# aux_dfm$extreme_cluster[(nrow(aux_dfm)-1):nrow(aux_dfm)] <- NA
+# agex_sgn[aux_dfm$cell[is.na(aux_dfm$extreme_cluster)]] <- NA
+# 
+# aux <- agex_sgn
+# aux[aux != 321] <- NA
+# aux_dfm <- terra::as.data.frame(aux, xy = T, cell = T)
+# aux_dfm$extreme_cluster[(nrow(aux_dfm)-3):nrow(aux_dfm)] <- NA
+# agex_sgn[aux_dfm$cell[is.na(aux_dfm$extreme_cluster)]] <- NA
 
-aux <- agex_sgn
-aux[aux != 321] <- NA
-aux_dfm <- terra::as.data.frame(aux, xy = T, cell = T)
-aux_dfm$extreme_cluster[(nrow(aux_dfm)-3):nrow(aux_dfm)] <- NA
-agex_sgn[aux_dfm$cell[is.na(aux_dfm$extreme_cluster)]] <- NA
-
-terra::writeRaster(x = agex_sgn, filename = paste0(root,'/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'), overwrite = T)
+terra::writeRaster(x = agex_sgn, filename = paste0(root,'/agex_results/agex_results_clusters/agex_global_',index,'_combined_fmadogram_clean.tif'), overwrite = T)

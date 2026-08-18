@@ -4,7 +4,7 @@
 # By: Harold Achicanoy
 # WUR & ABC
 # Created in May 2024
-# Modified in February 2026
+# Modified in July 2026
 # --------------------------------------------------------------- #
 
 # R options and user-defined functions
@@ -23,14 +23,14 @@ getmode <- function(v) {
 ## Key arguments
 root   <- '//CATALOGUE/AgroclimExtremes'
 yrs    <- 1980:2022
-index  <- 'spei-6'
+index  <- 'spei-12'
 gs     <- 'two'
 
 # Extreme clusters for places with one growing seasons
 agex_sgn <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_spei-6_one_s1_fmadogram_clean.tif'))
 # Extreme clusters for places with two growing seasons
-agex_sgn_s1 <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_spei-6_two_s1_fmadogram_k225.tif'))
-agex_sgn_s2 <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_spei-6_two_s2_fmadogram_k222.tif'))
+agex_sgn_s1 <- terra::rast(list.files(path = paste0(root,'/agex_results/agex_results_clusters'), pattern = paste0('agex_global_',index,'_',gs,'_s1_fmadogram_k[0-9][0-9][0-9].tif'), full.names = T))
+agex_sgn_s2 <- terra::rast(list.files(path = paste0(root,'/agex_results/agex_results_clusters'), pattern = paste0('agex_global_',index,'_',gs,'_s2_fmadogram_k[0-9][0-9][0-9].tif'), full.names = T))
 
 # Lower limit: minimum number of pixels per extreme cluster based on gs1
 lwr_lmt <- min(table(as.numeric(terra::values(agex_sgn, na.rm = T))))
@@ -53,7 +53,7 @@ agex_sgn_aux <- agex_sgn; rm(agex_sgn)
 terra::values(agex_sgn_aux) <- NA
 agex_sgn_aux[dfm$cell] <- dfm$extreme_cluster
 
-outfile <- paste0(root,'/agex_results/agex_results_clusters/agex_global_spei-6_two_fmadogram_clean.tif')
+outfile <- paste0(root,'/agex_results/agex_results_clusters/agex_global_',index,'_',gs,'_fmadogram_clean.tif')
 
 ## CLEANING PROCESS
 if(!file.exists(outfile)){
@@ -78,7 +78,7 @@ if(!file.exists(outfile)){
     
     # Get outliers from coordinates
     set.seed(1235)
-    out_pre <- OutliersO3::O3prep(data = aux_dfm[,c('x','y')], method = c('HDo','BAC','adjOut','DDC','MCD')) # 'PCS'
+    out_pre <- OutliersO3::O3prep(data = aux_dfm[,c('x','y')], method = c('BAC','adjOut','DDC','MCD')) # 'PCS', 'HDo'
     out_msg <- capture.output(try(OutliersO3::O3plotM(out_pre), silent = T))
     if(length(out_msg) > 1){
       out_res <- OutliersO3::O3plotM(out_pre)

@@ -4,7 +4,7 @@
 # By: Harold Achicanoy
 # WUR & ABC
 # Created in October 2024
-# Modified in February 2026
+# Modified in August 2026
 # --------------------------------------------------------------- #
 
 # R options and user-defined functions ----
@@ -42,12 +42,12 @@ root   <- '//CATALOGUE/AgroclimExtremes'
 index  <- 'spei-6'
 
 # Extreme weather clusters ----
-agex_sgn_cln <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
+agex_sgn_cln <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_',index,'_combined_fmadogram_clean.tif'))
 names(agex_sgn_cln) <- 'extreme_cluster'
 # Extreme weather clusters by growing seasons
-agex_sgn_gs1 <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_spei-6_one_s1_fmadogram_clean.tif'))
+agex_sgn_gs1 <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_',index,'_one_s1_fmadogram_clean.tif'))
 agex_sgn_gs1[!is.na(agex_sgn_gs1)] <- 1
-agex_sgn_gs2 <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_spei-6_two_fmadogram_clean.tif'))
+agex_sgn_gs2 <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_',index,'_two_fmadogram_clean.tif'))
 agex_sgn_gs2[!is.na(agex_sgn_gs2)] <- 2
 agex_sgn_gs <- terra::merge(agex_sgn_gs1, agex_sgn_gs2); rm(agex_sgn_gs1, agex_sgn_gs2)
 names(agex_sgn_gs) <- 'growing_seasons'
@@ -148,18 +148,20 @@ if(!file.exists(outfile)){
 # Crop classes diversity ----
 # Metric: Shannon diversity index
 # Meaning: High entropy means high variation of food/non-food classes
-outfile <- paste0(root,'/agex_results/agex_vulnerability/crop_classes_diversity.tif')
+agr_dts <- "spam2020"
+outfile <- paste0(root,'/agex_results/agex_vulnerability/crop_classes_diversity_',agr_dts,'.tif')
 if(!file.exists(outfile)){
   dir.create(path = dirname(outfile), F, T)
-  crp_fls <- list.files(path = paste0(root,'/agex_raw_data'), pattern = '^agex_cropclass_', full.names = T)
+  crp_fls <- list.files(path = paste0(root,'/agex_raw_data/',agr_dts,'_counts'), pattern = '^agex_cropclass_', full.names = T)
   crp_fls <- crp_fls[-grep2(pattern = c('fibres','stimulant','rest_of_crops'), x = crp_fls)] # Categories to exclude
   crp_typ <- terra::rast(crp_fls)
+  crp_typ <- terra::subst(crp_typ, NA, 0)
   crp_ntp <- terra::app(x = crp_typ, fun = function(i, ff) ff(i), cores = 20, ff = entropy::entropy)
   names(crp_ntp) <- 'crop_classes_diversity'
   terra::writeRaster(x = crp_ntp, filename = outfile, overwrite = T)
   crp_ntp_25km <- terra::resample(x = crp_ntp, y = agex_sgn_cln, method = 'cubicspline', threads = T)
   crp_ntp_25km <- terra::mask(x = crp_ntp_25km, mask = agex_sgn_cln)
-  terra::writeRaster(x = crp_ntp_25km, filename = paste0(root,'/agex_results/agex_vulnerability/crop_classes_diversity_25km.tif'), overwrite = T)
+  terra::writeRaster(x = crp_ntp_25km, filename = paste0(root,'/agex_results/agex_vulnerability/crop_classes_diversity_25km_',agr_dts,'.tif'), overwrite = T)
 } else {
   crp_ntp <- terra::rast(outfile)
 }; rm(outfile)
