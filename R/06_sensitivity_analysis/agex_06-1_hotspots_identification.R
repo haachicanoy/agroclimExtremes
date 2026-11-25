@@ -18,7 +18,7 @@
 options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
 suppressMessages(pacman::p_load(terra, dplyr))
-source('https://raw.githubusercontent.com/haachicanoy/agroclimExtremes/main/R/06_sensitivity/agex_06-0_sensitivity_functions.R')
+source('https://raw.githubusercontent.com/haachicanoy/agroclimExtremes/refs/heads/main/R/06_sensitivity_analysis/agex_06-0_sensitivity_functions.R')
 # source('./R/06_sensitivity/agex_06-0_sensitivity_functions.R') # local alternative
 
 # Key arguments ----

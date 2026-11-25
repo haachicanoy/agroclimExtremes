@@ -153,10 +153,8 @@ calc_extreme_trend <- function(root, index, yrs = 1980:2022, cores = 20){
 exposure_files <- function(root, agr_dts){
   vln <- paste0(root,'/agex_results/agex_vulnerability')
   fls <- list(
-    spam2010 = list(crop_diversity = paste0(vln,'/crop_classes_diversity_25km.tif'),
-                    crop_vop       = paste0(vln,'/food_vop.tif')),
-    spam2020 = list(crop_diversity = paste0(vln,'/crop_classes_diversity_25km_spam2020.tif'),
-                    crop_vop       = paste0(vln,'/food_vop_spam2020.tif')) # CHECK: VoP 2020 file name
+    spam2010 = list(crop_diversity = paste0(vln,'/crop_classes_diversity_25km.tif')),
+    spam2020 = list(crop_diversity = paste0(vln,'/crop_classes_diversity_25km_spam2020.tif'))
   )
   out <- fls[[agr_dts]]
   out$livestock_diversity <- paste0(vln,'/lsu_diversity_25km.tif')
@@ -217,7 +215,7 @@ classify_hotspots <- function(mtr, idx_sxt, exp, hotspot_categories = c('4-4')){
   }
   # Composite hotspots as reported in the paper
   mtr$food_production_hotspot <- mtr$crop_diversity_hotspot | mtr$livestock_diversity_hotspot
-  mtr$economic_value_hotspot  <- mtr$crop_vop_hotspot | mtr$livestock_units_hotspot
+  # mtr$economic_value_hotspot  <- mtr$crop_vop_hotspot | mtr$livestock_units_hotspot
   rownames(thr) <- NULL
   return(list(classes = mtr, thresholds = thr))
 }
@@ -246,8 +244,8 @@ run_hotspots <- function(root, index, agr_dts, cls_file, scenario, out_dir){
   utils::write.csv(x = res$classes, file = paste0(out_dir,'/agex_hotspots_',scenario,'.csv'), row.names = F)
   utils::write.csv(x = res$thresholds, file = paste0(out_dir,'/agex_hotspots_thresholds_',scenario,'.csv'), row.names = F)
   # Pixel-level layers used later for the comparisons
-  hcols <- c('crop_diversity_hotspot','livestock_diversity_hotspot','crop_vop_hotspot','livestock_units_hotspot',
-             'food_production_hotspot','economic_value_hotspot')
+  hcols <- c('crop_diversity_hotspot','livestock_diversity_hotspot', # 'crop_vop_hotspot','livestock_units_hotspot',
+             'food_production_hotspot') # 'economic_value_hotspot'
   hrs <- lapply(hcols, function(h) cluster_to_raster(cls, res$classes, h)) |> terra::rast()
   terra::writeRaster(x = c(cls, idx_sxt, exp, hrs), filename = paste0(out_dir,'/agex_hotspots_',scenario,'.tif'), overwrite = T)
   return(res)
@@ -260,9 +258,9 @@ run_hotspots <- function(root, index, agr_dts, cls_file, scenario, out_dir){
 # Returns one row per hotspot type.
 compare_scenarios <- function(a, b, scenario_a, scenario_b, ctr = NULL,
                               hcols = c('crop_diversity_hotspot','livestock_diversity_hotspot',
-                                        'crop_vop_hotspot','livestock_units_hotspot',
-                                        'food_production_hotspot','economic_value_hotspot'),
-                              scores = c('extreme_trend','crop_diversity','livestock_diversity','crop_vop','livestock_units'),
+                                        # 'crop_vop_hotspot','livestock_units_hotspot',
+                                        'food_production_hotspot'), # 'economic_value_hotspot'
+                              scores = c('extreme_trend','crop_diversity','livestock_diversity'), # 'crop_vop','livestock_units'
                               retain_thr = .5, seed = 1235, n_smp = 1e5){
   b <- terra::resample(b, a, method = 'near')
   are <- terra::cellSize(a[[1]], unit = 'km'); names(are) <- 'area'
