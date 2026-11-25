@@ -153,7 +153,7 @@ calc_extreme_trend <- function(root, index, yrs = 1980:2022, cores = 20){
 exposure_files <- function(root, agr_dts){
   vln <- paste0(root,'/agex_results/agex_vulnerability')
   fls <- list(
-    spam2010 = list(crop_diversity = paste0(vln,'/crop_classes_diversity_25km.tif')),
+    spam2010 = list(crop_diversity = paste0(vln,'/crop_classes_diversity_25km_spam2010.tif')),
     spam2020 = list(crop_diversity = paste0(vln,'/crop_classes_diversity_25km_spam2020.tif'))
   )
   out <- fls[[agr_dts]]

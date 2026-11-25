@@ -27,19 +27,19 @@ out_dir <- paste0(root,'/agex_results/agex_sensitivity')
 indices <- c('spei-3','spei-6','spei-12')
 agr_dss <- c('spam2010','spam2020')
 
-# Crop value of production for MapSPAM 2020 (25 km) ----
-# The 2010 layer (food_vop.tif) was produced for the main analysis. Build the
-# 2020 equivalent with the same steps. CHECK the raw SPAM2020 VoP file name.
-outfile <- paste0(root,'/agex_results/agex_vulnerability/food_vop_spam2020.tif')
-if(!file.exists(outfile)){
-  tmp_25km <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
-  vop_2020 <- terra::rast(paste0(root,'/agex_raw_data/agex_spam2020V2r2_global_V_agg_VP_FOOD_A.tif')) # CHECK
-  vop_2020_25km <- terra::resample(x = vop_2020, y = tmp_25km, method = 'cubicspline', threads = T)
-  vop_2020_25km <- terra::mask(x = vop_2020_25km, mask = tmp_25km)
-  names(vop_2020_25km) <- 'food_vop'
-  terra::writeRaster(x = vop_2020_25km, filename = outfile, overwrite = T)
-  rm(tmp_25km, vop_2020, vop_2020_25km)
-}; rm(outfile)
+# # Crop value of production for MapSPAM 2020 (25 km) ----
+# # The 2010 layer (food_vop.tif) was produced for the main analysis. Build the
+# # 2020 equivalent with the same steps. CHECK the raw SPAM2020 VoP file name.
+# outfile <- paste0(root,'/agex_results/agex_vulnerability/food_vop_spam2020.tif')
+# if(!file.exists(outfile)){
+#   tmp_25km <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_spei-6_combined_fmadogram_clean.tif'))
+#   vop_2020 <- terra::rast(paste0(root,'/agex_raw_data/agex_spam2020V2r2_global_V_agg_VP_FOOD_A.tif')) # CHECK
+#   vop_2020_25km <- terra::resample(x = vop_2020, y = tmp_25km, method = 'cubicspline', threads = T)
+#   vop_2020_25km <- terra::mask(x = vop_2020_25km, mask = tmp_25km)
+#   names(vop_2020_25km) <- 'food_vop'
+#   terra::writeRaster(x = vop_2020_25km, filename = outfile, overwrite = T)
+#   rm(tmp_25km, vop_2020, vop_2020_25km)
+# }; rm(outfile)
 
 # Scenarios ----
 # Baseline = spei-6 x spam2010 (main manuscript)
