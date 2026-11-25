@@ -27,7 +27,7 @@
 options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
 suppressMessages(pacman::p_load(terra, dplyr, cluster, future, furrr, landscapemetrics, aricode))
-source('https://raw.githubusercontent.com/haachicanoy/agroclimExtremes/main/R/06_sensitivity/agex_06-0_sensitivity_functions.R')
+source('https://raw.githubusercontent.com/haachicanoy/agroclimExtremes/refs/heads/main/R/06_sensitivity_analysis/agex_06-0_sensitivity_functions.R')
 
 # Optimal number of clusters (same criterion as 03-2: PAM + average silhouette
 # on a 3% sample of pixels). k_range is an argument so it can be adapted to the
@@ -54,7 +54,7 @@ agr_dts   <- 'spam2010'
 thrs      <- c(0, 0.01, 0.05, 0.10, 0.20) # 0 = reference without mask
 k_mode    <- 'optimal'                     # 'optimal' (silhouette) or 'baseline' (same K as main run)
 glad_dir  <- paste0(root,'/agex_raw_data/glad_cropland') # CHECK: GLAD 0.025 deg overview layers (percent cropland)
-glad_yrs  <- c(2003, 2019)
+glad_yrs  <- c(2003, 2015)
 cafr_ext  <- terra::ext(c(12, 31, -12, 6))   # Congo Basin / Central Africa box (lon/lat)
 dir.create(cls_dir, F, T)
 
@@ -65,10 +65,10 @@ tmp_25km <- terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_gl
 for(yr in glad_yrs){
   outfile <- paste0(root,'/agex_results/agex_vulnerability/glad_cropland_fraction_',yr,'_25km.tif')
   if(!file.exists(outfile)){
-    glad <- terra::rast(list.files(path = glad_dir, pattern = paste0(yr,'.*\\.tif$'), full.names = T)[1]) # CHECK file pattern
-    glad <- terra::classify(glad, rcl = cbind(101, Inf, NA)) # remove no-data codes, if any
+    glad <- terra::rast(list.files(path = glad_dir, pattern = paste0(yr,'.*\\.tif$'), full.names = T)[1])
+    glad <- terra::classify(glad, rcl = cbind(-Inf, 0, NA)) # remove no-data codes, if any
     glad_25km <- terra::aggregate(x = glad, fact = round(terra::res(tmp_25km)[1]/terra::res(glad)[1]), fun = 'mean', na.rm = T)
-    glad_25km <- terra::resample(x = glad_25km, y = tmp_25km, method = 'near') / 100
+    glad_25km <- terra::resample(x = glad_25km, y = tmp_25km, method = 'near')
     names(glad_25km) <- 'cropland_fraction'
     terra::writeRaster(x = glad_25km, filename = outfile, overwrite = T)
   }

@@ -68,11 +68,12 @@ smm <- lapply(res, function(r){
              crop_diversity      = sum(cl$crop_diversity_hotspot),
              livestock_diversity = sum(cl$livestock_diversity_hotspot),
              joint_diversity     = sum(cl$crop_diversity_hotspot & cl$livestock_diversity_hotspot),
-             food_production     = sum(cl$food_production_hotspot),
-             crop_vop            = sum(cl$crop_vop_hotspot),
-             livestock_units     = sum(cl$livestock_units_hotspot),
-             joint_economic      = sum(cl$crop_vop_hotspot & cl$livestock_units_hotspot),
-             economic_value      = sum(cl$economic_value_hotspot))
+             food_production     = sum(cl$food_production_hotspot)
+             #crop_vop            = sum(cl$crop_vop_hotspot),
+             #livestock_units     = sum(cl$livestock_units_hotspot),
+             #joint_economic      = sum(cl$crop_vop_hotspot & cl$livestock_units_hotspot),
+             #economic_value      = sum(cl$economic_value_hotspot))
+             )
 }) |> dplyr::bind_rows()
 utils::write.csv(x = smm, file = paste0(out_dir,'/agex_hotspots_summary.csv'), row.names = F)
 smm

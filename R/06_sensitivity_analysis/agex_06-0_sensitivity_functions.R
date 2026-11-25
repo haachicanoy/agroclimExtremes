@@ -90,7 +90,6 @@ fmado_cluster <- function(x, k){
 load_index_ts <- function(root, index, gs, season, yrs = 1980:2022){
   fls <- list.files(path = paste0(root,'/agex_indices/agex_',index,'/agex_',index,'_25km'),
                     pattern = paste0(gs,'_s',season,'_',index,'_'), full.names = T)
-  fls <- fls[grepl(pattern = paste0('_(',paste(yrs, collapse = '|'),').tif$'), x = fls)] |> sort()
   idx <- terra::rast(fls)
   return(idx)
 }
