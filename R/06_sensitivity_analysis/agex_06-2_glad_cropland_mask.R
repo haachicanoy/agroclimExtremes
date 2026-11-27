@@ -19,7 +19,7 @@
 #    an explicit Central Africa (Congo Basin) summary.
 # 4. Identify hotspots on each masked partition (crop diversity is
 #    recomputed only over the retained pixels).
-# 5. (R3.4) Cropland change 2003-2019 per cluster to flag hotspots located
+# 5. (R3.4) Cropland change 2003-2015 per cluster to flag hotspots located
 #    in areas of rapid agricultural transformation.
 # --------------------------------------------------------------- #
 
@@ -41,7 +41,7 @@ select_k <- function(x, k_range = 200:300, prc = 0.03, workers = 40, seed = 1245
     model <- cluster::pam(x = dd, k = k)
     data.frame(k = k, avg_silhouette = model$silinfo$avg.width)
   }) |> dplyr::bind_rows()
-  future:::ClusterRegistry('stop'); gc(verbose = F, reset = T, full = T)
+  future::plan(sequential); gc(verbose = F, reset = T, full = T)
   return(sil_width$k[which.max(sil_width$avg_silhouette)])
 }
 
@@ -160,7 +160,7 @@ for(f in cls_fls){
                scenario = paste0(index,'_',agr_dts,'_',scn_lbl), out_dir = out_dir)
 }; rm(f, scn_lbl)
 
-# 5. Cropland change 2003-2019 within baseline clusters (R3.4) ----
+# 5. Cropland change 2003-2015 within baseline clusters (R3.4) ----
 frc_0 <- terra::rast(paste0(root,'/agex_results/agex_vulnerability/glad_cropland_fraction_',min(glad_yrs),'_25km.tif'))
 frc_1 <- terra::rast(paste0(root,'/agex_results/agex_vulnerability/glad_cropland_fraction_',max(glad_yrs),'_25km.tif'))
 dlt <- frc_1 - frc_0; names(dlt) <- 'cropland_fraction_change'
@@ -172,5 +172,5 @@ bsl <- dplyr::left_join(bsl, chg, by = 'extreme_cluster')
 utils::write.csv(x = bsl, file = paste0(out_dir,'/agex_hotspots_',index,'_',agr_dts,'_cropland_change.csv'), row.names = F)
 # Hotspots located in rapidly changing agricultural areas
 bsl |>
-  dplyr::filter(food_production_hotspot | economic_value_hotspot) |>
+  dplyr::filter(food_production_hotspot) |>
   dplyr::summarise(n_hotspots = dplyr::n(), n_rapid_change = sum(rapid_change, na.rm = T))

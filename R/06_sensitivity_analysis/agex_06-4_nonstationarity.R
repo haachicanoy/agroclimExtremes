@@ -28,7 +28,7 @@
 options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
 suppressMessages(pacman::p_load(terra, dplyr, aricode))
-source('https://raw.githubusercontent.com/haachicanoy/agroclimExtremes/main/R/06_sensitivity/agex_06-0_sensitivity_functions.R')
+source('https://raw.githubusercontent.com/haachicanoy/agroclimExtremes/refs/heads/main/R/06_sensitivity_analysis/agex_06-0_sensitivity_functions.R')
 
 # Key arguments ----
 root     <- '//CATALOGUE/AgroclimExtremes'
@@ -59,8 +59,10 @@ res <- lapply(1:nrow(stp), function(i){
 
   idx_roi <- load_index_ts(root, index, gs, season, yrs)
   # Detrended (as in 03-1) and raw (scaled only) series
-  idx_dtr <- terra::app(x = idx_roi, fun = function(i, ff) ff(i), cores = 20, ff = function(x) transformations(x, detrend = TRUE))
-  idx_raw <- terra::app(x = idx_roi, fun = function(i, ff) ff(i), cores = 20, ff = function(x) transformations(x, detrend = FALSE))
+  # idx_dtr <- terra::app(x = idx_roi, fun = function(i, ff) ff(i), cores = 20, ff = function(x) transformations(x, detrend = TRUE))
+  # idx_raw <- terra::app(x = idx_roi, fun = function(i, ff) ff(i), cores = 20, ff = function(x) transformations(x, detrend = FALSE))
+  idx_dtr <- terra::app(x = idx_roi, fun = function(i, tf) {library(Kendall); tf(i, detrend = TRUE)}, cores = 20, tf = transformations)
+  idx_raw <- terra::app(x = idx_roi, fun = function(i, tf) {library(Kendall); tf(i, detrend = FALSE)}, cores = 20, tf = transformations)
   dfm_dtr <- terra::as.data.frame(x = idx_dtr, cell = T, na.rm = T)
   dfm_raw <- terra::as.data.frame(x = idx_raw, cell = T, na.rm = T)
   dfm_raw <- dfm_raw[match(dfm_dtr$cell, dfm_raw$cell),]

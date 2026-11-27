@@ -268,18 +268,31 @@ compare_scenarios <- function(a, b, scenario_a, scenario_b, ctr = NULL,
   names(dfb)[-1] <- paste0(names(dfb)[-1],'_b')
   dfm <- dplyr::left_join(dfa, dfb, by = 'cell')
   cmn <- !is.na(dfm$extreme_cluster) & !is.na(dfm$extreme_cluster_b)
-
+  
   # Partition similarity on common pixels
   ari <- aricode::ARI(dfm$extreme_cluster[cmn], dfm$extreme_cluster_b[cmn])
   nmi <- aricode::NMI(dfm$extreme_cluster[cmn], dfm$extreme_cluster_b[cmn])
-  # Spearman correlation of cluster-level continuous scores at common pixels
+  # Spearman correlations at common pixels (random sample of n_smp pixels):
+  # - spearman_px_<s>: pixel values of s in a vs b (input-level agreement)
+  # - spearman_cl_<s>: mean of s over the pixel's cluster in a vs in b. This is
+  #   the score that enters the quartile classification, so high spearman_cl
+  #   with low Jaccard = instability from thresholds, not from the signal.
+  for(s in scores){
+    dfm[[paste0(s,'_clm')]]   <- stats::ave(dfm[[s]], dfm$extreme_cluster, FUN = function(z) mean(z, na.rm = T))
+    dfm[[paste0(s,'_clm_b')]] <- stats::ave(dfm[[paste0(s,'_b')]], dfm$extreme_cluster_b, FUN = function(z) mean(z, na.rm = T))
+  }
   set.seed(seed)
   idx <- which(cmn); if(length(idx) > n_smp) idx <- sample(idx, n_smp)
-  rho <- sapply(scores, function(s){
+  rho_px <- sapply(scores, function(s){
     stats::cor(dfm[idx, s], dfm[idx, paste0(s,'_b')], method = 'spearman', use = 'pairwise.complete.obs')
   })
-  names(rho) <- paste0('spearman_',scores)
-
+  rho_cl <- sapply(scores, function(s){
+    stats::cor(dfm[idx, paste0(s,'_clm')], dfm[idx, paste0(s,'_clm_b')], method = 'spearman', use = 'pairwise.complete.obs')
+  })
+  names(rho_px) <- paste0('spearman_px_',scores)
+  names(rho_cl) <- paste0('spearman_cl_',scores)
+  rho <- c(rho_px, rho_cl)
+  
   out <- lapply(hcols, function(h){
     ha <- dfm[[h]] == 1 & !is.na(dfm[[h]])
     hb <- dfm[[paste0(h,'_b')]] == 1 & !is.na(dfm[[paste0(h,'_b')]])
@@ -303,7 +316,7 @@ compare_scenarios <- function(a, b, scenario_a, scenario_b, ctr = NULL,
                clusters_retained_pct = ifelse(nrow(ret) > 0, 100 * mean(ret$share >= retain_thr), NA),
                t(rho))
   }) |> dplyr::bind_rows()
-
+  
   # Regions where the classification changes (gained / lost hotspot area per country)
   if(!is.null(ctr)){
     cty <- terra::rasterize(x = ctr, y = a[[1]], field = 'adm0_iso')

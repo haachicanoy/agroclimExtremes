@@ -11,8 +11,8 @@
 # - Hotspot agreement: number of hotspot clusters, hotspot area, area-based
 #   Jaccard index, % of baseline hotspot area retained, % of baseline hotspot
 #   clusters retained (>= 50% of their area still classified as hotspot)
-# - Spearman correlation of the continuous cluster-level scores (trend and
-#   exposure). High rho with low Jaccard = instability from the quartile
+# - Spearman correlation of the continuous scores (trend and exposure), both
+#   pixel-level (spearman_px_*) and cluster-level (spearman_cl_*). High rho with low Jaccard = instability from the quartile
 #   thresholds, not from the underlying signal.
 # - Regions (countries/continents) where hotspot area is gained or lost
 # --------------------------------------------------------------- #
@@ -20,8 +20,8 @@
 # R options and user-defined functions ----
 options(warn = -1, scipen = 999)
 suppressMessages(if(!require(pacman)){install.packages('pacman')}else{library(pacman)})
-suppressMessages(pacman::p_load(terra, dplyr, tidyr, rnaturalearth))
-source('https://raw.githubusercontent.com/haachicanoy/agroclimExtremes/main/R/06_sensitivity/agex_06-0_sensitivity_functions.R')
+suppressMessages(pacman::p_load(terra, dplyr, tidyr, rnaturalearth, sf))
+source('https://raw.githubusercontent.com/haachicanoy/agroclimExtremes/refs/heads/main/R/06_sensitivity_analysis/agex_06-0_sensitivity_functions.R')
 
 # Key arguments ----
 root     <- '//CATALOGUE/AgroclimExtremes'
@@ -76,7 +76,8 @@ agr_tbl |>
                                'crop_vop_hotspot','livestock_units_hotspot')) |>
   dplyr::select(group, scenario_b, hotspot, ARI, n_hotspots_a, n_hotspots_b,
                 jaccard_area, overlap_retained_pct, clusters_retained_pct,
-                spearman_extreme_trend) |>
+                spearman_cl_extreme_trend, spearman_cl_crop_diversity, spearman_cl_livestock_diversity,
+                spearman_cl_crop_vop, spearman_cl_livestock_units) |>
   utils::write.csv(file = paste0(out_dir,'/agex_sensitivity_agreement_compact.csv'), row.names = F)
 
 # Livestock-focused summary for SPEI-12 (R2.1, R3.2) ----
