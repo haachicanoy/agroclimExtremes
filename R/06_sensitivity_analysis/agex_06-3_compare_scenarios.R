@@ -77,7 +77,7 @@ agr_tbl |>
   dplyr::select(group, scenario_b, hotspot, ARI, n_hotspots_a, n_hotspots_b,
                 jaccard_area, overlap_retained_pct, clusters_retained_pct,
                 spearman_cl_extreme_trend, spearman_cl_crop_diversity, spearman_cl_livestock_diversity,
-                spearman_cl_crop_vop, spearman_cl_livestock_units) |>
+                ) |> # spearman_cl_crop_vop, spearman_cl_livestock_units
   utils::write.csv(file = paste0(out_dir,'/agex_sensitivity_agreement_compact.csv'), row.names = F)
 
 # Livestock-focused summary for SPEI-12 (R2.1, R3.2) ----
@@ -106,7 +106,7 @@ reg |>
 # Pixel-level agreement maps (number of scenarios in which a pixel is hotspot) ----
 # Replaces Figure S6 with the same scenarios used in the agreement table.
 fls <- paste0(out_dir,'/agex_hotspots_',unique(c(baseline, cmp$scenario_b[cmp$group != 'Simplified pipeline (no outlier cleaning)'])),'.tif')
-for(h in c('food_production_hotspot','economic_value_hotspot')){
+for(h in c('food_production_hotspot')){
   stk <- lapply(fls, function(f) terra::rast(f)[[h]]) |> terra::rast()
   stk <- terra::subst(stk, NA, 0)
   agr <- terra::app(stk, mean) # share of scenarios classifying the pixel as hotspot

@@ -107,7 +107,11 @@ for(thr in thrs){
   # Combine two growing seasons (as 03-4, without outlier cleaning):
   # keep pixels clustered in both seasons; drop combinations smaller than the
   # smallest one-season cluster.
-  lwr_lmt <- min(table(as.numeric(terra::values(cls_set[[1]], na.rm = T))))
+  # Same floor as 03-4: smallest cluster of the CLEANED baseline one-season
+  # partition (fixed absolute pixel count, identical for all thresholds).
+  # Using the uncleaned/masked one-season partition gives a higher floor and
+  # drops ~140 small two-season clusters (gladref: 315 vs 456 clusters).
+  lwr_lmt <- min(table(as.numeric(terra::values(terra::rast(paste0(root,'/agex_results/agex_results_clusters/agex_global_spei-6_one_s1_fmadogram_clean.tif')), na.rm = T))))
   dfm <- terra::as.data.frame(x = c(cls_set[[2]], cls_set[[3]]), cell = T, na.rm = T)
   names(dfm)[2:3] <- c('s1','s2')
   dfm$combined <- paste0(dfm$s1,'-',dfm$s2)

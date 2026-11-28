@@ -36,7 +36,7 @@ out_dir  <- paste0(root,'/agex_results/agex_sensitivity/nonstationarity')
 index    <- 'spei-6'
 yrs      <- 1980:2022
 brk_yr   <- 2000     # first half: 1980-2000 (21 yrs); second half: 2001-2022 (22 yrs)
-n_boot   <- 100      # random block splits for the null distribution
+n_boot   <- 1000    # random block splits for the null distribution
 blk_len  <- 3        # block length (years)
 smp_prc  <- 0.10     # share of pixels used in check B (same sample in all runs)
 dir.create(out_dir, F, T)

@@ -297,6 +297,7 @@ compare_scenarios <- function(a, b, scenario_a, scenario_b, ctr = NULL,
     ha <- dfm[[h]] == 1 & !is.na(dfm[[h]])
     hb <- dfm[[paste0(h,'_b')]] == 1 & !is.na(dfm[[paste0(h,'_b')]])
     a_area <- sum(dfm$area[ha]); b_area <- sum(dfm$area[hb])
+    a_area_cmn <- sum(dfm$area[ha & cmn]) # baseline hotspot area that still exists in b
     i_area <- sum(dfm$area[ha & hb]); u_area <- sum(dfm$area[ha | hb])
     # Cluster-level retention: share of each baseline hotspot cluster's area
     # that is still hotspot in the alternative scenario
@@ -313,6 +314,8 @@ compare_scenarios <- function(a, b, scenario_a, scenario_b, ctr = NULL,
                hotspot_area_a_km2 = a_area, hotspot_area_b_km2 = b_area,
                jaccard_area = ifelse(u_area > 0, i_area / u_area, NA),
                overlap_retained_pct = ifelse(a_area > 0, 100 * i_area / a_area, NA),
+               baseline_hotspot_in_common_pct = ifelse(a_area > 0, 100 * a_area_cmn / a_area, NA),
+               overlap_retained_common_pct = ifelse(a_area_cmn > 0, 100 * i_area / a_area_cmn, NA),
                clusters_retained_pct = ifelse(nrow(ret) > 0, 100 * mean(ret$share >= retain_thr), NA),
                t(rho))
   }) |> dplyr::bind_rows()
